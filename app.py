@@ -304,86 +304,160 @@ if "install_detay_acik" not in st.session_state:
     st.session_state.install_detay_acik = False
 
 def render_install_prompt(prefix="login"):
-    # PWA Meta Etiketlerini ve beforeinstallprompt Dinleyicisini Üst Pencereye Enjekte Et
     components.html("""
     <script>
-        try {
-            const pDoc = window.parent.document;
-            if (!pDoc.getElementById('lgs-pwa-meta')) {
-                const meta1 = pDoc.createElement('meta');
-                meta1.id = 'lgs-pwa-meta';
-                meta1.name = 'apple-mobile-web-app-capable';
-                meta1.content = 'yes';
-                pDoc.head.appendChild(meta1);
+        (function() {
+            try {
+                const pWin = window.parent;
+                const pDoc = pWin.document;
 
-                const meta2 = pDoc.createElement('meta');
-                meta2.name = 'apple-mobile-web-app-title';
-                meta2.content = 'LGS Karargahı';
-                pDoc.head.appendChild(meta2);
-            }
-            window.parent.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                window.parent.deferredLgsPrompt = e;
-            });
-        } catch (err) {}
+                pWin.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    pWin.deferredLgsPrompt = e;
+                });
+
+                if (pWin.sessionStorage.getItem('lgs_modal_dismissed') === '1') {
+                    return;
+                }
+                if (pDoc.getElementById('lgs-install-modal-overlay')) {
+                    return;
+                }
+
+                const styleEl = pDoc.createElement('style');
+                styleEl.innerHTML = `
+                    #lgs-install-modal-overlay {
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(15, 23, 42, 0.55);
+                        backdrop-filter: blur(6px);
+                        z-index: 999999;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 18px;
+                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                        animation: lgsFadeIn 0.25s ease;
+                    }
+                    @keyframes lgsFadeIn {
+                        from { opacity: 0; transform: scale(0.95); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                    .lgs-modal-box {
+                        background: #ffffff;
+                        border-radius: 28px;
+                        max-width: 430px;
+                        width: 100%;
+                        padding: 32px 26px;
+                        text-align: center;
+                        box-shadow: 0 25px 60px rgba(15, 23, 42, 0.35);
+                        border: 2px solid #e2e8f0;
+                    }
+                    .lgs-modal-icon {
+                        width: 78px;
+                        height: 78px;
+                        margin: 0 auto 16px auto;
+                        border-radius: 22px;
+                        background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 40px;
+                        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.3);
+                    }
+                    .lgs-modal-title {
+                        font-size: 22px;
+                        font-weight: 900;
+                        color: #0f172a;
+                        margin-bottom: 8px;
+                        line-height: 1.3;
+                    }
+                    .lgs-modal-sub {
+                        font-size: 14.5px;
+                        color: #475569;
+                        font-weight: 600;
+                        margin-bottom: 24px;
+                        line-height: 1.5;
+                    }
+                    .lgs-btn-primary {
+                        width: 100%;
+                        background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
+                        color: #ffffff;
+                        border: none;
+                        border-radius: 16px;
+                        padding: 15px 20px;
+                        font-size: 16px;
+                        font-weight: 800;
+                        cursor: pointer;
+                        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+                        margin-bottom: 10px;
+                        transition: transform 0.15s ease;
+                    }
+                    .lgs-btn-primary:hover {
+                        transform: translateY(-2px);
+                    }
+                    .lgs-btn-secondary {
+                        width: 100%;
+                        background: #f1f5f9;
+                        color: #475569;
+                        border: none;
+                        border-radius: 14px;
+                        padding: 12px 18px;
+                        font-size: 14px;
+                        font-weight: 700;
+                        cursor: pointer;
+                    }
+                    .lgs-btn-secondary:hover {
+                        background: #e2e8f0;
+                    }
+                `;
+                pDoc.head.appendChild(styleEl);
+
+                const overlay = pDoc.createElement('div');
+                overlay.id = 'lgs-install-modal-overlay';
+                overlay.innerHTML = `
+                    <div class="lgs-modal-box">
+                        <div class="lgs-modal-icon">🎯</div>
+                        <div class="lgs-modal-title">Masaüstü Uygulaması Yüklensin mi?</div>
+                        <div class="lgs-modal-sub">LGS Karargahı'nı tek tuşla masaüstüne ekle, her seferinde link yazmadan anında aç!</div>
+                        <button class="lgs-btn-primary" id="lgs-oneclick-install">🚀 Evet, Hemen Yükle</button>
+                        <button class="lgs-btn-secondary" id="lgs-oneclick-close">Daha Sonra</button>
+                    </div>
+                `;
+                pDoc.body.appendChild(overlay);
+
+                pDoc.getElementById('lgs-oneclick-close').onclick = function() {
+                    pWin.sessionStorage.setItem('lgs_modal_dismissed', '1');
+                    overlay.remove();
+                };
+
+                pDoc.getElementById('lgs-oneclick-install').onclick = async function() {
+                    const btn = pDoc.getElementById('lgs-oneclick-install');
+                    if (pWin.deferredLgsPrompt) {
+                        pWin.deferredLgsPrompt.prompt();
+                        await pWin.deferredLgsPrompt.userChoice;
+                        pWin.deferredLgsPrompt = null;
+                    } else {
+                        const targetUrl = pWin.location.href;
+                        const shortcutText = "[InternetShortcut]\\r\\nURL=" + targetUrl + "\\r\\nIconIndex=0\\r\\n";
+                        const blob = new Blob([shortcutText], { type: "application/internet-shortcut" });
+                        const url = URL.createObjectURL(blob);
+                        const a = pDoc.createElement('a');
+                        a.href = url;
+                        a.download = "LGS Karargahi.url";
+                        pDoc.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(url);
+                    }
+                    btn.style.background = "#10b981";
+                    btn.innerText = "✅ Masaüstü Uygulaması Yüklendi!";
+                    pWin.sessionStorage.setItem('lgs_modal_dismissed', '1');
+                    setTimeout(() => { overlay.remove(); }, 1100);
+                };
+            } catch (e) {}
+        })();
     </script>
     """, height=0)
-
-    if st.session_state.install_banner_gizle:
-        return
-
-    with st.container(border=True):
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%); border: 1.5px solid #93c5fd; border-radius: 16px; padding: 14px 18px; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 30px;">📲</span>
-                <div>
-                    <div style="font-size: 15.5px; font-weight: 900; color: #1e3a8a;">Masaüstü / Mobil Uygulama Yüklensin mi?</div>
-                    <div style="font-size: 13px; color: #475569; font-weight: 600; margin-top: 2px;">
-                        LGS Karargahı'nı cihazına uygulama olarak kaydet; her seferinde link yazmadan tek tıkla aç!
-                    </div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        b_col1, b_col2 = st.columns([1.6, 1], gap="small")
-        with b_col1:
-            if st.button("✅ Evet, Uygulamayı Yükle", key=f"{prefix}_inst_yes", use_container_width=True):
-                st.session_state.install_detay_acik = True
-        with b_col2:
-            if st.button("✖️ Şimdi Değil", key=f"{prefix}_inst_no", use_container_width=True):
-                st.session_state.install_banner_gizle = True
-                st.session_state.install_detay_acik = False
-                st.rerun()
-
-        if st.session_state.install_detay_acik:
-            # Native tarayıcı kurulum penceresi varsa tetikle
-            components.html("""
-            <script>
-                try {
-                    if (window.parent.deferredLgsPrompt) {
-                        window.parent.deferredLgsPrompt.prompt();
-                    }
-                } catch (e) {}
-            </script>
-            """, height=0)
-
-            kisayol_icerik = "[InternetShortcut]\nURL=https://lgs-karargahi.streamlit.app/\nIconIndex=0\n"
-            st.download_button(
-                label="📥 Bilgisayar İçin Masaüstü Kısayolunu İndir (LGS Karargahı.url)",
-                data=kisayol_icerik,
-                file_name="LGS Karargahi.url",
-                mime="application/internet-shortcut",
-                key=f"{prefix}_dl_shortcut",
-                use_container_width=True
-            )
-            st.markdown("""
-            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 12px 14px; margin-top: 8px; font-size: 13px; color: #334155; line-height: 1.5;">
-                <b>💻 Bilgisayarda (Chrome / Edge):</b> Yukarıdaki butondan masaüstü kısayolunu indirebilir veya tarayıcının sağ üst adres çubuğundaki <b>📥 Yükle</b> simgesine (ya da <b>⋮ ➔ Kaydet ve Paylaş ➔ Sayfayı uygulama olarak yükle</b>) tıklayabilirsin.<br>
-                <b>📱 Telefonda (iPhone / Android):</b> Safari'de alt ortadaki <b>⬆️ Paylaş ➔ Ana Ekrana Ekle</b>; Chrome'da sağ üstteki <b>⋮ ➔ Ana ekrana ekle / Uygulamayı yükle</b> seçeneğine dokun!
-            </div>
-            """, unsafe_allow_html=True)
 
 if not st.session_state.user:
     st.markdown("<br>", unsafe_allow_html=True)
