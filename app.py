@@ -834,45 +834,84 @@ elif menu == "📚 PDF Havuzu":
                     cozum_json = json.dumps(st.session_state.pdf_cozum_kartlari, ensure_ascii=False)
                     cozum_html = f"""
                     <style>
-                        .sol-wrap {{ font-family: 'Inter', sans-serif; padding: 4px; display: flex; flex-direction: column; gap: 16px; }}
+                        * {{ box-sizing: border-box; }}
+                        body {{ margin: 0; padding: 0; background: transparent; }}
+                        .sol-wrap {{ font-family: 'Inter', -apple-system, sans-serif; padding: 4px 2px; display: flex; flex-direction: column; gap: 14px; }}
                         .sol-card {{
                             background: white;
                             border: 2px solid #e0e7ff;
                             border-radius: 18px;
-                            padding: 18px;
+                            padding: 16px;
                             box-shadow: 0 6px 16px rgba(37, 99, 235, 0.06);
                         }}
-                        .sol-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }}
+                        .sol-header {{
+                            display: flex;
+                            align-items: stretch;
+                            gap: 10px;
+                            margin-bottom: 12px;
+                        }}
                         .sol-num {{
                             background: linear-gradient(90deg, #2563eb, #7c3aed);
                             color: white;
                             font-weight: 800;
                             font-size: 13px;
-                            padding: 5px 12px;
-                            border-radius: 99px;
+                            padding: 8px 10px;
+                            border-radius: 12px;
+                            white-space: nowrap;
+                            flex: 0 0 104px;
+                            width: 104px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                            box-shadow: 0 3px 8px rgba(37, 99, 235, 0.18);
                         }}
                         .sol-kazanim {{
                             background: #eff6ff;
+                            border: 1.5px solid #bfdbfe;
                             color: #1d4ed8;
-                            font-size: 12px;
+                            font-size: 12.5px;
                             font-weight: 700;
-                            padding: 4px 10px;
-                            border-radius: 8px;
+                            padding: 8px 12px;
+                            border-radius: 12px;
+                            flex: 1 1 auto;
+                            min-width: 0;
+                            line-height: 1.35;
+                            display: flex;
+                            align-items: center;
+                            text-align: left;
+                            word-break: break-word;
                         }}
-                        .sol-btn-row {{ display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }}
+                        .sol-btn-row {{
+                            display: flex;
+                            gap: 8px;
+                            flex-wrap: wrap;
+                            margin-bottom: 6px;
+                        }}
                         .sol-action-btn {{
                             border: none;
-                            padding: 9px 14px;
-                            border-radius: 10px;
+                            padding: 10px 14px;
+                            border-radius: 11px;
                             font-size: 13px;
-                            font-weight: 700;
+                            font-weight: 800;
                             cursor: pointer;
-                            transition: transform 0.15s ease;
+                            transition: transform 0.15s ease, filter 0.15s ease;
+                            flex: 1 1 190px;
+                            width: 100%;
+                            text-align: left;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
                         }}
-                        .sol-action-btn:hover {{ transform: translateY(-2px); }}
-                        .btn-hint {{ background: #fef3c7; color: #92400e; }}
-                        .btn-steps {{ background: #e0e7ff; color: #3730a3; }}
-                        .btn-ans {{ background: #dcfce7; color: #166534; }}
+                        .sol-action-btn::after {{
+                            content: '▾';
+                            font-size: 12px;
+                            opacity: 0.7;
+                        }}
+                        .sol-action-btn:hover {{ transform: translateY(-1px); filter: brightness(0.97); }}
+                        .btn-hint {{ background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }}
+                        .btn-steps {{ background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }}
+                        .btn-ans {{ background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }}
                         .sol-panel {{
                             display: none;
                             margin-top: 10px;
@@ -906,16 +945,19 @@ elif menu == "📚 PDF Havuzu":
                         items.forEach((item, idx) => {{
                             const card = document.createElement('div');
                             card.className = 'sol-card';
+                            const rawNo = String(item.soru_no || (idx + 1)).trim();
+                            const numMatch = rawNo.match(/\\d+/);
+                            const stdSoruNo = numMatch ? ('Soru ' + numMatch[0]) : rawNo;
                             const stepsHtml = (item.adimlar || []).map(s => `<div class="step-item">👉 ${{s}}</div>`).join('');
                             card.innerHTML = `
                                 <div class="sol-header">
-                                    <span class="sol-num">📌 ${{item.soru_no || ('Soru ' + (idx+1))}}</span>
+                                    <span class="sol-num">📌 ${{stdSoruNo}}</span>
                                     <span class="sol-kazanim">🎯 ${{item.kazanim || 'LGS Kazanımı'}}</span>
                                 </div>
                                 <div class="sol-btn-row">
-                                    <button class="sol-action-btn btn-hint" onclick="toggleP('sh-${{idx}}')">💡 1. İpucunu Göster</button>
-                                    <button class="sol-action-btn btn-steps" onclick="toggleP('ss-${{idx}}')">👣 2. Adım Adım Çözümü Aç</button>
-                                    <button class="sol-action-btn btn-ans" onclick="toggleP('sa-${{idx}}')">🏆 3. Doğru Şıkkı Gör</button>
+                                    <button class="sol-action-btn btn-hint" onclick="toggleP('sh-${{idx}}')"><span>💡 1. İpucunu Göster</span></button>
+                                    <button class="sol-action-btn btn-steps" onclick="toggleP('ss-${{idx}}')"><span>👣 2. Adım Adım Çözümü Aç</span></button>
+                                    <button class="sol-action-btn btn-ans" onclick="toggleP('sa-${{idx}}')"><span>🏆 3. Doğru Şıkkı Gör</span></button>
                                 </div>
                                 <div class="sol-panel panel-hint" id="sh-${{idx}}"><b>💡 Püf Nokta:</b> ${{item.ipucu || ''}}</div>
                                 <div class="sol-panel panel-steps" id="ss-${{idx}}">${{stepsHtml}}</div>
@@ -929,7 +971,7 @@ elif menu == "📚 PDF Havuzu":
                         }};
                     </script>
                     """
-                    components.html(cozum_html, height=min(650, len(st.session_state.pdf_cozum_kartlari) * 230 + 60), scrolling=True)
+                    components.html(cozum_html, height=min(750, len(st.session_state.pdf_cozum_kartlari) * 240 + 60), scrolling=True)
 
                 # 2) BU SAYFADAN İNTERAKTİF İKİZ SORU MEYDAN OKUMASI
                 if st.session_state.get("pdf_ikiz_quiz"):
