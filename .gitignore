@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+firebase_credentials.json
+local_db.json
+hazirla_bulut_anahtarlari.py
+pdf_kutuphanesi/
+*.mp3

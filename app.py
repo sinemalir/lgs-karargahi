@@ -369,13 +369,13 @@ def radyodan_degisti():
 # Üst Mobil Bar: Marka + Hızlı Menü + Çıkış
 st.markdown(f"""
     <div class='top-bar'>
-        <span class='brand-title'>🎯 LGS Karargahı</span>
+        <div><span style='font-size: 24px; margin-right: 6px;'>🎯</span><span class='brand-title'>LGS Karargahı</span></div>
         <span class='user-pill'>🛡️ {user_display_name}</span>
     </div>
 """, unsafe_allow_html=True)
 
 # Mobil Hızlı Kontrol Çubuğu (⬅️ Geri | 🏠 Ana Sayfa | 📋 Hızlı Menü | 🚪 Çıkış)
-m_col1, m_col2, m_col3, m_col4 = st.columns([1.1, 1.3, 1.4, 1])
+m_col1, m_col2, m_col3, m_col4 = st.columns([1.1, 1.3, 1.4, 1], gap="small")
 with m_col1:
     st.button("⬅️ Geri", on_click=geri_git, use_container_width=True, key="mob_back_btn")
 with m_col2:
@@ -390,15 +390,100 @@ with m_col4:
         st.session_state.user = None
         st.rerun()
 
-# Sekme Çubuğu
-menu = st.radio(
-    "📍 İstasyonlar", 
-    ISTASYONLAR,
-    key="aktif_istasyon",
-    on_change=radyodan_degisti,
-    horizontal=True,
-    label_visibility="collapsed"
-)
+# 6 İstasyon İçin Soft Renkli, Hizalı 3x2 Tıklanabilir Buton Izgarası
+ISTASYON_KISA_AD = [
+    ("🏠 Ana Sayfa", "🏠 Ana Sayfa"),
+    ("📚 PDF Havuzu", "📚 PDF Havuzu"),
+    ("⚡ Hızlı Öğren", "⚡ Hızlı Öğren (Video/Kaynak)"),
+    ("🤖 Soru Çöz & İkiz", "🤖 Soru Çöz & İkiz"),
+    ("📷 Deneme Analizi", "📷 Deneme Analizi"),
+    ("❌ Hata & Gelişim", "❌ Hata & Gelişim"),
+]
+
+st.markdown("""
+<style>
+    /* 6 İstasyon Butonu İçin Ayrı Soft Pastel Renkler ve Tam Hizalama */
+    div[class*="st-key-ist_btn_"] button {
+        min-height: 50px !important;
+        border-radius: 14px !important;
+        font-size: 14.5px !important;
+        font-weight: 800 !important;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05) !important;
+        transition: all 0.2s ease !important;
+    }
+    div[class*="st-key-ist_btn_"] button:hover {
+        transform: translateY(-2px) !important;
+        filter: brightness(0.97) !important;
+    }
+    /* 0: Ana Sayfa - Soft Gökyüzü Mavisi */
+    .st-key-ist_btn_0 button {
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+        border: 2px solid #7dd3fc !important;
+    }
+    .st-key-ist_btn_0 button p, .st-key-ist_btn_0 button span, .st-key-ist_btn_0 button div {
+        color: #0369a1 !important;
+    }
+    /* 1: PDF Havuzu - Soft Lavanta Moru */
+    .st-key-ist_btn_1 button {
+        background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%) !important;
+        border: 2px solid #d8b4fe !important;
+    }
+    .st-key-ist_btn_1 button p, .st-key-ist_btn_1 button span, .st-key-ist_btn_1 button div {
+        color: #6b21a8 !important;
+    }
+    /* 2: Hızlı Öğren - Soft Şeftali / Kehribar */
+    .st-key-ist_btn_2 button {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+        border: 2px solid #fcd34d !important;
+    }
+    .st-key-ist_btn_2 button p, .st-key-ist_btn_2 button span, .st-key-ist_btn_2 button div {
+        color: #92400e !important;
+    }
+    /* 3: Soru Çöz & İkiz - Soft Nane Yeşili */
+    .st-key-ist_btn_3 button {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+        border: 2px solid #6ee7b7 !important;
+    }
+    .st-key-ist_btn_3 button p, .st-key-ist_btn_3 button span, .st-key-ist_btn_3 button div {
+        color: #065f46 !important;
+    }
+    /* 4: Deneme Analizi - Soft Gül Kurusu / Pembe */
+    .st-key-ist_btn_4 button {
+        background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%) !important;
+        border: 2px solid #fda4af !important;
+    }
+    .st-key-ist_btn_4 button p, .st-key-ist_btn_4 button span, .st-key-ist_btn_4 button div {
+        color: #9f1239 !important;
+    }
+    /* 5: Hata & Gelişim - Soft İndigo */
+    .st-key-ist_btn_5 button {
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%) !important;
+        border: 2px solid #a5b4fc !important;
+    }
+    .st-key-ist_btn_5 button p, .st-key-ist_btn_5 button span, .st-key-ist_btn_5 button div {
+        color: #3730a3 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+with st.container(border=True):
+    r1_c1, r1_c2, r1_c3 = st.columns(3, gap="small")
+    r2_c1, r2_c2, r2_c3 = st.columns(3, gap="small")
+    grid_cols = [r1_c1, r1_c2, r1_c3, r2_c1, r2_c2, r2_c3]
+    for idx, (gorunen_ad, tam_hedef) in enumerate(ISTASYON_KISA_AD):
+        aktif_mi = (st.session_state.aktif_istasyon == tam_hedef)
+        etiket = f"✨ {gorunen_ad}" if aktif_mi else gorunen_ad
+        with grid_cols[idx]:
+            st.button(
+                etiket,
+                key=f"ist_btn_{idx}",
+                on_click=istasyona_git,
+                args=(tam_hedef,),
+                use_container_width=True
+            )
+
+menu = st.session_state.aktif_istasyon
+
 
 # Sağ Altta Yüzen (Floating) "⬆️ Yukarı Çık" ve "🏠 Ana Menü" Mobil Aksiyon Butonları
 st.markdown("""
