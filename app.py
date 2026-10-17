@@ -201,21 +201,31 @@ st.markdown("""
     p, label, li, div[data-testid="stMarkdownContainer"] {
         color: #334155;
     }
-    /* Tüm Butonlar ve 📋 Menü (Popover) Butonu Aynı Mavi-Mor Gradyan Stilde */
+    /* Tüm Buton Konteynerleri Mobilde de %100 Tam Genişlik Olsun */
+    .stButton,
+    div[data-testid="stButton"],
+    .stDownloadButton,
+    div[data-testid="stDownloadButton"],
+    div[data-testid="stPopover"] {
+        width: 100% !important;
+    }
+    /* Tüm Butonlar, Download Butonu ve 📋 Menü (Popover) Butonu Aynı Mavi-Mor Gradyan Stilde */
     .stButton > button,
+    .stDownloadButton > button,
     div[data-testid="stPopover"] button,
     [data-testid="stPopover"] > div > button {
-        width: 100%;
+        width: 100% !important;
         background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%) !important;
         color: white !important;
         font-weight: 700 !important;
         border-radius: 12px !important;
-        padding: 10px 18px !important;
+        padding: 10px 14px !important;
         border: none !important;
         box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22) !important;
         transition: all 0.2s ease !important;
     }
     .stButton > button p, .stButton > button span, .stButton > button div,
+    .stDownloadButton > button p, .stDownloadButton > button span, .stDownloadButton > button div,
     div[data-testid="stPopover"] button p, div[data-testid="stPopover"] button span,
     div[data-testid="stPopover"] button div, div[data-testid="stPopover"] button svg {
         background: transparent !important;
@@ -225,9 +235,26 @@ st.markdown("""
         padding: 0 !important;
         margin: 0 !important;
     }
-    .stButton > button:hover, div[data-testid="stPopover"] > button:hover {
+    .stButton > button:hover, .stDownloadButton > button:hover, div[data-testid="stPopover"] > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35) !important;
+    }
+    /* Mobilde Önceki/Sonraki Sayfa Barı ve PDF Kart Butonları Alt Alta Düşmesin, Yan Yana Kalsın */
+    div[data-testid="stHorizontalBlock"]:has(.st-key-pdf_prev_top),
+    div[data-testid="stHorizontalBlock"]:has(.st-key-pdf_prev_bot),
+    div[data-testid="stHorizontalBlock"]:has([class*="st-key-open_"]) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.st-key-pdf_prev_top) > div[data-testid="stColumn"],
+    div[data-testid="stHorizontalBlock"]:has(.st-key-pdf_prev_bot) > div[data-testid="stColumn"],
+    div[data-testid="stHorizontalBlock"]:has([class*="st-key-open_"]) > div[data-testid="stColumn"] {
+        min-width: 0 !important;
+        width: auto !important;
+        flex: 1 1 0% !important;
     }
     /* Popover Açılır Menü İçeriği Beyaz Zemin Üzerine Temiz Görünüm */
     div[data-testid="stPopoverBody"] {
@@ -350,6 +377,7 @@ def istasyona_git(hedef):
         st.session_state.nav_gecmisi.append(mevcut)
     st.session_state.aktif_istasyon = hedef
     st.session_state.onceki_secim = hedef
+    st.session_state.hedef_scroll = "sayfa-basi" if hedef == "🏠 Ana Sayfa" else "istasyon-baslangic"
 
 def geri_git():
     if len(st.session_state.nav_gecmisi) > 0:
@@ -359,6 +387,7 @@ def geri_git():
     else:
         st.session_state.aktif_istasyon = "🏠 Ana Sayfa"
         st.session_state.onceki_secim = "🏠 Ana Sayfa"
+    st.session_state.hedef_scroll = "sayfa-basi" if st.session_state.aktif_istasyon == "🏠 Ana Sayfa" else "istasyon-baslangic"
 
 def radyodan_degisti():
     yeni = st.session_state.aktif_istasyon
@@ -524,6 +553,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------- MODÜLLER -----------------
+st.markdown("<div id='istasyon-baslangic'></div>", unsafe_allow_html=True)
 
 if menu == "🏠 Ana Sayfa":
     st.markdown(f"""
@@ -543,7 +573,7 @@ if menu == "🏠 Ana Sayfa":
                 <div class='station-title'>Dijital PDF Kütüphanesi</div>
                 <div class='station-desc' style='margin-bottom: 12px;'>Yüklenen testleri sayfa sayfa aç, soruları interaktif çöz ve ikiz soru meydan okuması başlat.</div>
             """, unsafe_allow_html=True)
-            st.button("📚 Kütüphaneyi Aç →", on_click=istasyona_git, args=("📚 PDF Havuzu",), key="go_pdf")
+            st.button("📚 Kütüphaneyi Aç →", on_click=istasyona_git, args=("📚 PDF Havuzu",), key="go_pdf", use_container_width=True)
             
         with st.container(border=True):
             st.markdown("""
@@ -551,7 +581,7 @@ if menu == "🏠 Ana Sayfa":
                 <div class='station-title'>Soru Çöz & İkiz Üret</div>
                 <div class='station-desc' style='margin-bottom: 12px;'>Takıldığın sorunun fotoğrafını yükle, adım adım çözümünü ve MEB ikizini al.</div>
             """, unsafe_allow_html=True)
-            st.button("🤖 Soru Çözücüye Git →", on_click=istasyona_git, args=("🤖 Soru Çöz & İkiz",), key="go_soru")
+            st.button("🤖 Soru Çözücüye Git →", on_click=istasyona_git, args=("🤖 Soru Çöz & İkiz",), key="go_soru", use_container_width=True)
 
     with c2:
         with st.container(border=True):
@@ -560,7 +590,7 @@ if menu == "🏠 Ana Sayfa":
                 <div class='station-title'>Hızlı Öğren & 3D Flashcard</div>
                 <div class='station-desc' style='margin-bottom: 12px;'>Konu yaz veya YouTube videosu ekle; 3D çevirmeli kartlar, podcast ve mini testlerle öğren.</div>
             """, unsafe_allow_html=True)
-            st.button("⚡ Hızlı Öğren'e Git →", on_click=istasyona_git, args=("⚡ Hızlı Öğren (Video/Kaynak)",), key="go_hizli")
+            st.button("⚡ Hızlı Öğren'e Git →", on_click=istasyona_git, args=("⚡ Hızlı Öğren (Video/Kaynak)",), key="go_hizli", use_container_width=True)
 
         with st.container(border=True):
             st.markdown("""
@@ -568,7 +598,7 @@ if menu == "🏠 Ana Sayfa":
                 <div class='station-title'>Deneme Optik & Karnem</div>
                 <div class='station-desc' style='margin-bottom: 12px;'>6 ders deneme sonuç belgeni yükle, zayıf kazanımlarını ve haftalık gelişimini gör.</div>
             """, unsafe_allow_html=True)
-            st.button("📷 Deneme Analizine Git →", on_click=istasyona_git, args=("📷 Deneme Analizi",), key="go_deneme")
+            st.button("📷 Deneme Analizine Git →", on_click=istasyona_git, args=("📷 Deneme Analizi",), key="go_deneme", use_container_width=True)
         
     st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
     
@@ -587,382 +617,432 @@ if menu == "🏠 Ana Sayfa":
 
 elif menu == "📚 PDF Havuzu":
     import fitz  # PyMuPDF
+    import re as _re
     from pathlib import Path
     
     pdf_lib_dir = Path("pdf_kutuphanesi")
     pdf_lib_dir.mkdir(exist_ok=True)
     
-    st.markdown("<div class='karargah-card'>", unsafe_allow_html=True)
-    st.markdown("### 📚 Dijital PDF & Soru Kütüphanesi")
-    st.write("Anne tarafından yüklenen ders notları, testler ve denemeler kalıcı olarak bu kütüphaneye kaydedilir. İstediğin kitaba/teste tıklayıp hemen açabilir ve üzerinde çalışabilirsin!")
-    
-    with st.expander("➕ Kütüphaneye Yeni PDF / Test Yükle", expanded=False):
-        ders_etiketi = st.selectbox("Hangi Ders?", ["Matematik", "Fen Bilimleri", "Türkçe", "T.C. İnkılap Tarihi", "Din Kültürü", "İngilizce", "Genel Deneme"], key="lib_ders")
-        yuklenen_pdf = st.file_uploader("PDF Dosyası Seç", type=["pdf"], key="lib_uploader")
-        if yuklenen_pdf:
-            hedef_dosya = pdf_lib_dir / f"[{ders_etiketi}] {yuklenen_pdf.name}"
-            if not hedef_dosya.exists():
-                hedef_dosya.write_bytes(yuklenen_pdf.getvalue())
-                st.success(f"✅ '{yuklenen_pdf.name}' kütüphaneye kalıcı olarak eklendi!")
-            else:
-                st.info(f"📁 '{yuklenen_pdf.name}' zaten kütüphanede mevcut.")
-            st.session_state.secili_pdf = str(hedef_dosya)
-    
-    st.markdown("---")
-    st.markdown("#### 📖 Kütüphanedeki Kaynaklar *(Açmak için kaynağa tıkla)*")
-    
-    kayitli_pdfler = sorted(pdf_lib_dir.glob("*.pdf"), key=lambda x: x.stat().st_mtime, reverse=True)
-    
-    if not kayitli_pdfler:
-        st.info("Kütüphanede henüz kayıtlı bir PDF yok. Yukarıdaki '➕ Kütüphaneye Yeni PDF / Test Yükle' bölümünden ilk kaynağını ekleyebilirsin!")
-    else:
-        # Kitaplık Grid Görünümü (2 sütunlu kartlar)
-        cols = st.columns(2)
-        for idx, pdf_path in enumerate(kayitli_pdfler):
-            col = cols[idx % 2]
-            with col:
-                boyut_mb = pdf_path.stat().st_size / (1024 * 1024)
-                secili_mi = (st.session_state.get("secili_pdf") == str(pdf_path))
-                kart_stili = "border: 2px solid #2563eb; background: #eff6ff;" if secili_mi else "border: 1px solid #e2e8f0; background: #f8fafc;"
+    with st.container(border=True):
+        st.markdown("### 📚 Dijital PDF & Soru Kütüphanesi")
+        st.write("Yüklenen ders notları, testler ve denemeler kalıcı olarak kütüphaneye kaydedilir. İstediğin kaynağın adını değiştirebilir ve tıklayıp hemen açabilirsin!")
+        
+        with st.expander("➕ Kütüphaneye Yeni PDF / Test Yükle", expanded=False):
+            ders_etiketi = st.selectbox("Hangi Ders?", ["Matematik", "Fen Bilimleri", "Türkçe", "T.C. İnkılap Tarihi", "Din Kültürü", "İngilizce", "Genel Deneme"], key="lib_ders")
+            ozel_kaynak_adi = st.text_input(
+                "✏️ Kaynak Adı (İsteğe bağlı — boş bırakırsan dosya adı kullanılır):",
+                placeholder="Örn: Çarpanlar ve Katlar Test 1",
+                key="lib_custom_name"
+            )
+            yuklenen_pdf = st.file_uploader("PDF Dosyası Seç", type=["pdf"], key="lib_uploader")
+            if yuklenen_pdf:
+                ham_isim = ozel_kaynak_adi.strip() if ozel_kaynak_adi.strip() else Path(yuklenen_pdf.name).stem
+                temiz_isim = _re.sub(r'[<>:"/\\|?*]', '-', ham_isim).strip()
+                hedef_dosya = pdf_lib_dir / f"[{ders_etiketi}] {temiz_isim}.pdf"
+                if st.button("💾 Kütüphaneye Kaydet ve Aç", key="lib_save_btn", use_container_width=True):
+                    hedef_dosya.write_bytes(yuklenen_pdf.getvalue())
+                    st.session_state.secili_pdf = str(hedef_dosya)
+                    st.session_state.pdf_sayfa_no = 1
+                    st.session_state.hedef_scroll = "acik-kitap-alani"
+                    st.success(f"✅ '{hedef_dosya.stem}' kütüphaneye eklendi!")
+                    st.rerun()
+        
+        st.markdown("---")
+        st.markdown("#### 📖 Kütüphanedeki Kaynaklar")
+        
+        kayitli_pdfler = sorted(pdf_lib_dir.glob("*.pdf"), key=lambda x: x.stat().st_mtime, reverse=True)
+        
+        if not kayitli_pdfler:
+            st.info("Kütüphanede henüz kayıtlı bir PDF yok. Yukarıdaki '➕ Kütüphaneye Yeni PDF / Test Yükle' bölümünden ilk kaynağını ekleyebilirsin!")
+        else:
+            cols = st.columns(2)
+            for idx, pdf_path in enumerate(kayitli_pdfler):
+                col = cols[idx % 2]
+                with col:
+                    boyut_mb = pdf_path.stat().st_size / (1024 * 1024)
+                    secili_mi = (st.session_state.get("secili_pdf") == str(pdf_path))
+                    kart_stili = "border: 2px solid #2563eb; background: #eff6ff;" if secili_mi else "border: 1.5px solid #e2e8f0; background: #f8fafc;"
+                    st.markdown(f"""
+                    <div style='{kart_stili} padding: 14px; border-radius: 14px; margin-bottom: 8px;'>
+                        <div style='font-size: 14.5px; font-weight: 800; color: #1e293b; line-height: 1.35; word-break: break-word;'>📕 {pdf_path.stem}</div>
+                        <div style='font-size: 12px; color: #64748b; margin-top: 4px;'>Boyut: {boyut_mb:.1f} MB</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    c_ac, c_ad, c_sil = st.columns([2.2, 1.5, 0.9], gap="small")
+                    with c_ac:
+                        if st.button("📖 Aç", key=f"open_{idx}", use_container_width=True):
+                            st.session_state.secili_pdf = str(pdf_path)
+                            st.session_state.pdf_sayfa_no = 1
+                            st.session_state.pdf_cozum_kartlari = None
+                            st.session_state.pdf_ikiz_quiz = None
+                            st.session_state.pdf_ozet_kart = None
+                            st.session_state.hedef_scroll = "acik-kitap-alani"
+                            st.rerun()
+                    with c_ad:
+                        with st.popover("✏️ İsim", use_container_width=True):
+                            yeni_isim_gir = st.text_input("Yeni Kaynak Adı:", value=pdf_path.stem, key=f"ren_in_{idx}")
+                            if st.button("✅ Kaydet", key=f"ren_save_{idx}", use_container_width=True):
+                                temiz_yeni = _re.sub(r'[<>:"/\\|?*]', '-', yeni_isim_gir.strip())
+                                if temiz_yeni:
+                                    yeni_yol = pdf_lib_dir / f"{temiz_yeni}.pdf"
+                                    if yeni_yol != pdf_path:
+                                        pdf_path.rename(yeni_yol)
+                                        if st.session_state.get("secili_pdf") == str(pdf_path):
+                                            st.session_state.secili_pdf = str(yeni_yol)
+                                    st.rerun()
+                    with c_sil:
+                        if st.button("🗑️", key=f"del_{idx}", use_container_width=True):
+                            if st.session_state.get("secili_pdf") == str(pdf_path):
+                                st.session_state.secili_pdf = None
+                            pdf_path.unlink(missing_ok=True)
+                            st.rerun()
+            
+            # SEÇİLEN PDF'İ OKUMA VE ÇALIŞMA EKRANI
+            secili_yol = st.session_state.get("secili_pdf")
+            if secili_yol and Path(secili_yol).exists():
+                aktif_pdf = Path(secili_yol)
+                doc = fitz.open(str(aktif_pdf))
+                toplam_sayfa = len(doc)
+                
+                if "pdf_sayfa_no" not in st.session_state:
+                    st.session_state.pdf_sayfa_no = 1
+                st.session_state.pdf_sayfa_no = max(1, min(toplam_sayfa, st.session_state.pdf_sayfa_no))
+                
+                st.markdown("<div id='acik-kitap-alani'></div>", unsafe_allow_html=True)
+                st.markdown("---")
+                
+                # Mobil Uyumlu Kompakt Açık Kaynak Başlık Kartı
                 st.markdown(f"""
-                <div style='{kart_stili} padding: 14px; border-radius: 14px; margin-bottom: 8px;'>
-                    <div style='font-size: 15px; font-weight: 800; color: #1e293b;'>📕 {pdf_path.stem}</div>
-                    <div style='font-size: 12px; color: #64748b; margin-top: 4px;'>Boyut: {boyut_mb:.1f} MB</div>
+                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div style="font-size: 14.5px; font-weight: 800; line-height: 1.35; flex: 1;">📖 {aktif_pdf.stem}</div>
+                    <span style="background: #2563eb; color: white; font-size: 12.5px; font-weight: 800; padding: 4px 12px; border-radius: 99px; white-space: nowrap;">
+                        Sayfa {st.session_state.pdf_sayfa_no} / {toplam_sayfa}
+                    </span>
                 </div>
                 """, unsafe_allow_html=True)
-                c_ac, c_sil = st.columns([3, 1])
-                with c_ac:
-                    if st.button("📖 Kitabı Aç", key=f"open_{idx}"):
-                        st.session_state.secili_pdf = str(pdf_path)
-                        st.session_state.pdf_sayfa_no = 1
-                        st.session_state.pdf_ai_sonuc = None
+                
+                # Üst Sayfa Geçiş Çubuğu (Mobilde Tek Satırda Yan Yana Kalır)
+                nav1, nav2, nav3 = st.columns([1.1, 1, 1.1], gap="small")
+                with nav1:
+                    if st.button("⬅️ Önceki", key="pdf_prev_top", use_container_width=True) and st.session_state.pdf_sayfa_no > 1:
+                        st.session_state.pdf_sayfa_no -= 1
+                        st.session_state.hedef_scroll = "acik-kitap-alani"
                         st.rerun()
-                with c_sil:
-                    if st.button("🗑️", key=f"del_{idx}"):
-                        if st.session_state.get("secili_pdf") == str(pdf_path):
-                            st.session_state.secili_pdf = None
-                        pdf_path.unlink(missing_ok=True)
+                with nav2:
+                    secilen_s = st.number_input("Sayfa", min_value=1, max_value=toplam_sayfa, value=st.session_state.pdf_sayfa_no, label_visibility="collapsed", key="pdf_num_top")
+                    if secilen_s != st.session_state.pdf_sayfa_no:
+                        st.session_state.pdf_sayfa_no = secilen_s
+                        st.session_state.hedef_scroll = "acik-kitap-alani"
                         st.rerun()
-        
-        # SEÇİLEN PDF'İ OKUMA VE ÇALIŞMA EKRANI
-        secili_yol = st.session_state.get("secili_pdf")
-        if secili_yol and Path(secili_yol).exists():
-            aktif_pdf = Path(secili_yol)
-            doc = fitz.open(str(aktif_pdf))
-            toplam_sayfa = len(doc)
+                with nav3:
+                    if st.button("Sonraki ➡️", key="pdf_next_top", use_container_width=True) and st.session_state.pdf_sayfa_no < toplam_sayfa:
+                        st.session_state.pdf_sayfa_no += 1
+                        st.session_state.hedef_scroll = "acik-kitap-alani"
+                        st.rerun()
+                
+                # Aktif Sayfayı Yüksek Çözünürlüklü Görsel Olarak Göster
+                sayfa_index = st.session_state.pdf_sayfa_no - 1
+                page = doc.load_page(sayfa_index)
+                pix = page.get_pixmap(dpi=150)
+                sayfa_img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                
+                st.image(sayfa_img, use_container_width=True)
+                
+                # Alt Hızlı Sayfa Geçiş + PDF İndir Çubuğu (Mobilde Tek Satırda Yan Yana)
+                b_nav1, b_nav2, b_nav3 = st.columns([1, 1.1, 1], gap="small")
+                with b_nav1:
+                    if st.button("⬅️ Önceki", key="pdf_prev_bot", use_container_width=True) and st.session_state.pdf_sayfa_no > 1:
+                        st.session_state.pdf_sayfa_no -= 1
+                        st.session_state.hedef_scroll = "acik-kitap-alani"
+                        st.rerun()
+                with b_nav2:
+                    with open(aktif_pdf, "rb") as f_dl:
+                        st.download_button("📥 PDF İndir", data=f_dl, file_name=aktif_pdf.name, mime="application/pdf", use_container_width=True)
+                with b_nav3:
+                    if st.button("Sonraki ➡️", key="pdf_next_bot", use_container_width=True) and st.session_state.pdf_sayfa_no < toplam_sayfa:
+                        st.session_state.pdf_sayfa_no += 1
+                        st.session_state.hedef_scroll = "acik-kitap-alani"
+                        st.rerun()
+                
+                # Bu Sayfa Üzerinde İnteraktif Yapay Zeka İşlemleri (Tam Genişlik Mobil Uyumlu)
+                st.markdown("#### 🎮 Bu Sayfayla Ne Yapmak İstersin?")
+                b_coz, b_ikiz, b_ozet = st.columns(3, gap="small")
+                with b_coz:
+                    if st.button("🧠 Soruları İnteraktif Çöz", key="act_coz", use_container_width=True):
+                        with st.spinner(f"Sayfa {st.session_state.pdf_sayfa_no} inceleniyor, adım adım çözüm kartları hazırlanıyor..."):
+                            st.session_state.pdf_cozum_kartlari = solve_page_questions_structured(sayfa_img)
+                            st.session_state.pdf_ikiz_quiz = None
+                            st.session_state.pdf_ozet_kart = None
+                            st.session_state.hedef_scroll = "pdf-aksiyon-sonuc"
+                with b_ikiz:
+                    if st.button("🎯 İkiz Soru Meydan Okuması", key="act_ikiz", use_container_width=True):
+                        with st.spinner("Bu sayfadaki soruların MEB ikizleri hazırlanıyor..."):
+                            st.session_state.pdf_ikiz_quiz = generate_lgs_quiz_list(image=sayfa_img)
+                            st.session_state.pdf_cozum_kartlari = None
+                            st.session_state.pdf_ozet_kart = None
+                            st.session_state.hedef_scroll = "pdf-aksiyon-sonuc"
+                with b_ozet:
+                    if st.button("🚀 Sayfayı Hap Özetle", key="act_ozet", use_container_width=True):
+                        with st.spinner("Sayfadaki kazanımlar infografik özete dönüştürülüyor..."):
+                            st.session_state.pdf_ozet_kart = generate_hap_ozet_structured(image=sayfa_img)
+                            st.session_state.pdf_cozum_kartlari = None
+                            st.session_state.pdf_ikiz_quiz = None
+                            st.session_state.hedef_scroll = "pdf-aksiyon-sonuc"
+                
+                st.markdown("<div id='pdf-aksiyon-sonuc'></div>", unsafe_allow_html=True)
             
-            st.markdown("---")
-            st.markdown(f"### 📖 Açık Kaynak: **{aktif_pdf.stem}** *(Toplam {toplam_sayfa} Sayfa)*")
-            
-            if "pdf_sayfa_no" not in st.session_state:
-                st.session_state.pdf_sayfa_no = 1
-            st.session_state.pdf_sayfa_no = max(1, min(toplam_sayfa, st.session_state.pdf_sayfa_no))
-            
-            # Sayfa Geçiş Kontrolleri
-            nav1, nav2, nav3, nav4 = st.columns([1, 2, 1, 1.5])
-            with nav1:
-                if st.button("⬅️ Önceki") and st.session_state.pdf_sayfa_no > 1:
-                    st.session_state.pdf_sayfa_no -= 1
-                    st.session_state.pdf_ai_sonuc = None
-                    st.rerun()
-            with nav2:
-                secilen_s = st.number_input("Sayfaya Git:", min_value=1, max_value=toplam_sayfa, value=st.session_state.pdf_sayfa_no, label_visibility="collapsed")
-                if secilen_s != st.session_state.pdf_sayfa_no:
-                    st.session_state.pdf_sayfa_no = secilen_s
-                    st.session_state.pdf_ai_sonuc = None
-                    st.rerun()
-            with nav3:
-                if st.button("Sonraki ➡️") and st.session_state.pdf_sayfa_no < toplam_sayfa:
-                    st.session_state.pdf_sayfa_no += 1
-                    st.session_state.pdf_ai_sonuc = None
-                    st.rerun()
-            with nav4:
-                with open(aktif_pdf, "rb") as f_dl:
-                    st.download_button("📥 PDF İndir", data=f_dl, file_name=aktif_pdf.name, mime="application/pdf")
-            
-            # Aktif Sayfayı Yüksek Çözünürlüklü Görsel Olarak Göster (Taranmış PDF'lerde bile %100 çalışır)
-            sayfa_index = st.session_state.pdf_sayfa_no - 1
-            page = doc.load_page(sayfa_index)
-            pix = page.get_pixmap(dpi=150)
-            sayfa_img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            
-            st.image(sayfa_img, caption=f"{aktif_pdf.stem} — Sayfa {st.session_state.pdf_sayfa_no} / {toplam_sayfa}")
-            
-            # Bu Sayfa Üzerinde İnteraktif Yapay Zeka İşlemleri
-            st.markdown("#### 🎮 Bu Sayfayla Ne Yapmak İstersin?")
-            b_coz, b_ikiz, b_ozet = st.columns(3)
-            with b_coz:
-                if st.button("🧠 Soruları İnteraktif Çöz"):
-                    with st.spinner(f"Sayfa {st.session_state.pdf_sayfa_no} inceleniyor, adım adım çözüm kartları hazırlanıyor..."):
-                        st.session_state.pdf_cozum_kartlari = solve_page_questions_structured(sayfa_img)
-                        st.session_state.pdf_ikiz_quiz = None
-                        st.session_state.pdf_ozet_kart = None
-            with b_ikiz:
-                if st.button("🎯 İkiz Soru Meydan Okuması"):
-                    with st.spinner("Bu sayfadaki soruların MEB ikizleri hazırlanıyor..."):
-                        st.session_state.pdf_ikiz_quiz = generate_lgs_quiz_list(image=sayfa_img)
-                        st.session_state.pdf_cozum_kartlari = None
-                        st.session_state.pdf_ozet_kart = None
-            with b_ozet:
-                if st.button("🚀 Sayfayı Hap Özetle"):
-                    with st.spinner("Sayfadaki kazanımlar infografik özete dönüştürülüyor..."):
-                        st.session_state.pdf_ozet_kart = generate_hap_ozet_structured(image=sayfa_img)
-                        st.session_state.pdf_cozum_kartlari = None
-                        st.session_state.pdf_ikiz_quiz = None
-            
-            # 1) İNTERAKTİF ADIM ADIM SORU ÇÖZÜM KARTLARI
-            if st.session_state.get("pdf_cozum_kartlari"):
-                st.markdown("---")
-                st.markdown("#### 🧩 İnteraktif Soru Çözüm İstasyonu *(İpucunu aç, adımları tek tek gör ve cevabı kontrol et!)*")
-                cozum_json = json.dumps(st.session_state.pdf_cozum_kartlari, ensure_ascii=False)
-                cozum_html = f"""
-                <style>
-                    .sol-wrap {{ font-family: 'Inter', sans-serif; padding: 4px; display: flex; flex-direction: column; gap: 16px; }}
-                    .sol-card {{
-                        background: white;
-                        border: 2px solid #e0e7ff;
-                        border-radius: 18px;
-                        padding: 18px;
-                        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.06);
-                    }}
-                    .sol-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }}
-                    .sol-num {{
-                        background: linear-gradient(90deg, #2563eb, #7c3aed);
-                        color: white;
-                        font-weight: 800;
-                        font-size: 13px;
-                        padding: 5px 12px;
-                        border-radius: 99px;
-                    }}
-                    .sol-kazanim {{
-                        background: #eff6ff;
-                        color: #1d4ed8;
-                        font-size: 12px;
-                        font-weight: 700;
-                        padding: 4px 10px;
-                        border-radius: 8px;
-                    }}
-                    .sol-btn-row {{ display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }}
-                    .sol-action-btn {{
-                        border: none;
-                        padding: 9px 14px;
-                        border-radius: 10px;
-                        font-size: 13px;
-                        font-weight: 700;
-                        cursor: pointer;
-                        transition: transform 0.15s ease;
-                    }}
-                    .sol-action-btn:hover {{ transform: translateY(-2px); }}
-                    .btn-hint {{ background: #fef3c7; color: #92400e; }}
-                    .btn-steps {{ background: #e0e7ff; color: #3730a3; }}
-                    .btn-ans {{ background: #dcfce7; color: #166534; }}
-                    .sol-panel {{
-                        display: none;
-                        margin-top: 10px;
-                        padding: 14px;
-                        border-radius: 12px;
-                        font-size: 14px;
-                        line-height: 1.5;
-                    }}
-                    .panel-hint {{ background: #fffbeb; border-left: 5px solid #f59e0b; color: #78350f; }}
-                    .panel-steps {{ background: #f8fafc; border-left: 5px solid #4f46e5; color: #1e293b; }}
-                    .panel-ans {{
-                        background: linear-gradient(135deg, #10b981, #059669);
-                        color: white;
-                        font-size: 16px;
-                        font-weight: 800;
-                        text-align: center;
-                    }}
-                    .step-item {{
-                        padding: 8px 10px;
-                        margin-bottom: 6px;
-                        background: white;
-                        border-radius: 8px;
-                        border: 1px solid #e2e8f0;
-                        font-weight: 600;
-                    }}
-                </style>
-                <div class="sol-wrap" id="sol-root"></div>
-                <script>
-                    const items = {cozum_json};
-                    const root = document.getElementById('sol-root');
-                    items.forEach((item, idx) => {{
-                        const card = document.createElement('div');
-                        card.className = 'sol-card';
-                        const stepsHtml = (item.adimlar || []).map(s => `<div class="step-item">👉 ${{s}}</div>`).join('');
-                        card.innerHTML = `
-                            <div class="sol-header">
-                                <span class="sol-num">📌 ${{item.soru_no || ('Soru ' + (idx+1))}}</span>
-                                <span class="sol-kazanim">🎯 ${{item.kazanim || 'LGS Kazanımı'}}</span>
-                            </div>
-                            <div class="sol-btn-row">
-                                <button class="sol-action-btn btn-hint" onclick="toggleP('sh-${{idx}}')">💡 1. İpucunu Göster</button>
-                                <button class="sol-action-btn btn-steps" onclick="toggleP('ss-${{idx}}')">👣 2. Adım Adım Çözümü Aç</button>
-                                <button class="sol-action-btn btn-ans" onclick="toggleP('sa-${{idx}}')">🏆 3. Doğru Şıkkı Gör</button>
-                            </div>
-                            <div class="sol-panel panel-hint" id="sh-${{idx}}"><b>💡 Püf Nokta:</b> ${{item.ipucu || ''}}</div>
-                            <div class="sol-panel panel-steps" id="ss-${{idx}}">${{stepsHtml}}</div>
-                            <div class="sol-panel panel-ans" id="sa-${{idx}}">🎉 Doğru Cevap: ${{item.dogru_sik || ''}}</div>
-                        `;
-                        root.appendChild(card);
-                    }});
-                    window.toggleP = function(id) {{
-                        const el = document.getElementById(id);
-                        el.style.display = (el.style.display === 'block') ? 'none' : 'block';
-                    }};
-                </script>
-                """
-                components.html(cozum_html, height=min(650, len(st.session_state.pdf_cozum_kartlari) * 230 + 60), scrolling=True)
-
-            # 2) BU SAYFADAN İNTERAKTİF İKİZ SORU MEYDAN OKUMASI
-            if st.session_state.get("pdf_ikiz_quiz"):
-                st.markdown("---")
-                st.markdown("#### 🎯 Bu Sayfanın İkiz Soru Arenası *(Şıklara tıkla, kendini test et!)*")
-                q_data = st.session_state.pdf_ikiz_quiz
-                q_json = json.dumps(q_data, ensure_ascii=False)
-                ikiz_html = f"""
-                <style>
-                    .q-container {{ font-family: 'Inter', sans-serif; padding: 4px; }}
-                    .q-scorebar {{
-                        background: linear-gradient(90deg, #4f46e5 0%, #9333ea 100%);
-                        color: white; padding: 12px 18px; border-radius: 14px;
-                        font-weight: 800; font-size: 14px; margin-bottom: 16px;
-                        display: flex; justify-content: space-between;
-                    }}
-                    .q-card {{
-                        background: #ffffff; border: 2px solid #e2e8f0; border-radius: 18px;
-                        padding: 18px; margin-bottom: 18px; box-shadow: 0 6px 16px rgba(0,0,0,0.04);
-                    }}
-                    .q-badge {{
-                        display: inline-block; background: #dbeafe; color: #1d4ed8;
-                        font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 8px; margin-bottom: 10px;
-                    }}
-                    .q-text {{ font-size: 15px; font-weight: 700; color: #1e293b; line-height: 1.5; margin-bottom: 14px; }}
-                    .q-options {{ display: flex; flex-direction: column; gap: 8px; }}
-                    .q-opt {{
-                        background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 12px;
-                        padding: 11px 14px; font-size: 14px; font-weight: 600; color: #334155;
-                        cursor: pointer; text-align: left;
-                    }}
-                    .q-opt.correct {{ background: #dcfce7 !important; border-color: #16a34a !important; color: #14532d !important; }}
-                    .q-opt.wrong {{ background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important; }}
-                    .q-actions {{ display: flex; gap: 10px; margin-top: 12px; }}
-                    .q-btn-small {{
-                        background: #f1f5f9; border: none; padding: 7px 12px; border-radius: 8px;
-                        font-size: 12px; font-weight: 700; color: #475569; cursor: pointer;
-                    }}
-                    .q-box {{ display: none; margin-top: 10px; padding: 12px; border-radius: 12px; font-size: 13.5px; }}
-                    .q-hint-box {{ background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }}
-                    .q-sol-box {{ background: #f0fdf4; color: #166534; border: 1px solid #86efac; }}
-                </style>
-                <div class="q-container">
-                    <div class="q-scorebar">
-                        <span>⚡ İkiz Soru Meydan Okuması</span>
-                        <span id="p-score">Skor: 0 / {len(q_data)} 🏆</span>
-                    </div>
-                    <div id="p-quiz-root"></div>
-                </div>
-                <script>
-                    const qs = {q_json};
-                    let sc = 0;
-                    const ans = new Set();
-                    const rt = document.getElementById('p-quiz-root');
-                    qs.forEach((q, qIdx) => {{
-                        const card = document.createElement('div');
-                        card.className = 'q-card';
-                        const opts = (q.secenekler || []).map((opt, oIdx) =>
-                            `<button class="q-opt" id="popt-${{qIdx}}-${{oIdx}}" onclick="selPOpt(${{qIdx}}, ${{oIdx}}, ${{q.dogru_index}})">${{opt}}</button>`
-                        ).join('');
-                        card.innerHTML = `
-                            <div class="q-badge">🔥 İkiz Soru ${{qIdx + 1}}</div>
-                            <div class="q-text">${{q.soru}}</div>
-                            <div class="q-options">${{opts}}</div>
-                            <div class="q-actions">
-                                <button class="q-btn-small" onclick="togPBox('phint-${{qIdx}}')">💡 İpucu Al</button>
-                                <button class="q-btn-small" onclick="togPBox('psol-${{qIdx}}')">📖 Çözümü Gör</button>
-                            </div>
-                            <div class="q-box q-hint-box" id="phint-${{qIdx}}"><b>💡 İpucu:</b> ${{q.ipucu || ''}}</div>
-                            <div class="q-box q-sol-box" id="psol-${{qIdx}}"><b>✅ Çözüm:</b> ${{q.cozum || ''}}</div>
-                        `;
-                        rt.appendChild(card);
-                    }});
-                    window.selPOpt = function(qIdx, oIdx, cIdx) {{
-                        const btn = document.getElementById(`popt-${{qIdx}}-${{oIdx}}`);
-                        const sol = document.getElementById(`psol-${{qIdx}}`);
-                        if (oIdx === cIdx) {{
-                            btn.classList.add('correct');
-                            btn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
-                            sol.style.display = 'block';
-                            if (!ans.has(qIdx)) {{
-                                sc++; ans.add(qIdx);
-                                document.getElementById('p-score').innerText = `Skor: ${{sc}} / ${{qs.length}} 🏆`;
-                            }}
-                        }} else {{
-                            btn.classList.add('wrong');
-                            btn.innerHTML += ' &nbsp; ❌ <b>Tekrar Dene!</b>';
-                            ans.add(qIdx);
+                # 1) İNTERAKTİF ADIM ADIM SORU ÇÖZÜM KARTLARI
+                if st.session_state.get("pdf_cozum_kartlari"):
+                    st.markdown("---")
+                    st.markdown("#### 🧩 İnteraktif Soru Çözüm İstasyonu *(İpucunu aç, adımları tek tek gör ve cevabı kontrol et!)*")
+                    cozum_json = json.dumps(st.session_state.pdf_cozum_kartlari, ensure_ascii=False)
+                    cozum_html = f"""
+                    <style>
+                        .sol-wrap {{ font-family: 'Inter', sans-serif; padding: 4px; display: flex; flex-direction: column; gap: 16px; }}
+                        .sol-card {{
+                            background: white;
+                            border: 2px solid #e0e7ff;
+                            border-radius: 18px;
+                            padding: 18px;
+                            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.06);
                         }}
-                    }};
-                    window.togPBox = function(id) {{
-                        const el = document.getElementById(id);
-                        el.style.display = (el.style.display === 'block') ? 'none' : 'block';
-                    }};
-                </script>
-                """
-                components.html(ikiz_html, height=len(q_data) * 340 + 80, scrolling=True)
+                        .sol-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }}
+                        .sol-num {{
+                            background: linear-gradient(90deg, #2563eb, #7c3aed);
+                            color: white;
+                            font-weight: 800;
+                            font-size: 13px;
+                            padding: 5px 12px;
+                            border-radius: 99px;
+                        }}
+                        .sol-kazanim {{
+                            background: #eff6ff;
+                            color: #1d4ed8;
+                            font-size: 12px;
+                            font-weight: 700;
+                            padding: 4px 10px;
+                            border-radius: 8px;
+                        }}
+                        .sol-btn-row {{ display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }}
+                        .sol-action-btn {{
+                            border: none;
+                            padding: 9px 14px;
+                            border-radius: 10px;
+                            font-size: 13px;
+                            font-weight: 700;
+                            cursor: pointer;
+                            transition: transform 0.15s ease;
+                        }}
+                        .sol-action-btn:hover {{ transform: translateY(-2px); }}
+                        .btn-hint {{ background: #fef3c7; color: #92400e; }}
+                        .btn-steps {{ background: #e0e7ff; color: #3730a3; }}
+                        .btn-ans {{ background: #dcfce7; color: #166534; }}
+                        .sol-panel {{
+                            display: none;
+                            margin-top: 10px;
+                            padding: 14px;
+                            border-radius: 12px;
+                            font-size: 14px;
+                            line-height: 1.5;
+                        }}
+                        .panel-hint {{ background: #fffbeb; border-left: 5px solid #f59e0b; color: #78350f; }}
+                        .panel-steps {{ background: #f8fafc; border-left: 5px solid #4f46e5; color: #1e293b; }}
+                        .panel-ans {{
+                            background: linear-gradient(135deg, #10b981, #059669);
+                            color: white;
+                            font-size: 16px;
+                            font-weight: 800;
+                            text-align: center;
+                        }}
+                        .step-item {{
+                            padding: 8px 10px;
+                            margin-bottom: 6px;
+                            background: white;
+                            border-radius: 8px;
+                            border: 1px solid #e2e8f0;
+                            font-weight: 600;
+                        }}
+                    </style>
+                    <div class="sol-wrap" id="sol-root"></div>
+                    <script>
+                        const items = {cozum_json};
+                        const root = document.getElementById('sol-root');
+                        items.forEach((item, idx) => {{
+                            const card = document.createElement('div');
+                            card.className = 'sol-card';
+                            const stepsHtml = (item.adimlar || []).map(s => `<div class="step-item">👉 ${{s}}</div>`).join('');
+                            card.innerHTML = `
+                                <div class="sol-header">
+                                    <span class="sol-num">📌 ${{item.soru_no || ('Soru ' + (idx+1))}}</span>
+                                    <span class="sol-kazanim">🎯 ${{item.kazanim || 'LGS Kazanımı'}}</span>
+                                </div>
+                                <div class="sol-btn-row">
+                                    <button class="sol-action-btn btn-hint" onclick="toggleP('sh-${{idx}}')">💡 1. İpucunu Göster</button>
+                                    <button class="sol-action-btn btn-steps" onclick="toggleP('ss-${{idx}}')">👣 2. Adım Adım Çözümü Aç</button>
+                                    <button class="sol-action-btn btn-ans" onclick="toggleP('sa-${{idx}}')">🏆 3. Doğru Şıkkı Gör</button>
+                                </div>
+                                <div class="sol-panel panel-hint" id="sh-${{idx}}"><b>💡 Püf Nokta:</b> ${{item.ipucu || ''}}</div>
+                                <div class="sol-panel panel-steps" id="ss-${{idx}}">${{stepsHtml}}</div>
+                                <div class="sol-panel panel-ans" id="sa-${{idx}}">🎉 Doğru Cevap: ${{item.dogru_sik || ''}}</div>
+                            `;
+                            root.appendChild(card);
+                        }});
+                        window.toggleP = function(id) {{
+                            const el = document.getElementById(id);
+                            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+                        }};
+                    </script>
+                    """
+                    components.html(cozum_html, height=min(650, len(st.session_state.pdf_cozum_kartlari) * 230 + 60), scrolling=True)
 
-            # 3) BU SAYFANIN İNFOGRAFİK HAP ÖZETİ
-            if st.session_state.get("pdf_ozet_kart"):
-                ozet_d = st.session_state.pdf_ozet_kart
-                st.markdown("---")
-                baslik_str = str(ozet_d.get("baslik", "Sayfa Özeti")).replace("<", "&lt;").replace(">", "&gt;")
-                taktik_str = str(ozet_d.get("altin_taktik", "")).replace("<", "&lt;").replace(">", "&gt;")
-                p_ozet_html = f"""
-                <style>
-                    .ozet-wrap {{ font-family: 'Inter', sans-serif; padding: 6px 2px; }}
-                    .ozet-title {{
-                        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-                        color: white; padding: 16px 20px; border-radius: 16px;
-                        font-size: 18px; font-weight: 800; margin-bottom: 14px;
-                    }}
-                    .ozet-grid {{ display: flex; flex-direction: column; gap: 12px; }}
-                    .ozet-item {{
-                        background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
-                        border-left: 6px solid #4f46e5; border-radius: 14px; padding: 16px;
-                        cursor: pointer;
-                    }}
-                    .ozet-item-head {{ font-size: 15px; font-weight: 800; color: #1e1b4b; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }}
-                    .ozet-item-body {{ font-size: 14px; color: #334155; line-height: 1.5; font-weight: 500; }}
-                    .taktik-box {{
-                        margin-top: 16px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-                        border: 2px dashed #d97706; border-radius: 16px; padding: 16px; color: #78350f;
-                    }}
-                </style>
-                <div class="ozet-wrap">
-                    <div class="ozet-title">🚀 {baslik_str}</div>
-                    <div class="ozet-grid">
-                """
-                for m in ozet_d.get("maddeler", []):
-                    em = str(m.get("emoji", "⚡"))
-                    mb = str(m.get("baslik", "")).replace("<", "&lt;").replace(">", "&gt;")
-                    md = str(m.get("detay", "")).replace("<", "&lt;").replace(">", "&gt;")
+                # 2) BU SAYFADAN İNTERAKTİF İKİZ SORU MEYDAN OKUMASI
+                if st.session_state.get("pdf_ikiz_quiz"):
+                    st.markdown("---")
+                    st.markdown("#### 🎯 Bu Sayfanın İkiz Soru Arenası *(Şıklara tıkla, kendini test et!)*")
+                    q_data = st.session_state.pdf_ikiz_quiz
+                    q_json = json.dumps(q_data, ensure_ascii=False)
+                    ikiz_html = f"""
+                    <style>
+                        .q-container {{ font-family: 'Inter', sans-serif; padding: 4px; }}
+                        .q-scorebar {{
+                            background: linear-gradient(90deg, #4f46e5 0%, #9333ea 100%);
+                            color: white; padding: 12px 18px; border-radius: 14px;
+                            font-weight: 800; font-size: 14px; margin-bottom: 16px;
+                            display: flex; justify-content: space-between;
+                        }}
+                        .q-card {{
+                            background: #ffffff; border: 2px solid #e2e8f0; border-radius: 18px;
+                            padding: 18px; margin-bottom: 18px; box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+                        }}
+                        .q-badge {{
+                            display: inline-block; background: #dbeafe; color: #1d4ed8;
+                            font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 8px; margin-bottom: 10px;
+                        }}
+                        .q-text {{ font-size: 15px; font-weight: 700; color: #1e293b; line-height: 1.5; margin-bottom: 14px; }}
+                        .q-options {{ display: flex; flex-direction: column; gap: 8px; }}
+                        .q-opt {{
+                            background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 12px;
+                            padding: 11px 14px; font-size: 14px; font-weight: 600; color: #334155;
+                            cursor: pointer; text-align: left;
+                        }}
+                        .q-opt.correct {{ background: #dcfce7 !important; border-color: #16a34a !important; color: #14532d !important; }}
+                        .q-opt.wrong {{ background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important; }}
+                        .q-actions {{ display: flex; gap: 10px; margin-top: 12px; }}
+                        .q-btn-small {{
+                            background: #f1f5f9; border: none; padding: 7px 12px; border-radius: 8px;
+                            font-size: 12px; font-weight: 700; color: #475569; cursor: pointer;
+                        }}
+                        .q-box {{ display: none; margin-top: 10px; padding: 12px; border-radius: 12px; font-size: 13.5px; }}
+                        .q-hint-box {{ background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }}
+                        .q-sol-box {{ background: #f0fdf4; color: #166534; border: 1px solid #86efac; }}
+                    </style>
+                    <div class="q-container">
+                        <div class="q-scorebar">
+                            <span>⚡ İkiz Soru Meydan Okuması</span>
+                            <span id="p-score">Skor: 0 / {len(q_data)} 🏆</span>
+                        </div>
+                        <div id="p-quiz-root"></div>
+                    </div>
+                    <script>
+                        const qs = {q_json};
+                        let sc = 0;
+                        const ans = new Set();
+                        const rt = document.getElementById('p-quiz-root');
+                        qs.forEach((q, qIdx) => {{
+                            const card = document.createElement('div');
+                            card.className = 'q-card';
+                            const opts = (q.secenekler || []).map((opt, oIdx) =>
+                                `<button class="q-opt" id="popt-${{qIdx}}-${{oIdx}}" onclick="selPOpt(${{qIdx}}, ${{oIdx}}, ${{q.dogru_index}})">${{opt}}</button>`
+                            ).join('');
+                            card.innerHTML = `
+                                <div class="q-badge">🔥 İkiz Soru ${{qIdx + 1}}</div>
+                                <div class="q-text">${{q.soru}}</div>
+                                <div class="q-options">${{opts}}</div>
+                                <div class="q-actions">
+                                    <button class="q-btn-small" onclick="togPBox('phint-${{qIdx}}')">💡 İpucu Al</button>
+                                    <button class="q-btn-small" onclick="togPBox('psol-${{qIdx}}')">📖 Çözümü Gör</button>
+                                </div>
+                                <div class="q-box q-hint-box" id="phint-${{qIdx}}"><b>💡 İpucu:</b> ${{q.ipucu || ''}}</div>
+                                <div class="q-box q-sol-box" id="psol-${{qIdx}}"><b>✅ Çözüm:</b> ${{q.cozum || ''}}</div>
+                            `;
+                            rt.appendChild(card);
+                        }});
+                        window.selPOpt = function(qIdx, oIdx, cIdx) {{
+                            const btn = document.getElementById(`popt-${{qIdx}}-${{oIdx}}`);
+                            const sol = document.getElementById(`psol-${{qIdx}}`);
+                            if (oIdx === cIdx) {{
+                                btn.classList.add('correct');
+                                btn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
+                                sol.style.display = 'block';
+                                if (!ans.has(qIdx)) {{
+                                    sc++; ans.add(qIdx);
+                                    document.getElementById('p-score').innerText = `Skor: ${{sc}} / ${{qs.length}} 🏆`;
+                                }}
+                            }} else {{
+                                btn.classList.add('wrong');
+                                btn.innerHTML += ' &nbsp; ❌ <b>Tekrar Dene!</b>';
+                                ans.add(qIdx);
+                            }}
+                        }};
+                        window.togPBox = function(id) {{
+                            const el = document.getElementById(id);
+                            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+                        }};
+                    </script>
+                    """
+                    components.html(ikiz_html, height=len(q_data) * 340 + 80, scrolling=True)
+
+                # 3) BU SAYFANIN İNFOGRAFİK HAP ÖZETİ
+                if st.session_state.get("pdf_ozet_kart"):
+                    ozet_d = st.session_state.pdf_ozet_kart
+                    st.markdown("---")
+                    baslik_str = str(ozet_d.get("baslik", "Sayfa Özeti")).replace("<", "&lt;").replace(">", "&gt;")
+                    taktik_str = str(ozet_d.get("altin_taktik", "")).replace("<", "&lt;").replace(">", "&gt;")
+                    p_ozet_html = f"""
+                    <style>
+                        .ozet-wrap {{ font-family: 'Inter', sans-serif; padding: 6px 2px; }}
+                        .ozet-title {{
+                            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+                            color: white; padding: 16px 20px; border-radius: 16px;
+                            font-size: 18px; font-weight: 800; margin-bottom: 14px;
+                        }}
+                        .ozet-grid {{ display: flex; flex-direction: column; gap: 12px; }}
+                        .ozet-item {{
+                            background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+                            border-left: 6px solid #4f46e5; border-radius: 14px; padding: 16px;
+                            cursor: pointer;
+                        }}
+                        .ozet-item-head {{ font-size: 15px; font-weight: 800; color: #1e1b4b; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }}
+                        .ozet-item-body {{ font-size: 14px; color: #334155; line-height: 1.5; font-weight: 500; }}
+                        .taktik-box {{
+                            margin-top: 16px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+                            border: 2px dashed #d97706; border-radius: 16px; padding: 16px; color: #78350f;
+                        }}
+                    </style>
+                    <div class="ozet-wrap">
+                        <div class="ozet-title">🚀 {baslik_str}</div>
+                        <div class="ozet-grid">
+                    """
+                    for m in ozet_d.get("maddeler", []):
+                        em = str(m.get("emoji", "⚡"))
+                        mb = str(m.get("baslik", "")).replace("<", "&lt;").replace(">", "&gt;")
+                        md = str(m.get("detay", "")).replace("<", "&lt;").replace(">", "&gt;")
+                        p_ozet_html += f"""
+                        <div class="ozet-item" onclick="this.style.borderLeftColor='#10b981'; this.style.background='#ecfdf5';">
+                            <div class="ozet-item-head"><span>{em}</span> {mb} <span style="margin-left:auto; font-size:11px; color:#6366f1;">(Anladım ✓ tıkla)</span></div>
+                            <div class="ozet-item-body">{md}</div>
+                        </div>
+                        """
                     p_ozet_html += f"""
-                    <div class="ozet-item" onclick="this.style.borderLeftColor='#10b981'; this.style.background='#ecfdf5';">
-                        <div class="ozet-item-head"><span>{em}</span> {mb} <span style="margin-left:auto; font-size:11px; color:#6366f1;">(Anladım ✓ tıkla)</span></div>
-                        <div class="ozet-item-body">{md}</div>
+                        </div>
+                        <div class="taktik-box">
+                            <div style="font-weight:900; font-size:14px;">🏆 BU SAYFANIN ALTIN TAKTİĞİ</div>
+                            <div style="font-weight:700; font-size:14.5px; margin-top:4px;">{taktik_str}</div>
+                        </div>
                     </div>
                     """
-                p_ozet_html += f"""
-                    </div>
-                    <div class="taktik-box">
-                        <div style="font-weight:900; font-size:14px;">🏆 BU SAYFANIN ALTIN TAKTİĞİ</div>
-                        <div style="font-weight:700; font-size:14.5px; margin-top:4px;">{taktik_str}</div>
-                    </div>
-                </div>
-                """
-                components.html(p_ozet_html, height=430, scrolling=True)
-            doc.close()
-    st.markdown("</div>", unsafe_allow_html=True)
+                    components.html(p_ozet_html, height=430, scrolling=True)
+                doc.close()
 
 elif menu == "⚡ Hızlı Öğren (Video/Kaynak)":
     st.markdown("<div class='karargah-card'>", unsafe_allow_html=True)
@@ -1007,9 +1087,9 @@ elif menu == "⚡ Hızlı Öğren (Video/Kaynak)":
         st.markdown("---")
         st.markdown("### 🎯 Bu Kaynaktan Ne Üretmek İstersin?")
         
-        col_b1, col_b2, col_b3 = st.columns(3)
+        col_b1, col_b2, col_b3 = st.columns(3, gap="small")
         with col_b1:
-            if st.button("🎧 Hap Özet & Ses"):
+            if st.button("🎧 Hap Özet & Ses", use_container_width=True):
                 with st.spinner("İnfografik Hap Özet ve Podcast hazırlanıyor..."):
                     ozet_data = generate_hap_ozet_structured(kaynak_metni)
                     st.session_state.hizli_ozet_data = ozet_data
@@ -1019,20 +1099,25 @@ elif menu == "⚡ Hızlı Öğren (Video/Kaynak)":
                     tts = gTTS(text=ses_metni, lang='tr')
                     tts.save("hapis_ozet.mp3")
                     st.session_state.hizli_ses = "hapis_ozet.mp3"
+                    st.session_state.hedef_scroll = "hizli-ogren-sonuc"
         with col_b2:
-            if st.button("📇 Flashcard Üret"):
+            if st.button("📇 Flashcard Üret", use_container_width=True):
                 with st.spinner("İnteraktif Flashcard kartları tasarlanıyor..."):
                     st.session_state.hizli_flashcards = generate_flashcards_list(kaynak_metni)
                     st.session_state.hizli_ozet_data = None
                     st.session_state.hizli_quiz = None
                     st.session_state.hizli_ses = None
+                    st.session_state.hedef_scroll = "hizli-ogren-sonuc"
         with col_b3:
-            if st.button("📝 LGS Sorusu Üret"):
+            if st.button("📝 LGS Sorusu Üret", use_container_width=True):
                 with st.spinner("İnteraktif LGS Mini Yarışması hazırlanıyor..."):
                     st.session_state.hizli_quiz = generate_lgs_quiz_list(kaynak_metni)
                     st.session_state.hizli_ozet_data = None
                     st.session_state.hizli_flashcards = None
                     st.session_state.hizli_ses = None
+                    st.session_state.hedef_scroll = "hizli-ogren-sonuc"
+        
+        st.markdown("<div id='hizli-ogren-sonuc'></div>", unsafe_allow_html=True)
 
         # 1. İNFOGRAFİK HAP ÖZET GÖRÜNÜMÜ
         if st.session_state.get("hizli_ozet_data"):
@@ -1416,14 +1501,16 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 with g_cols[idx % len(g_cols)]:
                     st.image(im, caption=f"Sayfa {idx + 1}")
         
-        if st.button("✨ İkiz Sorusunu Üret ve Çöz"):
+        if st.button("✨ İkiz Sorusunu Üret ve Çöz", use_container_width=True):
             with st.spinner("Yapay zeka yüklenen tüm sayfaları inceliyor ve ikiz soruyu tasarlıyor..."):
                 st.session_state.ikiz_sonuc = generate_twin_question(
                     f"[{ders_secimi}] {soru_metni}",
                     image=soru_gorselleri if soru_gorselleri else None
                 )
                 st.session_state.ikiz_ders = ders_secimi
+                st.session_state.hedef_scroll = "ikiz-soru-sonuc"
                 
+        st.markdown("<div id='ikiz-soru-sonuc'></div>", unsafe_allow_html=True)
         if "ikiz_sonuc" in st.session_state and st.session_state.ikiz_sonuc:
             st.markdown("---")
             ikiz_verisi = st.session_state.ikiz_sonuc
@@ -1804,7 +1891,7 @@ elif menu == "📷 Deneme Analizi":
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("🚀 LGS Puanımı Hesapla & Genel Performans Analizi Çıkar"):
+        if st.button("🚀 LGS Puanımı Hesapla & Genel Performans Analizi Çıkar", use_container_width=True):
             ozet_str = f"LGS Puanı: {lgs_puani:.2f} | Toplam Net: {toplam_net:.2f}/90\n"
             for d_lbl, ver in net_tablosu.items():
                 ozet_str += f"- {d_lbl}: {ver['D']} Doğru, {ver['Y']} Yanlış, {ver['B']} Boş -> {ver['Net']} Net\n"
@@ -1816,7 +1903,9 @@ elif menu == "📷 Deneme Analizi":
                 st.session_state.deneme_son_puan = lgs_puani
                 st.session_state.deneme_son_net = round(toplam_net, 2)
                 st.session_state.deneme_son_ad = deneme_adi if deneme_adi else f"Deneme ({datetime.datetime.now().strftime('%d.%m.%Y')})"
+                st.session_state.hedef_scroll = "deneme-analiz-sonuc"
 
+        st.markdown("<div id='deneme-analiz-sonuc'></div>", unsafe_allow_html=True)
         if st.session_state.get("deneme_analiz_json"):
             analiz_d = st.session_state.deneme_analiz_json
             genel_perf = str(analiz_d.get("genel_performans", "")).replace("<", "&lt;").replace(">", "&gt;")
@@ -1909,7 +1998,7 @@ elif menu == "📷 Deneme Analizi":
             """
             components.html(perf_html, height=540, scrolling=True)
             
-            if st.button("💾 Bu Deneme Sonucunu ve Puanımı Gelişim Karneme Kaydet"):
+            if st.button("💾 Bu Deneme Sonucunu ve Puanımı Gelişim Karneme Kaydet", use_container_width=True):
                 doc_id = f"deneme_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
                 data = {
                     "deneme_adi": st.session_state.get("deneme_son_ad", "Genel Deneme"),
@@ -1926,25 +2015,42 @@ elif menu == "📷 Deneme Analizi":
                 st.success(f"🎉 Harika! {lgs_puani} puanlık deneme sonucun gelişim karnene başarıyla kaydedildi!")
 
 elif menu == "❌ Hata & Gelişim":
-    st.markdown("<div class='karargah-card'>", unsafe_allow_html=True)
-    st.markdown("### 📈 Deneme ve Haftalık Gelişim Trendi")
-    user_denemeler = get_user_data(current_user, "denemeler")
-    user_hatalar = get_user_data(current_user, "hata_defteri")
-    tum_veriler = {**user_denemeler, **user_hatalar}
-    
-    if tum_veriler:
-        df_gelisim = pd.DataFrame.from_dict(tum_veriler, orient="index")
-        if "tip" not in df_gelisim.columns:
-            df_gelisim["tip"] = "Kayıt"
-        if "hafta" in df_gelisim.columns:
-            st.markdown("#### 📅 Haftalık Deneme & Hata Değişim Grafiği")
-            hafta_pivot = df_gelisim.pivot_table(index="hafta", columns="tip", aggfunc="size", fill_value=0)
-            st.bar_chart(hafta_pivot)
+    with st.container(border=True):
+        st.markdown("### 📈 Deneme ve Haftalık Gelişim Trendi")
+        user_denemeler = get_user_data(current_user, "denemeler")
+        user_hatalar = get_user_data(current_user, "hata_defteri")
+        tum_veriler = {**user_denemeler, **user_hatalar}
+        
+        if tum_veriler:
+            df_gelisim = pd.DataFrame.from_dict(tum_veriler, orient="index")
+            if "tip" not in df_gelisim.columns:
+                df_gelisim["tip"] = "Kayıt"
+            if "hafta" in df_gelisim.columns:
+                st.markdown("#### 📅 Haftalık Deneme & Hata Değişim Grafiği")
+                hafta_pivot = df_gelisim.pivot_table(index="hafta", columns="tip", aggfunc="size", fill_value=0)
+                st.bar_chart(hafta_pivot)
+            else:
+                st.bar_chart(df_gelisim["tip"].value_counts())
+                
+            st.markdown("#### 🔍 Detaylı Gelişim Karnesi")
+            st.dataframe(df_gelisim, use_container_width=True)
         else:
-            st.bar_chart(df_gelisim["tip"].value_counts())
-            
-        st.markdown("#### 🔍 Detaylı Gelişim Karnesi")
-        st.dataframe(df_gelisim, use_container_width=True)
-    else:
-        st.info("Henüz deneme veya soru verisi yok.")
-    st.markdown("</div>", unsafe_allow_html=True)
+            st.info("Henüz deneme veya soru verisi yok.")
+
+# Tıklanan Butonun İlgili Bölümüne Otomatik Yumuşak Kaydırma (Auto-Scroll)
+if st.session_state.get("hedef_scroll"):
+    hedef_id = st.session_state.hedef_scroll
+    st.session_state.hedef_scroll = None
+    components.html(f"""
+    <script>
+        setTimeout(function() {{
+            try {{
+                const el = window.parent.document.getElementById('{hedef_id}');
+                if (el) {{
+                    el.scrollIntoView({{ behavior: 'smooth', block: 'start' }});
+                }}
+            }} catch (e) {{}}
+        }}, 180);
+    </script>
+    """, height=0)
+
