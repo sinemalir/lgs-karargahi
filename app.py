@@ -298,172 +298,11 @@ KULLANICILAR = {
 
 if "user" not in st.session_state:
     st.session_state.user = None
-if "install_banner_gizle" not in st.session_state:
-    st.session_state.install_banner_gizle = False
-if "install_detay_acik" not in st.session_state:
-    st.session_state.install_detay_acik = False
-
-def render_install_prompt(prefix="login"):
-    components.html("""
-    <script>
-        (function() {
-            try {
-                const pWin = window.parent;
-                const pDoc = pWin.document;
-
-                pWin.addEventListener('beforeinstallprompt', (e) => {
-                    e.preventDefault();
-                    pWin.deferredLgsPrompt = e;
-                });
-
-                if (pWin.sessionStorage.getItem('lgs_modal_dismissed') === '1') {
-                    return;
-                }
-                if (pDoc.getElementById('lgs-install-modal-overlay')) {
-                    return;
-                }
-
-                const styleEl = pDoc.createElement('style');
-                styleEl.innerHTML = `
-                    #lgs-install-modal-overlay {
-                        position: fixed;
-                        inset: 0;
-                        background: rgba(15, 23, 42, 0.55);
-                        backdrop-filter: blur(6px);
-                        z-index: 999999;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        padding: 18px;
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-                        animation: lgsFadeIn 0.25s ease;
-                    }
-                    @keyframes lgsFadeIn {
-                        from { opacity: 0; transform: scale(0.95); }
-                        to { opacity: 1; transform: scale(1); }
-                    }
-                    .lgs-modal-box {
-                        background: #ffffff;
-                        border-radius: 28px;
-                        max-width: 430px;
-                        width: 100%;
-                        padding: 32px 26px;
-                        text-align: center;
-                        box-shadow: 0 25px 60px rgba(15, 23, 42, 0.35);
-                        border: 2px solid #e2e8f0;
-                    }
-                    .lgs-modal-icon {
-                        width: 78px;
-                        height: 78px;
-                        margin: 0 auto 16px auto;
-                        border-radius: 22px;
-                        background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 40px;
-                        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.3);
-                    }
-                    .lgs-modal-title {
-                        font-size: 22px;
-                        font-weight: 900;
-                        color: #0f172a;
-                        margin-bottom: 8px;
-                        line-height: 1.3;
-                    }
-                    .lgs-modal-sub {
-                        font-size: 14.5px;
-                        color: #475569;
-                        font-weight: 600;
-                        margin-bottom: 24px;
-                        line-height: 1.5;
-                    }
-                    .lgs-btn-primary {
-                        width: 100%;
-                        background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
-                        color: #ffffff;
-                        border: none;
-                        border-radius: 16px;
-                        padding: 15px 20px;
-                        font-size: 16px;
-                        font-weight: 800;
-                        cursor: pointer;
-                        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
-                        margin-bottom: 10px;
-                        transition: transform 0.15s ease;
-                    }
-                    .lgs-btn-primary:hover {
-                        transform: translateY(-2px);
-                    }
-                    .lgs-btn-secondary {
-                        width: 100%;
-                        background: #f1f5f9;
-                        color: #475569;
-                        border: none;
-                        border-radius: 14px;
-                        padding: 12px 18px;
-                        font-size: 14px;
-                        font-weight: 700;
-                        cursor: pointer;
-                    }
-                    .lgs-btn-secondary:hover {
-                        background: #e2e8f0;
-                    }
-                `;
-                pDoc.head.appendChild(styleEl);
-
-                const overlay = pDoc.createElement('div');
-                overlay.id = 'lgs-install-modal-overlay';
-                overlay.innerHTML = `
-                    <div class="lgs-modal-box">
-                        <div class="lgs-modal-icon">🎯</div>
-                        <div class="lgs-modal-title">Masaüstü Uygulaması Yüklensin mi?</div>
-                        <div class="lgs-modal-sub">LGS Karargahı'nı tek tuşla masaüstüne ekle, her seferinde link yazmadan anında aç!</div>
-                        <button class="lgs-btn-primary" id="lgs-oneclick-install">🚀 Evet, Hemen Yükle</button>
-                        <button class="lgs-btn-secondary" id="lgs-oneclick-close">Daha Sonra</button>
-                    </div>
-                `;
-                pDoc.body.appendChild(overlay);
-
-                pDoc.getElementById('lgs-oneclick-close').onclick = function() {
-                    pWin.sessionStorage.setItem('lgs_modal_dismissed', '1');
-                    overlay.remove();
-                };
-
-                pDoc.getElementById('lgs-oneclick-install').onclick = async function() {
-                    const btn = pDoc.getElementById('lgs-oneclick-install');
-                    if (pWin.deferredLgsPrompt) {
-                        pWin.deferredLgsPrompt.prompt();
-                        await pWin.deferredLgsPrompt.userChoice;
-                        pWin.deferredLgsPrompt = null;
-                    } else {
-                        const targetUrl = pWin.location.href;
-                        const shortcutText = "[InternetShortcut]\\r\\nURL=" + targetUrl + "\\r\\nIconIndex=0\\r\\n";
-                        const blob = new Blob([shortcutText], { type: "application/internet-shortcut" });
-                        const url = URL.createObjectURL(blob);
-                        const a = pDoc.createElement('a');
-                        a.href = url;
-                        a.download = "LGS Karargahi.url";
-                        pDoc.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                        URL.revokeObjectURL(url);
-                    }
-                    btn.style.background = "#10b981";
-                    btn.innerText = "✅ Masaüstü Uygulaması Yüklendi!";
-                    pWin.sessionStorage.setItem('lgs_modal_dismissed', '1');
-                    setTimeout(() => { overlay.remove(); }, 1100);
-                };
-            } catch (e) {}
-        })();
-    </script>
-    """, height=0)
 
 if not st.session_state.user:
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([0.6, 2.8, 0.6])
     with col2:
-        render_install_prompt(prefix="giris")
         with st.container(border=True):
             st.markdown("<div style='text-align: center; padding: 10px 0;'>", unsafe_allow_html=True)
             st.markdown("<div><span style='font-size: 30px; margin-right: 6px;'>🎯</span><span class='brand-title' style='font-size: 30px;'>LGS Karargahı</span></div>", unsafe_allow_html=True)
@@ -481,9 +320,6 @@ if not st.session_state.user:
                 else:
                     st.error("Şifre hatalı!")
     st.stop()
-
-# Giriş yapıldıktan sonra da henüz kapatılmadıysa en üstte göster
-render_install_prompt(prefix="ana")
 
 
 current_user = st.session_state.user

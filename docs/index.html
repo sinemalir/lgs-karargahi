@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LGS Karargahı</title>
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LGS Karargahı">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #f1f5f9; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        iframe { width: 100%; height: 100%; border: none; display: block; }
+        #pwa-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(6px);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+        .pwa-card {
+            background: #ffffff;
+            border-radius: 26px;
+            max-width: 410px;
+            width: 100%;
+            padding: 30px 24px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(15, 23, 42, 0.35);
+            border: 2px solid #e2e8f0;
+        }
+        .pwa-icon {
+            width: 76px;
+            height: 76px;
+            border-radius: 20px;
+            margin: 0 auto 14px auto;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+        }
+        .pwa-title { font-size: 21px; font-weight: 900; color: #0f172a; margin-bottom: 8px; }
+        .pwa-desc { font-size: 14px; color: #475569; font-weight: 600; margin-bottom: 22px; line-height: 1.5; }
+        .pwa-btn-install {
+            width: 100%;
+            background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 18px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-bottom: 10px;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+        }
+        .pwa-btn-close {
+            width: 100%;
+            background: #f1f5f9;
+            color: #475569;
+            border: none;
+            border-radius: 12px;
+            padding: 11px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <iframe src="https://lgs-karargahi.streamlit.app/?embed=true" allow="camera; microphone; clipboard-read; clipboard-write; fullscreen"></iframe>
+
+    <div id="pwa-modal">
+        <div class="pwa-card">
+            <img src="icon-192.png" class="pwa-icon" alt="LGS Karargahı">
+            <div class="pwa-title">Uygulama Cihazına Yüklensin mi?</div>
+            <div class="pwa-desc">LGS Karargahı'nı masaüstüne veya ana ekranına gerçek uygulama olarak tek tuşla kur!</div>
+            <button class="pwa-btn-install" id="btn-install-now">🚀 Evet, Uygulamayı Yükle</button>
+            <button class="pwa-btn-close" id="btn-install-later">Daha Sonra</button>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+
+        let deferredPrompt = null;
+        const modal = document.getElementById('pwa-modal');
+        const btnInstall = document.getElementById('btn-install-now');
+        const btnLater = document.getElementById('btn-install-later');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!sessionStorage.getItem('pwa_dismissed')) {
+                modal.style.display = 'flex';
+            }
+        });
+
+        btnInstall.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                deferredPrompt = null;
+            }
+            modal.style.display = 'none';
+        });
+
+        btnLater.addEventListener('click', () => {
+            sessionStorage.setItem('pwa_dismissed', '1');
+            modal.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
