@@ -643,6 +643,7 @@ elif menu == "📚 PDF Havuzu":
                     hedef_dosya.write_bytes(yuklenen_pdf.getvalue())
                     st.session_state.secili_pdf = str(hedef_dosya)
                     st.session_state.pdf_sayfa_no = 1
+                    st.session_state.pdf_num_top = 1
                     st.session_state.hedef_scroll = "acik-kitap-alani"
                     st.success(f"✅ '{hedef_dosya.stem}' kütüphaneye eklendi!")
                     st.rerun()
@@ -673,6 +674,7 @@ elif menu == "📚 PDF Havuzu":
                         if st.button("📖 Aç", key=f"open_{idx}", use_container_width=True):
                             st.session_state.secili_pdf = str(pdf_path)
                             st.session_state.pdf_sayfa_no = 1
+                            st.session_state.pdf_num_top = 1
                             st.session_state.pdf_cozum_kartlari = None
                             st.session_state.pdf_ikiz_quiz = None
                             st.session_state.pdf_ozet_kart = None
@@ -702,11 +704,25 @@ elif menu == "📚 PDF Havuzu":
             if secili_yol and Path(secili_yol).exists():
                 aktif_pdf = Path(secili_yol)
                 doc = fitz.open(str(aktif_pdf))
-                toplam_sayfa = len(doc)
+                toplam_sayfa = max(1, len(doc))
                 
                 if "pdf_sayfa_no" not in st.session_state:
                     st.session_state.pdf_sayfa_no = 1
-                st.session_state.pdf_sayfa_no = max(1, min(toplam_sayfa, st.session_state.pdf_sayfa_no))
+                st.session_state.pdf_sayfa_no = max(1, min(toplam_sayfa, int(st.session_state.pdf_sayfa_no)))
+                st.session_state.pdf_num_top = st.session_state.pdf_sayfa_no
+                
+                def _pdf_sayfa_git(hedef_sayfa, maks_sayfa=toplam_sayfa):
+                    yeni_s = max(1, min(maks_sayfa, int(hedef_sayfa)))
+                    st.session_state.pdf_sayfa_no = yeni_s
+                    st.session_state.pdf_num_top = yeni_s
+                    st.session_state.pdf_cozum_kartlari = None
+                    st.session_state.pdf_ikiz_quiz = None
+                    st.session_state.pdf_ozet_kart = None
+                    st.session_state.hedef_scroll = "acik-kitap-alani"
+
+                def _pdf_num_degisti(maks_sayfa=toplam_sayfa):
+                    secilen = st.session_state.get("pdf_num_top", st.session_state.pdf_sayfa_no)
+                    _pdf_sayfa_git(secilen, maks_sayfa)
                 
                 st.markdown("<div id='acik-kitap-alani'></div>", unsafe_allow_html=True)
                 st.markdown("---")
@@ -724,21 +740,33 @@ elif menu == "📚 PDF Havuzu":
                 # Üst Sayfa Geçiş Çubuğu (Mobilde Tek Satırda Yan Yana Kalır)
                 nav1, nav2, nav3 = st.columns([1.1, 1, 1.1], gap="small")
                 with nav1:
-                    if st.button("⬅️ Önceki", key="pdf_prev_top", use_container_width=True) and st.session_state.pdf_sayfa_no > 1:
-                        st.session_state.pdf_sayfa_no -= 1
-                        st.session_state.hedef_scroll = "acik-kitap-alani"
-                        st.rerun()
+                    st.button(
+                        "⬅️ Önceki",
+                        key="pdf_prev_top",
+                        use_container_width=True,
+                        disabled=(st.session_state.pdf_sayfa_no <= 1),
+                        on_click=_pdf_sayfa_git,
+                        args=(st.session_state.pdf_sayfa_no - 1, toplam_sayfa),
+                    )
                 with nav2:
-                    secilen_s = st.number_input("Sayfa", min_value=1, max_value=toplam_sayfa, value=st.session_state.pdf_sayfa_no, label_visibility="collapsed", key="pdf_num_top")
-                    if secilen_s != st.session_state.pdf_sayfa_no:
-                        st.session_state.pdf_sayfa_no = secilen_s
-                        st.session_state.hedef_scroll = "acik-kitap-alani"
-                        st.rerun()
+                    st.number_input(
+                        "Sayfa",
+                        min_value=1,
+                        max_value=toplam_sayfa,
+                        label_visibility="collapsed",
+                        key="pdf_num_top",
+                        on_change=_pdf_num_degisti,
+                        args=(toplam_sayfa,),
+                    )
                 with nav3:
-                    if st.button("Sonraki ➡️", key="pdf_next_top", use_container_width=True) and st.session_state.pdf_sayfa_no < toplam_sayfa:
-                        st.session_state.pdf_sayfa_no += 1
-                        st.session_state.hedef_scroll = "acik-kitap-alani"
-                        st.rerun()
+                    st.button(
+                        "Sonraki ➡️",
+                        key="pdf_next_top",
+                        use_container_width=True,
+                        disabled=(st.session_state.pdf_sayfa_no >= toplam_sayfa),
+                        on_click=_pdf_sayfa_git,
+                        args=(st.session_state.pdf_sayfa_no + 1, toplam_sayfa),
+                    )
                 
                 # Aktif Sayfayı Yüksek Çözünürlüklü Görsel Olarak Göster
                 sayfa_index = st.session_state.pdf_sayfa_no - 1
@@ -751,18 +779,26 @@ elif menu == "📚 PDF Havuzu":
                 # Alt Hızlı Sayfa Geçiş + PDF İndir Çubuğu (Mobilde Tek Satırda Yan Yana)
                 b_nav1, b_nav2, b_nav3 = st.columns([1, 1.1, 1], gap="small")
                 with b_nav1:
-                    if st.button("⬅️ Önceki", key="pdf_prev_bot", use_container_width=True) and st.session_state.pdf_sayfa_no > 1:
-                        st.session_state.pdf_sayfa_no -= 1
-                        st.session_state.hedef_scroll = "acik-kitap-alani"
-                        st.rerun()
+                    st.button(
+                        "⬅️ Önceki",
+                        key="pdf_prev_bot",
+                        use_container_width=True,
+                        disabled=(st.session_state.pdf_sayfa_no <= 1),
+                        on_click=_pdf_sayfa_git,
+                        args=(st.session_state.pdf_sayfa_no - 1, toplam_sayfa),
+                    )
                 with b_nav2:
                     with open(aktif_pdf, "rb") as f_dl:
                         st.download_button("📥 PDF İndir", data=f_dl, file_name=aktif_pdf.name, mime="application/pdf", use_container_width=True)
                 with b_nav3:
-                    if st.button("Sonraki ➡️", key="pdf_next_bot", use_container_width=True) and st.session_state.pdf_sayfa_no < toplam_sayfa:
-                        st.session_state.pdf_sayfa_no += 1
-                        st.session_state.hedef_scroll = "acik-kitap-alani"
-                        st.rerun()
+                    st.button(
+                        "Sonraki ➡️",
+                        key="pdf_next_bot",
+                        use_container_width=True,
+                        disabled=(st.session_state.pdf_sayfa_no >= toplam_sayfa),
+                        on_click=_pdf_sayfa_git,
+                        args=(st.session_state.pdf_sayfa_no + 1, toplam_sayfa),
+                    )
                 
                 # Bu Sayfa Üzerinde İnteraktif Yapay Zeka İşlemleri (Tam Genişlik Mobil Uyumlu)
                 st.markdown("#### 🎮 Bu Sayfayla Ne Yapmak İstersin?")
