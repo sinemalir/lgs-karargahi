@@ -298,14 +298,101 @@ KULLANICILAR = {
 
 if "user" not in st.session_state:
     st.session_state.user = None
+if "install_banner_gizle" not in st.session_state:
+    st.session_state.install_banner_gizle = False
+if "install_detay_acik" not in st.session_state:
+    st.session_state.install_detay_acik = False
+
+def render_install_prompt(prefix="login"):
+    # PWA Meta Etiketlerini ve beforeinstallprompt Dinleyicisini Üst Pencereye Enjekte Et
+    components.html("""
+    <script>
+        try {
+            const pDoc = window.parent.document;
+            if (!pDoc.getElementById('lgs-pwa-meta')) {
+                const meta1 = pDoc.createElement('meta');
+                meta1.id = 'lgs-pwa-meta';
+                meta1.name = 'apple-mobile-web-app-capable';
+                meta1.content = 'yes';
+                pDoc.head.appendChild(meta1);
+
+                const meta2 = pDoc.createElement('meta');
+                meta2.name = 'apple-mobile-web-app-title';
+                meta2.content = 'LGS Karargahı';
+                pDoc.head.appendChild(meta2);
+            }
+            window.parent.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                window.parent.deferredLgsPrompt = e;
+            });
+        } catch (err) {}
+    </script>
+    """, height=0)
+
+    if st.session_state.install_banner_gizle:
+        return
+
+    with st.container(border=True):
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%); border: 1.5px solid #93c5fd; border-radius: 16px; padding: 14px 18px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 30px;">📲</span>
+                <div>
+                    <div style="font-size: 15.5px; font-weight: 900; color: #1e3a8a;">Masaüstü / Mobil Uygulama Yüklensin mi?</div>
+                    <div style="font-size: 13px; color: #475569; font-weight: 600; margin-top: 2px;">
+                        LGS Karargahı'nı cihazına uygulama olarak kaydet; her seferinde link yazmadan tek tıkla aç!
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        b_col1, b_col2 = st.columns([1.6, 1], gap="small")
+        with b_col1:
+            if st.button("✅ Evet, Uygulamayı Yükle", key=f"{prefix}_inst_yes", use_container_width=True):
+                st.session_state.install_detay_acik = True
+        with b_col2:
+            if st.button("✖️ Şimdi Değil", key=f"{prefix}_inst_no", use_container_width=True):
+                st.session_state.install_banner_gizle = True
+                st.session_state.install_detay_acik = False
+                st.rerun()
+
+        if st.session_state.install_detay_acik:
+            # Native tarayıcı kurulum penceresi varsa tetikle
+            components.html("""
+            <script>
+                try {
+                    if (window.parent.deferredLgsPrompt) {
+                        window.parent.deferredLgsPrompt.prompt();
+                    }
+                } catch (e) {}
+            </script>
+            """, height=0)
+
+            kisayol_icerik = "[InternetShortcut]\nURL=https://lgs-karargahi.streamlit.app/\nIconIndex=0\n"
+            st.download_button(
+                label="📥 Bilgisayar İçin Masaüstü Kısayolunu İndir (LGS Karargahı.url)",
+                data=kisayol_icerik,
+                file_name="LGS Karargahi.url",
+                mime="application/internet-shortcut",
+                key=f"{prefix}_dl_shortcut",
+                use_container_width=True
+            )
+            st.markdown("""
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 12px 14px; margin-top: 8px; font-size: 13px; color: #334155; line-height: 1.5;">
+                <b>💻 Bilgisayarda (Chrome / Edge):</b> Yukarıdaki butondan masaüstü kısayolunu indirebilir veya tarayıcının sağ üst adres çubuğundaki <b>📥 Yükle</b> simgesine (ya da <b>⋮ ➔ Kaydet ve Paylaş ➔ Sayfayı uygulama olarak yükle</b>) tıklayabilirsin.<br>
+                <b>📱 Telefonda (iPhone / Android):</b> Safari'de alt ortadaki <b>⬆️ Paylaş ➔ Ana Ekrana Ekle</b>; Chrome'da sağ üstteki <b>⋮ ➔ Ana ekrana ekle / Uygulamayı yükle</b> seçeneğine dokun!
+            </div>
+            """, unsafe_allow_html=True)
 
 if not st.session_state.user:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2.2, 1])
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([0.6, 2.8, 0.6])
     with col2:
+        render_install_prompt(prefix="giris")
         with st.container(border=True):
             st.markdown("<div style='text-align: center; padding: 10px 0;'>", unsafe_allow_html=True)
-            st.markdown("<div class='brand-title' style='font-size: 30px;'>🎯 LGS Karargahı</div>", unsafe_allow_html=True)
+            st.markdown("<div><span style='font-size: 30px; margin-right: 6px;'>🎯</span><span class='brand-title' style='font-size: 30px;'>LGS Karargahı</span></div>", unsafe_allow_html=True)
             st.caption("Hedefe Giden En Akıllı Çalışma İstasyonu")
             st.markdown("</div>", unsafe_allow_html=True)
             
@@ -320,6 +407,10 @@ if not st.session_state.user:
                 else:
                     st.error("Şifre hatalı!")
     st.stop()
+
+# Giriş yapıldıktan sonra da henüz kapatılmadıysa en üstte göster
+render_install_prompt(prefix="ana")
+
 
 current_user = st.session_state.user
 user_display_name = KULLANICILAR[current_user]["ad"]
