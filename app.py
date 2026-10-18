@@ -2010,7 +2010,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
         """, unsafe_allow_html=True)
 
         # 🏆 KUPA & 20'LİK DERS ÖDÜL VİTRİNİ (Her Derste 20 Tamamlamaya Özel Ödül)
-        ders_kartlari_html = ""
+        ders_kartlari_parcalar = []
         for d_ad in DERS_LISTESI:
             d_meta = DERS_ODUL_META.get(d_ad, {"ikon": "📘", "odul_adi": "Özel Ödül"})
             d_toplam = int(prof_aktif["ders_sayaclari"].get(d_ad, 0))
@@ -2019,21 +2019,22 @@ elif menu == "🤖 Soru Çöz & İkiz":
             d_yuzde = int((d_kalan_icinde / 20.0) * 100)
             odul_rozet = f"🎁 x{d_odul_adedi} Ödül" if d_odul_adedi > 0 else "🎯 Hedef: 20"
             odul_bg = "#dcfce7; color:#166534; border:1px solid #86efac;" if d_odul_adedi > 0 else "#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;"
-            ders_kartlari_html += f"""
-            <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:12px; padding:9px 11px; box-shadow:0 2px 6px rgba(15,23,42,0.03);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                    <span style="font-size:12.5px; font-weight:800; color:#0f172a;">{d_meta['ikon']} {d_ad}</span>
-                    <span id="sino-badge-{d_ad}" style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:99px; background:{odul_bg}">{odul_rozet}</span>
-                </div>
-                <div style="background:#e2e8f0; height:8px; border-radius:99px; overflow:hidden; margin-bottom:4px;">
-                    <div id="sino-bar-{d_ad}" style="background:linear-gradient(90deg, #2563eb, #16a34a); width:{d_yuzde}%; height:100%; border-radius:99px; transition:width 0.4s ease;"></div>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#475569;">
-                    <span id="sino-cnt-{d_ad}">İlerleme: {d_kalan_icinde} / 20</span>
-                    <span>Toplam: {d_toplam}</span>
-                </div>
-            </div>
-            """
+            ders_kartlari_parcalar.append(
+                f'<div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:12px; padding:9px 11px; box-shadow:0 2px 6px rgba(15,23,42,0.03);">'
+                f'<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">'
+                f'<span style="font-size:12.5px; font-weight:800; color:#0f172a;">{d_meta["ikon"]} {d_ad}</span>'
+                f'<span id="sino-badge-{d_ad}" style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:99px; background:{odul_bg}">{odul_rozet}</span>'
+                f'</div>'
+                f'<div style="background:#e2e8f0; height:8px; border-radius:99px; overflow:hidden; margin-bottom:4px;">'
+                f'<div id="sino-bar-{d_ad}" style="background:linear-gradient(90deg, #2563eb, #16a34a); width:{d_yuzde}%; height:100%; border-radius:99px; transition:width 0.4s ease;"></div>'
+                f'</div>'
+                f'<div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#475569;">'
+                f'<span id="sino-cnt-{d_ad}">İlerleme: {d_kalan_icinde} / 20</span>'
+                f'<span>Toplam: {d_toplam}</span>'
+                f'</div>'
+                f'</div>'
+            )
+        ders_kartlari_html = "".join(ders_kartlari_parcalar)
 
         kazanilan_liste_html = ""
         if prof_aktif["kazanilan_oduller"]:
@@ -2043,18 +2044,17 @@ elif menu == "🤖 Soru Çöz & İkiz":
             )
             kazanilan_liste_html = f"<div style='margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;'>{rozetler_str}</div>"
 
-        st.markdown(f"""
-        <div style="background:linear-gradient(135deg, #fffbeb 0%, #eff6ff 100%); border:2px solid #fcd34d; border-radius:16px; padding:12px 14px; margin-bottom:14px;">
-            <div style="font-size:13px; font-weight:900; color:#92400e; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
-                <span>🏆 SİNOTEST KUPA & DERS ÖDÜL VİTRİNİ</span>
-                <span style="font-size:11.5px; color:#1e40af; font-weight:800;">⚡ Her çözdüğün etkinlik Kupa kazandırır • Her derste 20 tamamlamada Özel Ödül açılır!</span>
-            </div>
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(155px, 1fr)); gap:8px;">
-                {ders_kartlari_html}
-            </div>
-            {kazanilan_liste_html}
-        </div>
-        """, unsafe_allow_html=True)
+        vitrin_html = (
+            '<div style="background:linear-gradient(135deg, #fffbeb 0%, #eff6ff 100%); border:2px solid #fcd34d; border-radius:16px; padding:12px 14px; margin-bottom:14px;">'
+            '<div style="font-size:13px; font-weight:900; color:#92400e; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">'
+            '<span>🏆 SİNOTEST KUPA & DERS ÖDÜL VİTRİNİ</span>'
+            '<span style="font-size:11.5px; color:#1e40af; font-weight:800;">⚡ Her çözdüğün etkinlik Kupa kazandırır • Her derste 20 tamamlamada Özel Ödül açılır!</span>'
+            '</div>'
+            f'<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(155px, 1fr)); gap:8px;">{ders_kartlari_html}</div>'
+            f'{kazanilan_liste_html}'
+            '</div>'
+        )
+        st.markdown(vitrin_html, unsafe_allow_html=True)
 
         # 1) ÜST 3'LÜ SEGMENTED BAR: [⚡ Hızlı test | 📚 Kaynağımdan | 📷 Fotoğraftan]
         t_col1, t_col2, t_col3 = st.columns(3, gap="small")
