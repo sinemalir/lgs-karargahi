@@ -428,7 +428,7 @@ def generate_custom_lgs_test(ders, konu, zorluk, soru_sayisi=5):
 
 
 def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
-    """6 farklı çalışma türü (Test Oluştur, Flash Kart, Boşluk Doldur, Doğru/Yanlış, Eşleştir, Karıştırma) için içerik üretir."""
+    """6 farklı çalışma türü (Test Oluştur, Flash Kart, Boşluk Doldur, Doğru/Yanlış, Eşleştir, Karıştırma) için garantili ve normalize edilmiş içerik üretir."""
     adet = int(adet)
     if calisma_turu == "Test Oluştur":
         return generate_custom_lgs_test(ders, konu, zorluk, adet)
@@ -438,60 +438,129 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
             f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET arkalı-önlü bilgi kartı (Flash Kart) hazırla. "
             "Kesinlikle $ işareti veya LaTeX kodu kullanma (m², cm², 2⁵, √3 gibi düz Unicode kullan). "
             "SADECE geçerli bir JSON dizisi döndür:\n"
-            '[{"soru": "Kartın ön yüzündeki kavram veya kritik LGS sorusu?", "cevap": "Kartın arka yüzündeki net, akılda kalıcı cevap ve püf noktası."}]'
+            '[\n'
+            '  {\n'
+            '    "kazanim": "Alt kazanım / kavram adı",\n'
+            '    "on_yuz": "Kartın ön yüzündeki net kavram veya kritik LGS sorusu",\n'
+            '    "arka_yuz": "Kartın arka yüzündeki net, akılda kalıcı cevap ve konu özeti",\n'
+            '    "ipucu": "LGS sınavında dikkat edilmesi gereken püf noktası"\n'
+            '  }\n'
+            ']'
         )
         raw = ask_gemini(prompt)
+        veriler = []
         try:
             m = re.search(r"\[.*\]", raw, re.DOTALL)
             if m:
-                return clean_math_text(json.loads(m.group(0)))
+                veriler = clean_math_text(json.loads(m.group(0)))
         except Exception:
-            pass
-        return []
+            veriler = []
+        norm = []
+        for idx, item in enumerate(veriler if isinstance(veriler, list) else [], 1):
+            if not isinstance(item, dict):
+                continue
+            on_yuz = item.get("on_yuz") or item.get("soru") or item.get("kavram") or item.get("front") or ""
+            arka_yuz = item.get("arka_yuz") or item.get("cevap") or item.get("aciklama") or item.get("back") or ""
+            if on_yuz and arka_yuz:
+                norm.append({
+                    "kazanim": item.get("kazanim") or f"{konu} • Kart {idx}",
+                    "on_yuz": str(on_yuz).strip(),
+                    "arka_yuz": str(arka_yuz).strip(),
+                    "ipucu": str(item.get("ipucu") or "Bu kavram LGS'de öncüllü sorularda sıkça karşımıza çıkar.").strip()
+                })
+        return norm
 
     elif calisma_turu == "Boşluk Doldur":
         prompt = (
             f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET boşluk doldurma sorusu hazırla. "
-            "Her cümlede kritik kavramın yerine '_______' koy ve 4 seçenek ver (dogru_index: 0, 1, 2 veya 3). "
+            "Şık (A, B, C, D) KULLANMA! Her cümlede tek bir kritik kavramın yerine '_______' koy ve doğru kelimeyi 'cevap' alanına yaz. "
             "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
             '[\n'
             '  {\n'
-            '    "cumle": "DNA\'nın görev birimine _______ denir.",\n'
-            '    "secenekler": ["A) Gen", "B) Nükleotid", "C) Kromozom", "D) Hücre"],\n'
-            '    "dogru_index": 0,\n'
-            '    "cozum": "Kısa ve net açıklama..."\n'
+            '    "kazanim": "İlgili alt konu",\n'
+            '    "cumle": "Cümlenin başı _______ cümlenin devamı.",\n'
+            '    "cevap": "Boşluğa gelecek doğru kavram",\n'
+            '    "ipucu": "Kavramı hatırlatacak kısa ipucu",\n'
+            '    "cozum": "Neden bu kavramın geldiğinin kısa açıklaması"\n'
             '  }\n'
             ']'
         )
         raw = ask_gemini(prompt)
+        veriler = []
         try:
             m = re.search(r"\[.*\]", raw, re.DOTALL)
             if m:
-                return clean_math_text(json.loads(m.group(0)))
+                veriler = clean_math_text(json.loads(m.group(0)))
         except Exception:
-            pass
-        return []
+            veriler = []
+        norm = []
+        for idx, item in enumerate(veriler if isinstance(veriler, list) else [], 1):
+            if not isinstance(item, dict):
+                continue
+            cumle = item.get("cumle") or item.get("soru") or item.get("ifade") or ""
+            cevap = item.get("cevap") or item.get("dogru_cevap") or ""
+            if not cevap and isinstance(item.get("secenekler"), list):
+                d_i = int(item.get("dogru_index", 0))
+                if 0 <= d_i < len(item["secenekler"]):
+                    cevap = re.sub(r"^[A-Da-d][\)\.\-\s]+", "", str(item["secenekler"][d_i])).strip()
+            if "___" not in str(cumle) and cevap and str(cevap) in str(cumle):
+                cumle = str(cumle).replace(str(cevap), "_______", 1)
+            elif "___" not in str(cumle):
+                cumle = str(cumle).strip() + " (_______)"
+            if cumle and cevap:
+                norm.append({
+                    "kazanim": item.get("kazanim") or f"{konu} • Soru {idx}",
+                    "cumle": str(cumle).strip(),
+                    "cevap": str(cevap).strip(),
+                    "ipucu": str(item.get("ipucu") or "Cümledeki anahtar kelimelere dikkat et.").strip(),
+                    "cozum": str(item.get("cozum") or f"Boşluğa '{cevap}' gelmelidir.").strip()
+                })
+        return norm
 
     elif calisma_turu == "Doğru/Yanlış":
         prompt = (
-            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET Doğru/Yanlış sorusu hazırla. "
+            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET Doğru/Yanlış etkinliği ifadesi hazırla. "
+            "İfadelerin yaklaşık yarısı Doğru (true), yarısı Yanlış (false) olsun. "
             "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
             '[\n'
             '  {\n'
-            '    "ifade": "Basınç, birim yüzeye dik olarak etki eden kuvvettir.",\n'
+            '    "kazanim": "İlgili alt konu",\n'
+            '    "ifade": "Net ve anlaşılır bilgi cümlesi.",\n'
             '    "dogru_mu": true,\n'
-            '    "cozum": "Neden doğru veya yanlış olduğunun kısa açıklaması..."\n'
+            '    "ipucu": "Kısa ipucu",\n'
+            '    "cozum": "Neden Doğru veya Yanlış olduğunun net açıklaması"\n'
             '  }\n'
             ']'
         )
         raw = ask_gemini(prompt)
+        veriler = []
         try:
             m = re.search(r"\[.*\]", raw, re.DOTALL)
             if m:
-                return clean_math_text(json.loads(m.group(0)))
+                veriler = clean_math_text(json.loads(m.group(0)))
         except Exception:
-            pass
-        return []
+            veriler = []
+        norm = []
+        for idx, item in enumerate(veriler if isinstance(veriler, list) else [], 1):
+            if not isinstance(item, dict):
+                continue
+            ifade = item.get("ifade") or item.get("soru") or item.get("cumle") or ""
+            dogru_mu_raw = item.get("dogru_mu")
+            if isinstance(dogru_mu_raw, bool):
+                dogru_mu = dogru_mu_raw
+            elif isinstance(dogru_mu_raw, str):
+                dogru_mu = dogru_mu_raw.strip().lower() in ("true", "doğru", "dogru", "d", "1", "evet")
+            else:
+                dogru_mu = (int(item.get("dogru_index", 0)) == 0)
+            if ifade:
+                norm.append({
+                    "kazanim": item.get("kazanim") or f"{konu} • Madde {idx}",
+                    "ifade": str(ifade).strip(),
+                    "dogru_mu": bool(dogru_mu),
+                    "ipucu": str(item.get("ipucu") or "Kavramın tanımını ve istisnalarını düşün.").strip(),
+                    "cozum": str(item.get("cozum") or "").strip()
+                })
+        return norm
 
     elif calisma_turu == "Eşleştir":
         cift_sayisi = min(adet, 10)
@@ -499,40 +568,77 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
             f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {cift_sayisi} ADET kavram-açıklama eşleştirme çifti hazırla. "
             "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
             '[\n'
-            '  {"kavram": "Kısa Kavram / Terim / İşlem", "karsilik": "Bunun doğru karşılığı veya tanımı"}\n'
-            ']'
-        )
-        raw = ask_gemini(prompt)
-        try:
-            m = re.search(r"\[.*\]", raw, re.DOTALL)
-            if m:
-                return clean_math_text(json.loads(m.group(0)))
-        except Exception:
-            pass
-        return []
-
-    elif calisma_turu == "Karıştırma":
-        prompt = (
-            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 10)} ADET sıralama / karıştırma sorusu hazırla. "
-            "Öğrenciye karışık sırada verilen adımların, kavramların veya kelimelerin doğru sıralanmış halini bulduracak 4 şıklı soru üret. "
-            "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
-            '[\n'
             '  {\n'
-            '    "soru": "Karışık verilen [ I. ... | II. ... | III. ... ] ifadelerinin doğru sıralanışı veya birleşimi hangisidir?",\n'
-            '    "secenekler": ["A) ...", "B) ...", "C) ...", "D) ..."],\n'
-            '    "dogru_index": 0,\n'
-            '    "cozum": "Doğru sıralamanın açıklaması..."\n'
+            '    "sol": "Kavram / Terim / Örnek Cümle",\n'
+            '    "sag": "Tam Karşılığı / Tanımı / Anlam Özelliği",\n'
+            '    "aciklama": "Neden eşleştiğinin kısa açıklaması"\n'
             '  }\n'
             ']'
         )
         raw = ask_gemini(prompt)
+        veriler = []
         try:
             m = re.search(r"\[.*\]", raw, re.DOTALL)
             if m:
-                return clean_math_text(json.loads(m.group(0)))
+                veriler = clean_math_text(json.loads(m.group(0)))
         except Exception:
-            pass
-        return []
+            veriler = []
+        norm = []
+        for idx, item in enumerate(veriler if isinstance(veriler, list) else [], 1):
+            if not isinstance(item, dict):
+                continue
+            sol = item.get("sol") or item.get("kavram") or item.get("terim") or item.get("soru") or ""
+            sag = item.get("sag") or item.get("karsilik") or item.get("tanim") or item.get("cevap") or ""
+            if sol and sag:
+                norm.append({
+                    "sol": str(sol).strip(),
+                    "sag": str(sag).strip(),
+                    "aciklama": str(item.get("aciklama") or f"{sol} -> {sag}").strip()
+                })
+        return norm
+
+    elif calisma_turu == "Karıştırma":
+        prompt = (
+            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 10)} ADET interaktif 'Kelime / Adım Karıştırma (Sıraya Dizme)' etkinliği hazırla. "
+            "Kesinlikle A/B/C/D şıkkı KULLANMA! Her soruda öğrenciye bir yönerge/ipucu ('yonerge') ver ve doğru cümleyi, kuralı veya işlem sırasını oluşturan 4 ila 7 parçayı DOĞRU SIRASIYLA 'parcalar' dizisi olarak ver (sistem bunları ekranda karıştırıp öğrenciye tıklatarak sıraya dizdirecek). "
+            "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
+            '[\n'
+            '  {\n'
+            '    "kazanim": "İlgili alt konu",\n'
+            '    "yonerge": "Aşağıdaki karışık parçaları anlamlı ve kurallı bir cümle / doğru kural olacak şekilde sıraya dizin:",\n'
+            '    "parcalar": ["1. parça", "2. parça", "3. parça", "4. parça"],\n'
+            '    "ipucu": "İlk ve son parçaya dikkat et",\n'
+            '    "cozum": "Doğru diziliş ve açıklaması"\n'
+            '  }\n'
+            ']'
+        )
+        raw = ask_gemini(prompt)
+        veriler = []
+        try:
+            m = re.search(r"\[.*\]", raw, re.DOTALL)
+            if m:
+                veriler = clean_math_text(json.loads(m.group(0)))
+        except Exception:
+            veriler = []
+        norm = []
+        for idx, item in enumerate(veriler if isinstance(veriler, list) else [], 1):
+            if not isinstance(item, dict):
+                continue
+            parcalar = item.get("parcalar") or item.get("kelimeler") or item.get("adimlar") or []
+            if isinstance(parcalar, str):
+                parcalar = [p.strip() for p in parcalar.split() if p.strip()]
+            parcalar = [str(p).strip() for p in parcalar if str(p).strip()]
+            if len(parcalar) >= 2:
+                dogru_dizilis = " ".join(parcalar)
+                norm.append({
+                    "kazanim": item.get("kazanim") or f"{konu} • Etkinlik {idx}",
+                    "yonerge": str(item.get("yonerge") or item.get("soru") or "Karışık verilen parçaları doğru sırayla tıklayarak dizin:").strip(),
+                    "parcalar": parcalar,
+                    "dogru_dizilis": dogru_dizilis,
+                    "ipucu": str(item.get("ipucu") or "Anlam ve kural bütünlüğüne dikkat et.").strip(),
+                    "cozum": str(item.get("cozum") or f"Doğru sıralama: {dogru_dizilis}").strip()
+                })
+        return norm
 
     return []
 

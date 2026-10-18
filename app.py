@@ -2218,7 +2218,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
 
                 v_json = json.dumps(paket_veriler, ensure_ascii=False)
 
-                if tur_adi in ("Test Oluştur", "Boşluk Doldur", "Doğru/Yanlış", "Karıştırma"):
+                if tur_adi == "Test Oluştur":
                     st.caption("👇 Önce tüm sorularda cevabını işaretle (seçtiğin şık mavi yanar). Bitirince en alttaki **'🏁 Testi Bitir ve Gönder'** butonuna basarak doğru/yanlış sonuçlarını ve çözümleri gör!")
                     optik_html = f"""
                     <style>
@@ -2350,10 +2350,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         .ct-box {{ display: none; margin-top: 10px; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }}
                         .ct-hint-box {{ background: #fffbeb; color: #78350f; border-left: 5px solid #f59e0b; }}
                         .ct-sol-box {{ background: #f0fdf4; color: #166534; border-left: 5px solid #16a34a; }}
-                        .ct-submit-bar {{
-                            margin: 18px 0 10px 0;
-                            text-align: center;
-                        }}
+                        .ct-submit-bar {{ margin: 18px 0 10px 0; text-align: center; }}
                         .ct-submit-btn {{
                             width: 100%;
                             background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
@@ -2365,19 +2362,12 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             font-weight: 900;
                             cursor: pointer;
                             box-shadow: 0 6px 18px rgba(22, 163, 74, 0.32);
-                            transition: all 0.2s ease;
                         }}
-                        .ct-submit-btn:hover {{ transform: translateY(-1px); }}
-                        .ct-submit-btn:disabled {{
-                            background: #64748b;
-                            cursor: default;
-                            transform: none;
-                            box-shadow: none;
-                        }}
+                        .ct-submit-btn:disabled {{ background: #64748b; cursor: default; box-shadow: none; }}
                     </style>
                     <div class="ct-wrap">
                         <div class="ct-scorebar" id="ct-top-bar">
-                            <span>📝 SinoTest Optik Durumu ({tur_adi})</span>
+                            <span>📝 SinoTest Optik Durumu (Test)</span>
                             <span id="ct-score">İşaretlenen: 0 / {len(paket_veriler)}</span>
                         </div>
                         <div id="ct-root"></div>
@@ -2396,6 +2386,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             card.className = 'ct-card';
                             const stdNo = 'Soru ' + (qIdx + 1);
                             const topicTxt = q.kazanim || '{paket_baslik}';
+                            const qText = q.soru || q.cumle || q.ifade || '';
                             const opts = (q.secenekler || []).map((opt, oIdx) =>
                                 `<button class="ct-opt" id="ctopt-${{qIdx}}-${{oIdx}}" data-raw="${{encodeURIComponent(opt)}}" onclick="selCtOpt(${{qIdx}}, ${{oIdx}})">${{opt}}</button>`
                             ).join('');
@@ -2404,14 +2395,14 @@ elif menu == "🤖 Soru Çöz & İkiz":
                                     <span class="ct-num">📌 ${{stdNo}}</span>
                                     <span class="ct-topic">🎯 ${{topicTxt}}</span>
                                 </div>
-                                <div class="ct-qtext">${{q.soru || ''}}</div>
+                                <div class="ct-qtext">${{qText}}</div>
                                 <div class="ct-opts">${{opts}}</div>
                                 <div class="ct-status" id="ctst-${{qIdx}}"></div>
                                 <div class="ct-actions">
                                     <button class="ct-act-btn ct-btn-hint" onclick="togCtBox('cthint-${{qIdx}}')"><span>💡 İpucu Göster</span></button>
                                     <button class="ct-act-btn ct-btn-sol" id="ctbtn-sol-${{qIdx}}" onclick="togCtBox('ctsol-${{qIdx}}')"><span>📖 Adım Adım Çözümü Gör</span></button>
                                 </div>
-                                <div class="ct-box ct-hint-box" id="cthint-${{qIdx}}"><b>💡 İpucu:</b> ${{q.ipucu || ''}}</div>
+                                <div class="ct-box ct-hint-box" id="cthint-${{qIdx}}"><b>💡 İpucu:</b> ${{q.ipucu || 'Sorudaki anahtar kavramlara dikkat et.'}}</div>
                                 <div class="ct-box ct-sol-box" id="ctsol-${{qIdx}}"><b>✅ Adım Adım Çözüm:</b> ${{q.cozum || ''}}</div>
                             `;
                             rt.appendChild(card);
@@ -2440,10 +2431,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         window.submitCtTest = function() {{
                             if (isSubmitted) return;
                             isSubmitted = true;
-                            let scD = 0;
-                            let scY = 0;
-                            let scB = 0;
-
+                            let scD = 0, scY = 0, scB = 0;
                             qs.forEach((q, qIdx) => {{
                                 const cIdx = q.dogru_index || 0;
                                 const uIdx = userChoices[qIdx];
@@ -2451,7 +2439,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                                 const cBtn = document.getElementById(`ctopt-${{qIdx}}-${{cIdx}}`);
                                 const stEl = document.getElementById(`ctst-${{qIdx}}`);
                                 const solBtn = document.getElementById(`ctbtn-sol-${{qIdx}}`);
-                                const dogruEtiket = (optList.length === 2) ? (optList[cIdx] || '') : (harfler[cIdx] || '');
+                                const dogruEtiket = harfler[cIdx] || '';
 
                                 for (let i = 0; i < optList.length; i++) {{
                                     const b = document.getElementById(`ctopt-${{qIdx}}-${{i}}`);
@@ -2477,11 +2465,11 @@ elif menu == "🤖 Soru Çöz & İkiz":
                                         uBtn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
                                     }}
                                     stEl.className = 'ct-status ok';
-                                    stEl.innerHTML = `✅ <b>DOĞRU!</b> (${{dogruEtiket}}) — Alttaki butondan adım adım çözümü görebilirsin.`;
+                                    stEl.innerHTML = `✅ <b>DOĞRU!</b> (${{dogruEtiket}} şıkkı) — Alttaki butondan adım adım çözümü görebilirsin.`;
                                 }} else {{
                                     scY++;
                                     const uBtn = document.getElementById(`ctopt-${{qIdx}}-${{uIdx}}`);
-                                    const secEtiket = (optList.length === 2) ? (optList[uIdx] || '') : (harfler[uIdx] || '');
+                                    const secEtiket = harfler[uIdx] || '';
                                     if (uBtn) {{
                                         uBtn.classList.add('wrong');
                                         uBtn.innerHTML += ' &nbsp; ❌ <b>Senin Seçimin</b>';
@@ -2512,6 +2500,445 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     """
                     components.html(optik_html, height=min(860, len(paket_veriler) * 350 + 130), scrolling=True)
 
+                elif tur_adi == "Boşluk Doldur":
+                    st.caption("👇 Cümledeki boşluğa tıklayıp üstteki **Kelime Havuzu**'ndan kavram seçebilir veya kutucuğa doğrudan yazabilirsin. Bitirince en alttaki **'🏁 Boşlukları Bitir ve Gönder'** butonuna bas!")
+                    bosluk_html = f"""
+                    <style>
+                        * {{ box-sizing: border-box; }}
+                        body {{ margin: 0; padding: 0; background: transparent; font-family: 'Inter', -apple-system, sans-serif; }}
+                        .bd-wrap {{ padding: 4px 2px; }}
+                        .bd-bar {{
+                            background: linear-gradient(90deg, #1d4ed8 0%, #4f46e5 100%);
+                            color: white;
+                            padding: 12px 16px;
+                            border-radius: 14px;
+                            font-weight: 800;
+                            font-size: 13.5px;
+                            margin-bottom: 12px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            flex-wrap: wrap;
+                            gap: 8px;
+                        }}
+                        .bd-bank {{
+                            background: #eff6ff;
+                            border: 2px dashed #60a5fa;
+                            border-radius: 16px;
+                            padding: 12px 14px;
+                            margin-bottom: 16px;
+                        }}
+                        .bd-bank-title {{ font-size: 12.5px; font-weight: 800; color: #1e40af; margin-bottom: 8px; }}
+                        .bd-words {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+                        .bd-word {{
+                            background: #ffffff;
+                            border: 2px solid #93c5fd;
+                            color: #1d4ed8;
+                            font-weight: 800;
+                            font-size: 13px;
+                            padding: 7px 13px;
+                            border-radius: 99px;
+                            cursor: pointer;
+                            transition: all 0.15s ease;
+                        }}
+                        .bd-word:hover {{ background: #2563eb; color: #ffffff; border-color: #1e3a8a; }}
+                        .bd-card {{
+                            background: #ffffff;
+                            border: 2px solid #e2e8f0;
+                            border-radius: 16px;
+                            padding: 15px;
+                            margin-bottom: 12px;
+                            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+                        }}
+                        .bd-head {{ display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }}
+                        .bd-num {{
+                            background: linear-gradient(90deg, #2563eb, #7c3aed);
+                            color: white;
+                            font-weight: 800;
+                            font-size: 12.5px;
+                            padding: 6px 12px;
+                            border-radius: 10px;
+                            white-space: nowrap;
+                        }}
+                        .bd-topic {{
+                            background: #f1f5f9;
+                            color: #334155;
+                            font-size: 12px;
+                            font-weight: 700;
+                            padding: 6px 10px;
+                            border-radius: 10px;
+                            flex: 1;
+                        }}
+                        .bd-sentence {{
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: #0f172a;
+                            line-height: 1.8;
+                        }}
+                        .bd-input {{
+                            display: inline-block;
+                            min-width: 150px;
+                            padding: 6px 12px;
+                            margin: 0 4px;
+                            border: 2px solid #2563eb;
+                            border-radius: 10px;
+                            background: #eff6ff;
+                            color: #1e3a8a;
+                            font-weight: 800;
+                            font-size: 14px;
+                            text-align: center;
+                            outline: none;
+                        }}
+                        .bd-input:focus, .bd-input.active-slot {{
+                            background: #dbeafe;
+                            border-color: #1d4ed8;
+                            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
+                        }}
+                        .bd-input.correct {{ background: #dcfce7 !important; border-color: #16a34a !important; color: #14532d !important; }}
+                        .bd-input.wrong {{ background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important; }}
+                        .bd-fb {{ display: none; margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; }}
+                        .bd-fb.ok {{ background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }}
+                        .bd-fb.err {{ background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }}
+                        .bd-submit {{
+                            width: 100%;
+                            background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+                            color: white;
+                            border: none;
+                            padding: 15px;
+                            border-radius: 16px;
+                            font-size: 15.5px;
+                            font-weight: 900;
+                            cursor: pointer;
+                            margin-top: 10px;
+                            box-shadow: 0 6px 16px rgba(22, 163, 74, 0.28);
+                        }}
+                        .bd-submit:disabled {{ background: #64748b; cursor: default; box-shadow: none; }}
+                    </style>
+                    <div class="bd-wrap">
+                        <div class="bd-bar" id="bd-top">
+                            <span>✏️ Boşluk Doldurma Etkinliği</span>
+                            <span id="bd-score">Doldurulan: 0 / {len(paket_veriler)}</span>
+                        </div>
+                        <div class="bd-bank">
+                            <div class="bd-bank-title">🎯 Kelime Havuzu (Önce aşağıdaki bir boşluğa tıkla, sonra buradaki kelimeye dokun veya klavyeyle yaz):</div>
+                            <div class="bd-words" id="bd-words"></div>
+                        </div>
+                        <div id="bd-root"></div>
+                        <button class="bd-submit" id="bd-finish" onclick="gradeBd()">🏁 Boşlukları Bitir ve Gönder (Sonuçları Gör)</button>
+                    </div>
+                    <script>
+                        const rawItems = {v_json};
+                        const items = rawItems.map((it, idx) => {{
+                            let ans = it.cevap || it.dogru_cevap || '';
+                            if (!ans && Array.isArray(it.secenekler)) {{
+                                const di = it.dogru_index || 0;
+                                ans = String(it.secenekler[di] || '').replace(/^[A-Da-d][\\)\\.\\-\\s]+/, '').trim();
+                            }}
+                            let sent = it.cumle || it.soru || it.ifade || '';
+                            if (!sent.includes('___')) sent = sent + ' _______';
+                            return {{
+                                kazanim: it.kazanim || ('Soru ' + (idx + 1)),
+                                cumle: sent,
+                                cevap: ans,
+                                ipucu: it.ipucu || '',
+                                cozum: it.cozum || ''
+                            }};
+                        }});
+
+                        let activeSlot = 0;
+                        let isSubmitted = false;
+
+                        const wordsPool = items.map(x => x.cevap).filter(Boolean);
+                        for (let i = wordsPool.length - 1; i > 0; i--) {{
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [wordsPool[i], wordsPool[j]] = [wordsPool[j], wordsPool[i]];
+                        }}
+                        const wContainer = document.getElementById('bd-words');
+                        wordsPool.forEach(w => {{
+                            const b = document.createElement('button');
+                            b.className = 'bd-word';
+                            b.textContent = w;
+                            b.onclick = function() {{
+                                if (isSubmitted) return;
+                                const inp = document.getElementById('bdinp-' + activeSlot);
+                                if (inp) {{
+                                    inp.value = w;
+                                    updateBdCount();
+                                    if (activeSlot + 1 < items.length) setActiveSlot(activeSlot + 1);
+                                }}
+                            }};
+                            wContainer.appendChild(b);
+                        }});
+
+                        const root = document.getElementById('bd-root');
+                        items.forEach((it, idx) => {{
+                            const card = document.createElement('div');
+                            card.className = 'bd-card';
+                            const parts = it.cumle.split(/_{2,}/);
+                            const inputHtml = `<input type="text" class="bd-input ${{idx === 0 ? 'active-slot' : ''}}" id="bdinp-${{idx}}" placeholder="Boşluk ${{idx + 1}}..." onfocus="setActiveSlot(${{idx}})" oninput="updateBdCount()" />`;
+                            const fullSentence = parts.length > 1 ? (parts[0] + inputHtml + parts.slice(1).join(' ')) : (it.cumle + ' ' + inputHtml);
+                            card.innerHTML = `
+                                <div class="bd-head">
+                                    <span class="bd-num">📌 Soru ${{idx + 1}}</span>
+                                    <span class="bd-topic">🎯 ${{it.kazanim}}</span>
+                                </div>
+                                <div class="bd-sentence">${{fullSentence}}</div>
+                                <div class="bd-fb" id="bdfb-${{idx}}"></div>
+                            `;
+                            root.appendChild(card);
+                        }});
+
+                        window.setActiveSlot = function(idx) {{
+                            activeSlot = idx;
+                            items.forEach((_, i) => {{
+                                const el = document.getElementById('bdinp-' + i);
+                                if (el) el.classList.toggle('active-slot', i === idx);
+                            }});
+                        }};
+
+                        window.updateBdCount = function() {{
+                            let filled = 0;
+                            items.forEach((_, i) => {{
+                                const el = document.getElementById('bdinp-' + i);
+                                if (el && el.value.trim() !== '') filled++;
+                            }});
+                            document.getElementById('bd-score').innerHTML = `Doldurulan: ${{filled}} / ${{items.length}}`;
+                        }};
+
+                        function normTr(s) {{
+                            return String(s || '').trim().toLocaleLowerCase('tr-TR').replace(/[.,!?;:'"()-]/g, '').replace(/\\s+/g, ' ');
+                        }}
+
+                        window.gradeBd = function() {{
+                            if (isSubmitted) return;
+                            isSubmitted = true;
+                            let d = 0, y = 0, b = 0;
+                            items.forEach((it, i) => {{
+                                const inp = document.getElementById('bdinp-' + i);
+                                const fb = document.getElementById('bdfb-' + i);
+                                const uVal = inp ? inp.value.trim() : '';
+                                if (inp) {{
+                                    inp.disabled = true;
+                                    inp.classList.remove('active-slot');
+                                }}
+                                if (!uVal) {{
+                                    b++;
+                                    if (inp) inp.classList.add('wrong');
+                                    fb.className = 'bd-fb err';
+                                    fb.innerHTML = `⚪ <b>BOŞ BIRAKILDI!</b> Doğru Kavram: <b>${{it.cevap}}</b><br><span style="font-weight:600;">💡 ${{it.cozum}}</span>`;
+                                }} else if (normTr(uVal) === normTr(it.cevap)) {{
+                                    d++;
+                                    if (inp) inp.classList.add('correct');
+                                    fb.className = 'bd-fb ok';
+                                    fb.innerHTML = `✅ <b>DOĞRU! (${{it.cevap}})</b><br><span style="font-weight:600;">💡 ${{it.cozum}}</span>`;
+                                }} else {{
+                                    y++;
+                                    if (inp) inp.classList.add('wrong');
+                                    fb.className = 'bd-fb err';
+                                    fb.innerHTML = `❌ <b>YANLIŞ!</b> Yazdığın: <b>${{uVal}}</b> &nbsp;|&nbsp; Doğru Kavram: <b>${{it.cevap}}</b><br><span style="font-weight:600;">💡 ${{it.cozum}}</span>`;
+                                }}
+                                fb.style.display = 'block';
+                            }});
+                            document.getElementById('bd-score').innerHTML = `✅ Doğru: ${{d}} | ❌ Yanlış: ${{y}} | ⚪ Boş: ${{b}}`;
+                            const btn = document.getElementById('bd-finish');
+                            btn.disabled = true;
+                            btn.innerHTML = `✅ Tamamlandı — Doğru: ${{d}} | Yanlış: ${{y}} | Boş: ${{b}}`;
+                            document.getElementById('bd-top').scrollIntoView({{ behavior: 'smooth' }});
+                        }};
+                    </script>
+                    """
+                    components.html(bosluk_html, height=min(860, len(paket_veriler) * 190 + 220), scrolling=True)
+
+                elif tur_adi == "Doğru/Yanlış":
+                    st.caption("👇 Her cümlenin altındaki **'✅ DOĞRU'** veya **'❌ YANLIŞ'** butonuna bas (seçtiğin mavi yanar). Bitirince en alttaki **'🏁 Doğru/Yanlış'ı Bitir ve Gönder'** butonuna bas!")
+                    dy_html = f"""
+                    <style>
+                        * {{ box-sizing: border-box; }}
+                        body {{ margin: 0; padding: 0; background: transparent; font-family: 'Inter', -apple-system, sans-serif; }}
+                        .dy-wrap {{ padding: 4px 2px; }}
+                        .dy-bar {{
+                            background: linear-gradient(90deg, #1d4ed8 0%, #4f46e5 100%);
+                            color: white;
+                            padding: 12px 16px;
+                            border-radius: 14px;
+                            font-weight: 800;
+                            font-size: 13.5px;
+                            margin-bottom: 14px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }}
+                        .dy-card {{
+                            background: #ffffff;
+                            border: 2px solid #e2e8f0;
+                            border-radius: 16px;
+                            padding: 16px;
+                            margin-bottom: 12px;
+                            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+                        }}
+                        .dy-head {{ display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }}
+                        .dy-num {{
+                            background: linear-gradient(90deg, #2563eb, #7c3aed);
+                            color: white;
+                            font-weight: 800;
+                            font-size: 12.5px;
+                            padding: 6px 12px;
+                            border-radius: 10px;
+                        }}
+                        .dy-topic {{
+                            background: #eff6ff;
+                            color: #1d4ed8;
+                            font-size: 12px;
+                            font-weight: 700;
+                            padding: 6px 10px;
+                            border-radius: 10px;
+                            flex: 1;
+                        }}
+                        .dy-text {{
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: #0f172a;
+                            line-height: 1.55;
+                            margin-bottom: 12px;
+                        }}
+                        .dy-btns {{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }}
+                        .dy-btn {{
+                            background: #f8fafc;
+                            border: 2px solid #cbd5e1;
+                            border-radius: 12px;
+                            padding: 11px 14px;
+                            font-size: 14px;
+                            font-weight: 800;
+                            color: #334155;
+                            cursor: pointer;
+                            transition: all 0.15s ease;
+                        }}
+                        .dy-btn:hover {{ border-color: #3b82f6; background: #eff6ff; }}
+                        .dy-btn.selected {{
+                            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+                            border-color: #1e3a8a !important;
+                            color: #ffffff !important;
+                            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+                        }}
+                        .dy-btn.correct {{ background: #dcfce7 !important; border-color: #16a34a !important; color: #14532d !important; }}
+                        .dy-btn.wrong {{ background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important; }}
+                        .dy-fb {{ display: none; margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; }}
+                        .dy-fb.ok {{ background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }}
+                        .dy-fb.err {{ background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }}
+                        .dy-submit {{
+                            width: 100%;
+                            background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+                            color: white;
+                            border: none;
+                            padding: 15px;
+                            border-radius: 16px;
+                            font-size: 15.5px;
+                            font-weight: 900;
+                            cursor: pointer;
+                            margin-top: 10px;
+                        }}
+                        .dy-submit:disabled {{ background: #64748b; cursor: default; }}
+                    </style>
+                    <div class="dy-wrap">
+                        <div class="dy-bar" id="dy-top">
+                            <span>✅ Doğru / Yanlış Etkinliği</span>
+                            <span id="dy-score">İşaretlenen: 0 / {len(paket_veriler)}</span>
+                        </div>
+                        <div id="dy-root"></div>
+                        <button class="dy-submit" id="dy-finish" onclick="gradeDy()">🏁 Doğru/Yanlış'ı Bitir ve Gönder</button>
+                    </div>
+                    <script>
+                        const rawDy = {v_json};
+                        const dyItems = rawDy.map((it, idx) => {{
+                            const txt = it.ifade || it.soru || it.cumle || '';
+                            let isTrue = true;
+                            if (typeof it.dogru_mu === 'boolean') isTrue = it.dogru_mu;
+                            else if (typeof it.dogru_index === 'number') isTrue = (it.dogru_index === 0);
+                            return {{
+                                kazanim: it.kazanim || ('Madde ' + (idx + 1)),
+                                ifade: txt,
+                                dogru_mu: isTrue,
+                                cozum: it.cozum || ''
+                            }};
+                        }});
+                        const choices = {{}};
+                        let submitted = false;
+                        const root = document.getElementById('dy-root');
+                        dyItems.forEach((it, idx) => {{
+                            const card = document.createElement('div');
+                            card.className = 'dy-card';
+                            card.innerHTML = `
+                                <div class="dy-head">
+                                    <span class="dy-num">📌 Madde ${{idx + 1}}</span>
+                                    <span class="dy-topic">🎯 ${{it.kazanim}}</span>
+                                </div>
+                                <div class="dy-text">${{it.ifade}}</div>
+                                <div class="dy-btns">
+                                    <button class="dy-btn" id="dybtn-${{idx}}-true" onclick="selDy(${{idx}}, true)">✅ DOĞRU</button>
+                                    <button class="dy-btn" id="dybtn-${{idx}}-false" onclick="selDy(${{idx}}, false)">❌ YANLIŞ</button>
+                                </div>
+                                <div class="dy-fb" id="dyfb-${{idx}}"></div>
+                            `;
+                            root.appendChild(card);
+                        }});
+
+                        window.selDy = function(idx, val) {{
+                            if (submitted) return;
+                            choices[idx] = val;
+                            const bT = document.getElementById(`dybtn-${{idx}}-true`);
+                            const bF = document.getElementById(`dybtn-${{idx}}-false`);
+                            bT.classList.toggle('selected', val === true);
+                            bF.classList.toggle('selected', val === false);
+                            bT.innerHTML = (val === true ? '✓ ' : '') + '✅ DOĞRU';
+                            bF.innerHTML = (val === false ? '✓ ' : '') + '❌ YANLIŞ';
+                            document.getElementById('dy-score').innerHTML = `İşaretlenen: ${{Object.keys(choices).length}} / ${{dyItems.length}}`;
+                        }};
+
+                        window.gradeDy = function() {{
+                            if (submitted) return;
+                            submitted = true;
+                            let d = 0, y = 0, b = 0;
+                            dyItems.forEach((it, idx) => {{
+                                const uVal = choices[idx];
+                                const cVal = it.dogru_mu;
+                                const bT = document.getElementById(`dybtn-${{idx}}-true`);
+                                const bF = document.getElementById(`dybtn-${{idx}}-false`);
+                                const fb = document.getElementById(`dyfb-${{idx}}`);
+                                bT.classList.remove('selected');
+                                bF.classList.remove('selected');
+                                const cBtn = cVal ? bT : bF;
+                                const cLabel = cVal ? 'DOĞRU' : 'YANLIŞ';
+
+                                if (uVal === undefined) {{
+                                    b++;
+                                    cBtn.classList.add('correct');
+                                    fb.className = 'dy-fb err';
+                                    fb.innerHTML = `⚪ <b>BOŞ BIRAKILDI!</b> Doğru Cevap: <b>${{cLabel}}</b><br><span style="font-weight:600;">💡 ${{it.cozum}}</span>`;
+                                }} else if (uVal === cVal) {{
+                                    d++;
+                                    cBtn.classList.add('correct');
+                                    fb.className = 'dy-fb ok';
+                                    fb.innerHTML = `✅ <b>TEBRİKLER, DOĞRU! (${{cLabel}})</b><br><span style="font-weight:600;">💡 ${{it.cozum}}</span>`;
+                                }} else {{
+                                    y++;
+                                    const uBtn = uVal ? bT : bF;
+                                    uBtn.classList.add('wrong');
+                                    cBtn.classList.add('correct');
+                                    fb.className = 'dy-fb err';
+                                    fb.innerHTML = `❌ <b>YANLIŞ!</b> Doğru Cevap: <b>${{cLabel}}</b><br><span style="font-weight:600;">💡 ${{it.cozum}}</span>`;
+                                }}
+                                fb.style.display = 'block';
+                            }});
+                            document.getElementById('dy-score').innerHTML = `✅ Doğru: ${{d}} | ❌ Yanlış: ${{y}} | ⚪ Boş: ${{b}}`;
+                            const fBtn = document.getElementById('dy-finish');
+                            fBtn.disabled = true;
+                            fBtn.innerHTML = `✅ Tamamlandı — Doğru: ${{d}} | Yanlış: ${{y}} | Boş: ${{b}}`;
+                            document.getElementById('dy-top').scrollIntoView({{ behavior: 'smooth' }});
+                        }};
+                    </script>
+                    """
+                    components.html(dy_html, height=min(860, len(paket_veriler) * 210 + 130), scrolling=True)
+
                 elif tur_adi == "Flash Kart":
                     st.caption("👇 Kartların üzerine tıklayarak arka yüzündeki **cevabı ve kritik LGS ipucunu** çevirip görebilirsin!")
                     flash_html = f"""
@@ -2524,7 +2951,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             border: 2px solid #93c5fd;
                             border-radius: 18px;
                             padding: 18px 16px;
-                            min-height: 175px;
+                            min-height: 185px;
                             cursor: pointer;
                             display: flex;
                             flex-direction: column;
@@ -2548,14 +2975,18 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             margin-bottom: 10px;
                         }}
                         .fc-item.flipped .fc-badge {{ background: #bbf7d0; color: #166534; }}
-                        .fc-body {{ font-size: 14.5px; font-weight: 700; color: #1e293b; line-height: 1.5; }}
-                        .fc-foot {{ font-size: 11.5px; color: #64748b; font-weight: 700; margin-top: 12px; text-align: right; }}
+                        .fc-body {{ font-size: 14.5px; font-weight: 700; color: #1e293b; line-height: 1.55; }}
+                        .fc-foot {{ font-size: 11.5px; color: #2563eb; font-weight: 800; margin-top: 12px; text-align: right; }}
                     </style>
                     <div class="fc-grid" id="fc-root"></div>
                     <script>
-                        const cards = {v_json};
+                        const rawCards = {v_json};
                         const root = document.getElementById('fc-root');
-                        cards.forEach((c, idx) => {{
+                        rawCards.forEach((c, idx) => {{
+                            const frontTxt = c.on_yuz || c.soru || c.kavram || c.front || '';
+                            const backTxt = c.arka_yuz || c.cevap || c.aciklama || c.back || '';
+                            const topicTxt = c.kazanim || ('Kart ' + (idx + 1));
+                            const hintTxt = c.ipucu || '';
                             const el = document.createElement('div');
                             el.className = 'fc-item';
                             el.onclick = function() {{
@@ -2564,19 +2995,19 @@ elif menu == "🤖 Soru Çöz & İkiz":
                                 const bdy = el.querySelector('.fc-body');
                                 const ft = el.querySelector('.fc-foot');
                                 if (isF) {{
-                                    bdg.innerHTML = '✅ CEVAP & ÖZET (' + (c.kazanim || 'Kazanım') + ')';
-                                    bdy.innerHTML = (c.arka_yuz || '') + (c.ipucu ? `<div style="margin-top:8px;font-size:12.5px;color:#15803d;">💡 <b>İpucu:</b> ${{c.ipucu}}</div>` : '');
-                                    ft.innerHTML = '🔄 Soruya dönmek için tıkla';
+                                    bdg.innerHTML = '✅ CEVAP & ÖZET • ' + topicTxt;
+                                    bdy.innerHTML = backTxt + (hintTxt ? `<div style="margin-top:8px;font-size:12.5px;color:#15803d;">💡 <b>Püf Noktası:</b> ${{hintTxt}}</div>` : '');
+                                    ft.innerHTML = '🔄 Ön yüze (soruya) dönmek için dokun';
                                 }} else {{
-                                    bdg.innerHTML = '🎴 KART ' + (idx + 1) + ' • ' + (c.kazanim || 'Kavram');
-                                    bdy.innerHTML = c.on_yuz || '';
+                                    bdg.innerHTML = '🎴 KART ' + (idx + 1) + ' • ' + topicTxt;
+                                    bdy.innerHTML = frontTxt;
                                     ft.innerHTML = '👆 Cevabı görmek için karta dokun';
                                 }}
                             }};
                             el.innerHTML = `
                                 <div>
-                                    <span class="fc-badge">🎴 KART ${{idx + 1}} • ${{c.kazanim || 'Kavram'}}</span>
-                                    <div class="fc-body">${{c.on_yuz || ''}}</div>
+                                    <span class="fc-badge">🎴 KART ${{idx + 1}} • ${{topicTxt}}</span>
+                                    <div class="fc-body">${{frontTxt}}</div>
                                 </div>
                                 <div class="fc-foot">👆 Cevabı görmek için karta dokun</div>
                             `;
@@ -2584,10 +3015,10 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         }});
                     </script>
                     """
-                    components.html(flash_html, height=min(760, ((len(paket_veriler) + 1) // 2) * 210 + 60), scrolling=True)
+                    components.html(flash_html, height=min(780, ((len(paket_veriler) + 1) // 2) * 220 + 60), scrolling=True)
 
                 elif tur_adi == "Eşleştir":
-                    st.caption("👇 Her kavramın karşısındaki açılır kutudan eşleşen ifadeyi seç ve en alttaki **'🏁 Eşleştirmeyi Bitir ve Gönder'** butonuna bas!")
+                    st.caption("👇 Her kavramın karşısındaki açılır kutudan eşleşen ifadeyi seç (seçtiğin mavi yanar) ve en alttaki **'🏁 Eşleştirmeyi Bitir ve Gönder'** butonuna bas!")
                     eslestir_html = f"""
                     <style>
                         * {{ box-sizing: border-box; }}
@@ -2608,13 +3039,13 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             background: #ffffff;
                             border: 2px solid #e2e8f0;
                             border-radius: 14px;
-                            padding: 12px 14px;
+                            padding: 13px 14px;
                             margin-bottom: 10px;
                             display: flex;
                             flex-direction: column;
                             gap: 8px;
                         }}
-                        .em-left {{ font-size: 14px; font-weight: 800; color: #0f172a; }}
+                        .em-left {{ font-size: 14.5px; font-weight: 800; color: #0f172a; line-height: 1.45; }}
                         .em-sel {{
                             width: 100%;
                             padding: 10px 12px;
@@ -2626,24 +3057,24 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             background: #f8fafc;
                         }}
                         .em-sel.selected {{ border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }}
-                        .em-fb {{ display: none; font-size: 13px; font-weight: 700; padding: 8px 10px; border-radius: 8px; }}
-                        .em-fb.ok {{ background: #dcfce7; color: #166534; }}
-                        .em-fb.err {{ background: #fee2e2; color: #991b1b; }}
+                        .em-fb {{ display: none; font-size: 13px; font-weight: 700; padding: 9px 12px; border-radius: 10px; }}
+                        .em-fb.ok {{ background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }}
+                        .em-fb.err {{ background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }}
                         .em-btn {{
                             width: 100%;
                             background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
                             color: white;
                             border: none;
-                            padding: 14px;
-                            border-radius: 14px;
-                            font-size: 15px;
+                            padding: 15px;
+                            border-radius: 16px;
+                            font-size: 15.5px;
                             font-weight: 900;
                             cursor: pointer;
                             margin-top: 10px;
                         }}
                     </style>
                     <div class="em-wrap">
-                        <div class="em-bar">
+                        <div class="em-bar" id="em-top">
                             <span>🧩 Eşleştirme Etkinliği</span>
                             <span id="em-score">Toplam: {len(paket_veriler)} Eşleşme</span>
                         </div>
@@ -2651,7 +3082,12 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         <button class="em-btn" id="em-submit" onclick="gradeEm()">🏁 Eşleştirmeyi Bitir ve Gönder</button>
                     </div>
                     <script>
-                        const pairs = {v_json};
+                        const rawPairs = {v_json};
+                        const pairs = rawPairs.map(p => ({{
+                            sol: p.sol || p.kavram || p.terim || p.soru || '',
+                            sag: p.sag || p.karsilik || p.tanim || p.cevap || '',
+                            aciklama: p.aciklama || ''
+                        }}));
                         const rights = pairs.map((p, i) => ({{ idx: i, txt: p.sag }}));
                         for (let i = rights.length - 1; i > 0; i--) {{
                             const j = Math.floor(Math.random() * (i + 1));
@@ -2680,11 +3116,11 @@ elif menu == "🤖 Soru Çöz & İkiz":
                                 if (val === idx) {{
                                     d++;
                                     fb.className = 'em-fb ok';
-                                    fb.innerHTML = `✅ <b>DOĞRU!</b> ${{p.aciklama || ''}}`;
+                                    fb.innerHTML = `✅ <b>DOĞRU EŞLEŞME!</b> (${{p.sag}}) ${{p.aciklama ? '<br>' + p.aciklama : ''}}`;
                                 }} else {{
                                     y++;
                                     fb.className = 'em-fb err';
-                                    fb.innerHTML = `❌ <b>Doğru Eşleşme:</b> ${{p.sag}} <br><span style="font-weight:600;">${{p.aciklama || ''}}</span>`;
+                                    fb.innerHTML = `❌ <b>Doğru Eşleşme:</b> ${{p.sag}} ${{p.aciklama ? '<br><span style="font-weight:600;">' + p.aciklama + '</span>' : ''}}`;
                                 }}
                                 fb.style.display = 'block';
                             }});
@@ -2693,10 +3129,233 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             btn.disabled = true;
                             btn.style.background = '#64748b';
                             btn.innerHTML = `✅ Eşleştirme Tamamlandı — Doğru: ${{d}} / ${{pairs.length}}`;
+                            document.getElementById('em-top').scrollIntoView({{ behavior: 'smooth' }});
                         }};
                     </script>
                     """
-                    components.html(eslestir_html, height=min(820, len(paket_veriler) * 145 + 140), scrolling=True)
+                    components.html(eslestir_html, height=min(840, len(paket_veriler) * 150 + 140), scrolling=True)
+
+                elif tur_adi == "Karıştırma":
+                    st.caption("👇 Karışık verilen kelime/adım kutucuklarına **doğru sırayla dokunarak** üstteki cevap alanına diz (geri almak için üstteki kutucuğa tekrar dokun). Bitirince **'🏁 Sıralamayı Bitir ve Gönder'** butonuna bas!")
+                    karistir_html = f"""
+                    <style>
+                        * {{ box-sizing: border-box; }}
+                        body {{ margin: 0; padding: 0; background: transparent; font-family: 'Inter', -apple-system, sans-serif; }}
+                        .kr-wrap {{ padding: 4px 2px; }}
+                        .kr-bar {{
+                            background: linear-gradient(90deg, #1d4ed8 0%, #7c3aed 100%);
+                            color: white;
+                            padding: 12px 16px;
+                            border-radius: 14px;
+                            font-weight: 800;
+                            font-size: 13.5px;
+                            margin-bottom: 14px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }}
+                        .kr-card {{
+                            background: #ffffff;
+                            border: 2px solid #e0e7ff;
+                            border-radius: 18px;
+                            padding: 16px;
+                            margin-bottom: 14px;
+                            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+                        }}
+                        .kr-head {{ display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }}
+                        .kr-num {{
+                            background: linear-gradient(90deg, #2563eb, #7c3aed);
+                            color: white;
+                            font-weight: 800;
+                            font-size: 12.5px;
+                            padding: 6px 12px;
+                            border-radius: 10px;
+                        }}
+                        .kr-reset {{
+                            background: #f1f5f9;
+                            border: 1px solid #cbd5e1;
+                            color: #475569;
+                            font-size: 12px;
+                            font-weight: 800;
+                            padding: 5px 10px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                        }}
+                        .kr-prompt {{ font-size: 14.5px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }}
+                        .kr-tray {{
+                            min-height: 52px;
+                            background: #eff6ff;
+                            border: 2px dashed #60a5fa;
+                            border-radius: 12px;
+                            padding: 10px;
+                            margin-bottom: 10px;
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 8px;
+                            align-items: center;
+                        }}
+                        .kr-tray-empty {{ font-size: 12.5px; color: #64748b; font-weight: 600; }}
+                        .kr-pool {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+                        .kr-chip {{
+                            background: #ffffff;
+                            border: 2px solid #cbd5e1;
+                            color: #0f172a;
+                            font-weight: 800;
+                            font-size: 13.5px;
+                            padding: 8px 13px;
+                            border-radius: 10px;
+                            cursor: pointer;
+                            transition: all 0.15s ease;
+                        }}
+                        .kr-chip:hover {{ border-color: #2563eb; background: #eff6ff; }}
+                        .kr-chip.in-tray {{
+                            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+                            border-color: #1e3a8a;
+                            color: #ffffff;
+                        }}
+                        .kr-fb {{ display: none; margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; }}
+                        .kr-fb.ok {{ background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }}
+                        .kr-fb.err {{ background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }}
+                        .kr-submit {{
+                            width: 100%;
+                            background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+                            color: white;
+                            border: none;
+                            padding: 15px;
+                            border-radius: 16px;
+                            font-size: 15.5px;
+                            font-weight: 900;
+                            cursor: pointer;
+                            margin-top: 10px;
+                        }}
+                        .kr-submit:disabled {{ background: #64748b; cursor: default; }}
+                    </style>
+                    <div class="kr-wrap">
+                        <div class="kr-bar" id="kr-top">
+                            <span>🔀 Kelime / Kavram Karıştırma (Sıraya Dizme)</span>
+                            <span id="kr-score">Tamamlanan: 0 / {len(paket_veriler)}</span>
+                        </div>
+                        <div id="kr-root"></div>
+                        <button class="kr-submit" id="kr-finish" onclick="gradeKr()">🏁 Sıralamayı Bitir ve Gönder</button>
+                    </div>
+                    <script>
+                        const rawKr = {v_json};
+                        const krItems = rawKr.map((it, idx) => {{
+                            let parts = it.parcalar || it.kelimeler || it.adimlar || [];
+                            if (!Array.isArray(parts) || parts.length === 0) {{
+                                const fallbackStr = it.dogru_dizilis || it.cevap || 'Kavramları doğru sırayla birleştir';
+                                parts = String(fallbackStr).split(/\\s+/).filter(Boolean);
+                            }}
+                            const pool = parts.map((txt, pIdx) => ({{ id: pIdx, txt: String(txt) }}));
+                            for (let i = pool.length - 1; i > 0; i--) {{
+                                const j = Math.floor(Math.random() * (i + 1));
+                                [pool[i], pool[j]] = [pool[j], pool[i]];
+                            }}
+                            return {{
+                                kazanim: it.kazanim || ('Etkinlik ' + (idx + 1)),
+                                yonerge: it.yonerge || 'Aşağıdaki karışık parçaları doğru sırayla tıklayarak dizin:',
+                                target: parts.map(String),
+                                pool: pool,
+                                selected: [],
+                                cozum: it.cozum || ''
+                            }};
+                        }});
+
+                        let krSubmitted = false;
+                        const root = document.getElementById('kr-root');
+
+                        function renderKrCard(qIdx) {{
+                            const it = krItems[qIdx];
+                            const trayEl = document.getElementById('krtray-' + qIdx);
+                            const poolEl = document.getElementById('krpool-' + qIdx);
+                            if (!trayEl || !poolEl) return;
+
+                            if (it.selected.length === 0) {{
+                                trayEl.innerHTML = `<span class="kr-tray-empty">👆 Aşağıdaki kutucuklara sırayla dokunarak buraya diz...</span>`;
+                            }} else {{
+                                trayEl.innerHTML = it.selected.map((pObj, sPos) =>
+                                    `<button class="kr-chip in-tray" onclick="unpickKr(${{qIdx}}, ${{sPos}})">${{pObj.txt}} ✕</button>`
+                                ).join('');
+                            }}
+
+                            const usedIds = new Set(it.selected.map(x => x.id));
+                            poolEl.innerHTML = it.pool
+                                .filter(pObj => !usedIds.has(pObj.id))
+                                .map(pObj => `<button class="kr-chip" onclick="pickKr(${{qIdx}}, ${{pObj.id}})">${{pObj.txt}}</button>`)
+                                .join('');
+
+                            const doneCount = krItems.filter(x => x.selected.length > 0).length;
+                            document.getElementById('kr-score').innerHTML = `Dizilen: ${{doneCount}} / ${{krItems.length}}`;
+                        }}
+
+                        krItems.forEach((it, qIdx) => {{
+                            const card = document.createElement('div');
+                            card.className = 'kr-card';
+                            card.innerHTML = `
+                                <div class="kr-head">
+                                    <span class="kr-num">📌 Etkinlik ${{qIdx + 1}} • ${{it.kazanim}}</span>
+                                    <button class="kr-reset" onclick="resetKr(${{qIdx}})">🔄 Sıfırla</button>
+                                </div>
+                                <div class="kr-prompt">${{it.yonerge}}</div>
+                                <div class="kr-tray" id="krtray-${{qIdx}}"></div>
+                                <div class="kr-pool" id="krpool-${{qIdx}}"></div>
+                                <div class="kr-fb" id="krfb-${{qIdx}}"></div>
+                            `;
+                            root.appendChild(card);
+                            renderKrCard(qIdx);
+                        }});
+
+                        window.pickKr = function(qIdx, pId) {{
+                            if (krSubmitted) return;
+                            const it = krItems[qIdx];
+                            const found = it.pool.find(x => x.id === pId);
+                            if (found && !it.selected.some(x => x.id === pId)) {{
+                                it.selected.push(found);
+                                renderKrCard(qIdx);
+                            }}
+                        }};
+
+                        window.unpickKr = function(qIdx, sPos) {{
+                            if (krSubmitted) return;
+                            krItems[qIdx].selected.splice(sPos, 1);
+                            renderKrCard(qIdx);
+                        }};
+
+                        window.resetKr = function(qIdx) {{
+                            if (krSubmitted) return;
+                            krItems[qIdx].selected = [];
+                            renderKrCard(qIdx);
+                        }};
+
+                        window.gradeKr = function() {{
+                            if (krSubmitted) return;
+                            krSubmitted = true;
+                            let d = 0, y = 0;
+                            krItems.forEach((it, qIdx) => {{
+                                const userStr = it.selected.map(x => x.txt.trim()).join(' ');
+                                const targetStr = it.target.map(x => x.trim()).join(' ');
+                                const fb = document.getElementById('krfb-' + qIdx);
+                                if (userStr.toLocaleLowerCase('tr-TR') === targetStr.toLocaleLowerCase('tr-TR')) {{
+                                    d++;
+                                    fb.className = 'kr-fb ok';
+                                    fb.innerHTML = `✅ <b>HARİKA, DOĞRU DİZİLİŞ!</b> (${{targetStr}})<br><span style="font-weight:600;">💡 ${{it.cozum}}</span>`;
+                                }} else {{
+                                    y++;
+                                    fb.className = 'kr-fb err';
+                                    fb.innerHTML = `❌ <b>Doğru Diziliş:</b> ${{targetStr}}<br><span style="font-weight:600;">💡 ${{it.cozum}}</span>`;
+                                }}
+                                fb.style.display = 'block';
+                            }});
+                            document.getElementById('kr-score').innerHTML = `✅ Doğru: ${{d}} | ❌ Yanlış/Eksik: ${{y}}`;
+                            const btn = document.getElementById('kr-finish');
+                            btn.disabled = true;
+                            btn.innerHTML = `✅ Tamamlandı — Doğru: ${{d}} / ${{krItems.length}}`;
+                            document.getElementById('kr-top').scrollIntoView({{ behavior: 'smooth' }});
+                        }};
+                    </script>
+                    """
+                    components.html(karistir_html, height=min(860, len(paket_veriler) * 235 + 140), scrolling=True)
+
 
 
         # Fotoğraftan İkiz Soru Sonucu
