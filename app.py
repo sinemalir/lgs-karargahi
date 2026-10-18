@@ -14,7 +14,10 @@ from ai_engine import (
     generate_flashcards_list,
     generate_hap_ozet_structured,
     generate_lgs_quiz_list,
-    solve_page_questions_structured
+    solve_page_questions_structured,
+    get_ai_lgs_topics,
+    generate_custom_lgs_test,
+    MEB_8_SINIF_KONULARI,
 )
 from gtts import gTTS
 import pypdf
@@ -1551,45 +1554,525 @@ elif menu == "⚡ Hızlı Öğren (Video/Kaynak)":
 
 elif menu == "🤖 Soru Çöz & İkiz":
     import fitz
+    from pathlib import Path
+
+    # Varsayılan ÇipkoTest State'leri
+    if "cipko_ana_mod" not in st.session_state:
+        st.session_state.cipko_ana_mod = "hizli_test"  # hizli_test | kaynagimdan | fotograftan
+    if "cipko_konu_mod" not in st.session_state:
+        st.session_state.cipko_konu_mod = "sec"  # sec | yaz
+    if "cipko_ders" not in st.session_state:
+        st.session_state.cipko_ders = None
+    if "cipko_konu" not in st.session_state:
+        st.session_state.cipko_konu = None
+    if "cipko_zorluk" not in st.session_state:
+        st.session_state.cipko_zorluk = "Orta"
+    if "cipko_soru_sayisi" not in st.session_state:
+        st.session_state.cipko_soru_sayisi = 10
+    if "ai_konu_havuzu" not in st.session_state:
+        st.session_state.ai_konu_havuzu = {}
+
+    # ÇipkoTest Özel Mobil Pill & Segmented Bar CSS
+    st.markdown("""
+    <style>
+        /* Üst 3'lü Segmented Bar (⚡ Hızlı test | Kaynağımdan | 📷 Fotoğraftan) ve Alt Barlar Mobilde Yan Yana */
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tab_0),
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_sub_0),
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_0),
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_2),
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_4),
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_zor_0),
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_adet_0) {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+            align-items: stretch !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tab_0) > div[data-testid="stColumn"],
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_sub_0) > div[data-testid="stColumn"],
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_0) > div[data-testid="stColumn"],
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_2) > div[data-testid="stColumn"],
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_4) > div[data-testid="stColumn"],
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_zor_0) > div[data-testid="stColumn"],
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_adet_0) > div[data-testid="stColumn"] {
+            min-width: 0 !important;
+            flex: 1 1 0% !important;
+            width: auto !important;
+        }
+        /* ÇipkoTest Seçim Pill Butonları (Beyaz Yuvarlak Kapsül Görünümü) */
+        div[class*="st-key-cipko_"] button {
+            border-radius: 999px !important;
+            min-height: 44px !important;
+            font-size: 13.5px !important;
+            font-weight: 700 !important;
+            padding: 8px 12px !important;
+            transition: all 0.18s ease !important;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+            background: #ffffff !important;
+            border: 1.5px solid #e2e8f0 !important;
+        }
+        div[class*="st-key-cipko_"] button p,
+        div[class*="st-key-cipko_"] button span,
+        div[class*="st-key-cipko_"] button div {
+            color: #334155 !important;
+            font-weight: 700 !important;
+        }
+        /* Konu Butonları Çok Satırlı Olabilsin */
+        div[class*="st-key-cipko_konu_btn_"] button {
+            border-radius: 14px !important;
+            text-align: left !important;
+            justify-content: flex-start !important;
+            padding: 10px 14px !important;
+            min-height: 46px !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Aktif Seçilen Pill Butonlarını Mavi Çerçeveli ve Vurgulu Yapmak İçin Dinamik CSS
+    aktif_keys = []
+    if st.session_state.cipko_ana_mod == "hizli_test":
+        aktif_keys.append("cipko_tab_0")
+    elif st.session_state.cipko_ana_mod == "kaynagimdan":
+        aktif_keys.append("cipko_tab_1")
+    else:
+        aktif_keys.append("cipko_tab_2")
+
+    if st.session_state.cipko_konu_mod == "sec":
+        aktif_keys.append("cipko_sub_0")
+    else:
+        aktif_keys.append("cipko_sub_1")
+
+    DERS_LISTESI = ["Türkçe", "Matematik", "Fen Bilimleri", "İnkılap Tarihi", "İngilizce", "Din Kültürü"]
+    if st.session_state.cipko_ders in DERS_LISTESI:
+        aktif_keys.append(f"cipko_ders_{DERS_LISTESI.index(st.session_state.cipko_ders)}")
+
+    ZORLUK_LISTESI = ["Kolay", "Orta", "Zor"]
+    if st.session_state.cipko_zorluk in ZORLUK_LISTESI:
+        aktif_keys.append(f"cipko_zor_{ZORLUK_LISTESI.index(st.session_state.cipko_zorluk)}")
+
+    ADET_LISTESI = [5, 10, 20]
+    if st.session_state.cipko_soru_sayisi in ADET_LISTESI:
+        aktif_keys.append(f"cipko_adet_{ADET_LISTESI.index(st.session_state.cipko_soru_sayisi)}")
+
+    if st.session_state.cipko_ders and st.session_state.cipko_ders in st.session_state.ai_konu_havuzu:
+        mevcut_konular = ["🌟 Tüm Konular (Genel Karma)"] + st.session_state.ai_konu_havuzu[st.session_state.cipko_ders]
+        if st.session_state.cipko_konu in mevcut_konular:
+            aktif_keys.append(f"cipko_konu_btn_{mevcut_konular.index(st.session_state.cipko_konu)}")
+
+    aktif_css_kurallari = ""
+    for a_key in aktif_keys:
+        aktif_css_kurallari += f"""
+        .st-key-{a_key} button {{
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+            border: 2px solid #2563eb !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.16) !important;
+        }}
+        .st-key-{a_key} button p, .st-key-{a_key} button span, .st-key-{a_key} button div {{
+            color: #1d4ed8 !important;
+            font-weight: 800 !important;
+        }}
+        """
+    st.markdown(f"<style>{aktif_css_kurallari}</style>", unsafe_allow_html=True)
+
     with st.container(border=True):
-        st.markdown("### 🤖 Çipko Soru Çözücü & İkiz Soru Üretici")
-        ders_secimi = st.selectbox("Ders Seç", ["Türkçe", "Matematik", "Fen Bilimleri", "T.C. İnkılap Tarihi", "Din Kültürü", "İngilizce"])
-        soru_metni = st.text_area("Soru metnini yapıştır (isteğe bağlı):")
-        uploaded_files = st.file_uploader(
-            "Soru Fotoğrafları veya PDF Yükle (Birden fazla sayfa seçebilirsin!)",
-            type=["jpg", "png", "jpeg", "pdf"],
-            accept_multiple_files=True
-        )
-        
-        soru_gorselleri = []
-        if uploaded_files:
-            for uf in uploaded_files:
-                if uf.name.lower().endswith(".pdf"):
-                    doc = fitz.open(stream=uf.read(), filetype="pdf")
-                    for p_idx in range(min(5, len(doc))):
-                        pix = doc.load_page(p_idx).get_pixmap(dpi=140)
-                        soru_gorselleri.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
-                    doc.close()
+        # ÇipkoTest Başlık Alanı
+        st.markdown("""
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div>
+                <span style="font-size:24px; font-weight:900; background:linear-gradient(90deg, #1d4ed8, #7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⚡ ÇipkoTest</span>
+                <div style="font-size:12.5px; color:#64748b; font-weight:600;">Sınırsız Yapay Zeka Test & İkiz Soru İstasyonu</div>
+            </div>
+            <span style="background:#eff6ff; color:#1d4ed8; font-size:12px; font-weight:800; padding:5px 12px; border-radius:99px; border:1px solid #bfdbfe;">♾️ Sınırsız Hak</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # 1) ÜST 3'LÜ SEGMENTED BAR: [⚡ Hızlı test | Kaynağımdan | 📷 Fotoğraftan]
+        t_col1, t_col2, t_col3 = st.columns(3, gap="small")
+        with t_col1:
+            if st.button("⚡ Hızlı test", key="cipko_tab_0", use_container_width=True):
+                st.session_state.cipko_ana_mod = "hizli_test"
+                st.rerun()
+        with t_col2:
+            if st.button("📚 Kaynağımdan", key="cipko_tab_1", use_container_width=True):
+                st.session_state.cipko_ana_mod = "kaynagimdan"
+                st.rerun()
+        with t_col3:
+            if st.button("📷 Fotoğraftan", key="cipko_tab_2", use_container_width=True):
+                st.session_state.cipko_ana_mod = "fotograftan"
+                st.rerun()
+
+        st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+
+        # =========================================================================
+        # MOD 1: ⚡ HIZLI TEST (Ders Seç -> AI Konuları Getirsin -> Zorluk -> 5/10/20)
+        # =========================================================================
+        if st.session_state.cipko_ana_mod == "hizli_test":
+            # Alt Segmented Bar: [Konudan seç | Konu yaz]
+            s_col1, s_col2 = st.columns(2, gap="small")
+            with s_col1:
+                if st.button("📋 Konudan seç", key="cipko_sub_0", use_container_width=True):
+                    st.session_state.cipko_konu_mod = "sec"
+                    st.rerun()
+            with s_col2:
+                if st.button("✍️ Konu yaz", key="cipko_sub_1", use_container_width=True):
+                    st.session_state.cipko_konu_mod = "yaz"
+                    st.rerun()
+
+            st.markdown("<div style='font-size:17px; font-weight:800; color:#0f172a; margin:14px 0 8px 0;'>Hangi ders?</div>", unsafe_allow_html=True)
+
+            # 6 LGS Dersi (2'li Yan Yana Kapsül Butonlar — Görseldeki Gibi)
+            for r_idx in range(0, 6, 2):
+                d_col1, d_col2 = st.columns(2, gap="small")
+                for c_offset, d_col in enumerate([d_col1, d_col2]):
+                    d_idx = r_idx + c_offset
+                    ders_adi = DERS_LISTESI[d_idx]
+                    with d_col:
+                        if st.button(ders_adi, key=f"cipko_ders_{d_idx}", use_container_width=True):
+                            st.session_state.cipko_ders = ders_adi
+                            # Ders seçildiğinde yapay zeka konuları getirsin
+                            if ders_adi not in st.session_state.ai_konu_havuzu:
+                                with st.spinner(f"🤖 Yapay zeka {ders_adi} konularını getiriyor..."):
+                                    st.session_state.ai_konu_havuzu[ders_adi] = get_ai_lgs_topics(ders_adi)
+                            konu_list = st.session_state.ai_konu_havuzu[ders_adi]
+                            st.session_state.cipko_konu = konu_list[0] if konu_list else "🌟 Tüm Konular (Genel Karma)"
+                            st.session_state.hedef_scroll = "cipko-konu-alani"
+                            st.rerun()
+
+            # Ders Seçildiyse Konu, Zorluk ve Soru Sayısı Alanını Aç
+            st.markdown("<div id='cipko-konu-alani'></div>", unsafe_allow_html=True)
+            secili_ders = st.session_state.cipko_ders
+
+            if not secili_ders:
+                st.info("👆 Konuları görmek ve hızlı teste başlamak için yukarıdan bir **ders seç**!")
+            else:
+                st.markdown("---")
+                if st.session_state.cipko_konu_mod == "sec":
+                    baslik_col, yenile_col = st.columns([2.2, 1.2], gap="small")
+                    with baslik_col:
+                        st.markdown(f"<div style='font-size:16.5px; font-weight:800; color:#0f172a;'>🎯 {secili_ders} Konuları</div>", unsafe_allow_html=True)
+                    with yenile_col:
+                        if st.button("🤖 AI Alt Konu Öner", key="cipko_ai_refresh", use_container_width=True):
+                            with st.spinner(f"🤖 Yapay zeka {secili_ders} için yeni alt kazanımlar çıkarıyor..."):
+                                st.session_state.ai_konu_havuzu[secili_ders] = get_ai_lgs_topics(secili_ders, force_ai=True)
+                                st.session_state.cipko_konu = st.session_state.ai_konu_havuzu[secili_ders][0]
+                                st.rerun()
+
+                    if secili_ders not in st.session_state.ai_konu_havuzu:
+                        st.session_state.ai_konu_havuzu[secili_ders] = MEB_8_SINIF_KONULARI.get(secili_ders, [])
+
+                    tum_konular = ["🌟 Tüm Konular (Genel Karma)"] + st.session_state.ai_konu_havuzu[secili_ders]
+                    if st.session_state.cipko_konu not in tum_konular:
+                        st.session_state.cipko_konu = tum_konular[0]
+
+                    for k_idx, k_ad in enumerate(tum_konular):
+                        isaret = "✅ " if st.session_state.cipko_konu == k_ad else "• "
+                        if st.button(f"{isaret}{k_ad}", key=f"cipko_konu_btn_{k_idx}", use_container_width=True):
+                            st.session_state.cipko_konu = k_ad
+                            st.session_state.hedef_scroll = "cipko-ayar-alani"
+                            st.rerun()
                 else:
-                    soru_gorselleri.append(Image.open(uf))
+                    st.markdown(f"<div style='font-size:16.5px; font-weight:800; color:#0f172a; margin-bottom:6px;'>✍️ {secili_ders} Konusu Yaz</div>", unsafe_allow_html=True)
+                    yazilan_konu = st.text_input(
+                        "Test çözmek istediğin konuyu veya kazanımı yaz:",
+                        value="" if (not st.session_state.cipko_konu or st.session_state.cipko_konu.startswith("🌟")) else st.session_state.cipko_konu,
+                        placeholder=f"Örn: {MEB_8_SINIF_KONULARI.get(secili_ders, ['Özel Konu'])[0]}",
+                        key="cipko_yazilan_konu_input"
+                    )
+                    st.session_state.cipko_konu = yazilan_konu.strip() if yazilan_konu.strip() else "Genel Karma"
+
+                # ZORLUK SEVİYESİ VE SORU SAYISI (5 - 10 - 20)
+                st.markdown("<div id='cipko-ayar-alani'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='font-size:16.5px; font-weight:800; color:#0f172a; margin:14px 0 8px 0;'>🔥 Zorluk seviyesi</div>", unsafe_allow_html=True)
+                z_col1, z_col2, z_col3 = st.columns(3, gap="small")
+                ZORLUK_ETIKET = [("🟢 Kolay", "Kolay"), ("🟡 Orta", "Orta"), ("🔴 Zor", "Zor")]
+                for z_i, (z_goster, z_deger) in enumerate(ZORLUK_ETIKET):
+                    with [z_col1, z_col2, z_col3][z_i]:
+                        if st.button(z_goster, key=f"cipko_zor_{z_i}", use_container_width=True):
+                            st.session_state.cipko_zorluk = z_deger
+                            st.rerun()
+
+                st.markdown("<div style='font-size:16.5px; font-weight:800; color:#0f172a; margin:14px 0 8px 0;'>🔢 Soru sayısı</div>", unsafe_allow_html=True)
+                a_col1, a_col2, a_col3 = st.columns(3, gap="small")
+                for a_i, adet_val in enumerate([5, 10, 20]):
+                    with [a_col1, a_col2, a_col3][a_i]:
+                        if st.button(f"{adet_val} Soru", key=f"cipko_adet_{a_i}", use_container_width=True):
+                            st.session_state.cipko_soru_sayisi = adet_val
+                            st.rerun()
+
+                secili_konu_son = st.session_state.cipko_konu or "Genel Karma"
+                secili_zorluk_son = st.session_state.cipko_zorluk
+                secili_adet_son = st.session_state.cipko_soru_sayisi
+
+                st.markdown(f"""
+                <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:14px; padding:10px 14px; margin:12px 0; font-size:13px; color:#334155; font-weight:700;">
+                    📌 <b>Seçimin:</b> {secili_ders} &nbsp;|&nbsp; 🎯 {secili_konu_son} &nbsp;|&nbsp; 🔥 {secili_zorluk_son} &nbsp;|&nbsp; 🔢 {secili_adet_son} Soru
+                </div>
+                """, unsafe_allow_html=True)
+
+                if st.button(f"🚀 Hızlı Testi Başlat ({secili_adet_son} Soru)", key="cipko_start_test_btn", use_container_width=True):
+                    with st.spinner(f"🤖 Yapay zeka {secili_ders} - '{secili_konu_son}' ({secili_zorluk_son}) için {secili_adet_son} soruluk LGS testini hazırlıyor..."):
+                        st.session_state.cipko_aktif_test = generate_custom_lgs_test(
+                            ders=secili_ders,
+                            konu=secili_konu_son,
+                            zorluk=secili_zorluk_son,
+                            soru_sayisi=secili_adet_son
+                        )
+                        st.session_state.cipko_test_baslik = f"{secili_ders} • {secili_konu_son} ({secili_zorluk_son})"
+                        st.session_state.hedef_scroll = "cipko-test-arena-sonuc"
+                        st.rerun()
+
+        # =========================================================================
+        # MOD 2: 📚 KAYNAĞIMDAN (Kütüphanedeki PDF'lerden Seçip Test Üretme)
+        # =========================================================================
+        elif st.session_state.cipko_ana_mod == "kaynagimdan":
+            pdf_lib_dir = Path("pdf_kutuphanesi")
+            pdf_lib_dir.mkdir(exist_ok=True)
+            kayitli_pdfler = sorted(pdf_lib_dir.glob("*.pdf"), key=lambda x: x.stat().st_mtime, reverse=True)
+            if not kayitli_pdfler:
+                st.info("📚 Henüz kütüphanende yüklü bir PDF yok. '📚 PDF Havuzu' istasyonundan veya '📷 Fotoğraftan' sekmesinden kaynak yükleyebilirsin!")
+            else:
+                secilen_pdf_ad = st.selectbox("📖 Kütüphanendeki Kaynağı Seç:", [p.stem for p in kayitli_pdfler])
+                secilen_pdf_yol = next((p for p in kayitli_pdfler if p.stem == secilen_pdf_ad), kayitli_pdfler[0])
+                doc_k = fitz.open(str(secilen_pdf_yol))
+                toplam_s_k = max(1, len(doc_k))
+                sayfa_k = st.number_input(f"Hangi Sayfa? (1 - {toplam_s_k})", min_value=1, max_value=toplam_s_k, value=1)
+                pix_k = doc_k.load_page(sayfa_k - 1).get_pixmap(dpi=140)
+                img_k = Image.frombytes("RGB", [pix_k.width, pix_k.height], pix_k.samples)
+                doc_k.close()
+                st.image(img_k, caption=f"{secilen_pdf_ad} - Sayfa {sayfa_k}", use_container_width=True)
+                if st.button("🎯 Bu Sayfadan İkiz Test Üret", use_container_width=True):
+                    with st.spinner("Kaynağındaki sayfadan yeni nesil LGS soruları hazırlanıyor..."):
+                        st.session_state.cipko_aktif_test = generate_lgs_quiz_list(image=img_k)
+                        st.session_state.cipko_test_baslik = f"{secilen_pdf_ad} (Sayfa {sayfa_k})"
+                        st.session_state.hedef_scroll = "cipko-test-arena-sonuc"
+                        st.rerun()
+
+        # =========================================================================
+        # MOD 3: 📷 FOTOĞRAFTAN (Fotoğraf/PDF Yükle -> Çözüm + İkiz Soru Üret)
+        # =========================================================================
+        elif st.session_state.cipko_ana_mod == "fotograftan":
+            st.markdown("#### 📷 Soru Fotoğrafı veya PDF Yükle")
+            ders_secimi = st.selectbox("Ders Seç", ["Türkçe", "Matematik", "Fen Bilimleri", "T.C. İnkılap Tarihi", "Din Kültürü", "İngilizce"])
+            soru_metni = st.text_area("Soru metnini yapıştır (isteğe bağlı):")
+            uploaded_files = st.file_uploader(
+                "Soru Fotoğrafları veya PDF Yükle (Birden fazla sayfa seçebilirsin!)",
+                type=["jpg", "png", "jpeg", "pdf"],
+                accept_multiple_files=True
+            )
             
-            st.success(f"📎 Toplam **{len(soru_gorselleri)} sayfa/görsel** yüklendi!")
-            g_cols = st.columns(min(3, len(soru_gorselleri)))
-            for idx, im in enumerate(soru_gorselleri):
-                with g_cols[idx % len(g_cols)]:
-                    st.image(im, caption=f"Sayfa {idx + 1}")
-        
-        if st.button("✨ İkiz Sorusunu Üret ve Çöz", use_container_width=True):
-            with st.spinner("Yapay zeka yüklenen tüm sayfaları inceliyor ve ikiz soruyu tasarlıyor..."):
-                st.session_state.ikiz_sonuc = generate_twin_question(
-                    f"[{ders_secimi}] {soru_metni}",
-                    image=soru_gorselleri if soru_gorselleri else None
-                )
-                st.session_state.ikiz_ders = ders_secimi
-                st.session_state.hedef_scroll = "ikiz-soru-sonuc"
+            soru_gorselleri = []
+            if uploaded_files:
+                for uf in uploaded_files:
+                    if uf.name.lower().endswith(".pdf"):
+                        doc = fitz.open(stream=uf.read(), filetype="pdf")
+                        for p_idx in range(min(5, len(doc))):
+                            pix = doc.load_page(p_idx).get_pixmap(dpi=140)
+                            soru_gorselleri.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
+                        doc.close()
+                    else:
+                        soru_gorselleri.append(Image.open(uf))
                 
+                st.success(f"📎 Toplam **{len(soru_gorselleri)} sayfa/görsel** yüklendi!")
+                g_cols = st.columns(min(3, len(soru_gorselleri)))
+                for idx, im in enumerate(soru_gorselleri):
+                    with g_cols[idx % len(g_cols)]:
+                        st.image(im, caption=f"Sayfa {idx + 1}")
+            
+            if st.button("✨ İkiz Sorusunu Üret ve Çöz", use_container_width=True):
+                with st.spinner("Yapay zeka yüklenen tüm sayfaları inceliyor ve ikiz soruyu tasarlıyor..."):
+                    st.session_state.ikiz_sonuc = generate_twin_question(
+                        f"[{ders_secimi}] {soru_metni}",
+                        image=soru_gorselleri if soru_gorselleri else None
+                    )
+                    st.session_state.ikiz_ders = ders_secimi
+                    st.session_state.hedef_scroll = "ikiz-soru-sonuc"
+
+        # =========================================================================
+        # ÇİPKOTEST HIZLI TEST ARENASI SONUÇ EKRANI (5 - 10 - 20 SORU İNTERAKTİF)
+        # =========================================================================
+        st.markdown("<div id='cipko-test-arena-sonuc'></div>", unsafe_allow_html=True)
+        if st.session_state.get("cipko_aktif_test") and st.session_state.cipko_ana_mod in ("hizli_test", "kaynagimdan"):
+            st.markdown("---")
+            test_sorulari = st.session_state.cipko_aktif_test
+            test_baslik = st.session_state.get("cipko_test_baslik", "Hızlı LGS Testi")
+            st.markdown(f"#### 🏆 {test_baslik}")
+            t_json = json.dumps(test_sorulari, ensure_ascii=False)
+            test_html = f"""
+            <style>
+                * {{ box-sizing: border-box; }}
+                body {{ margin: 0; padding: 0; background: transparent; }}
+                .ct-wrap {{ font-family: 'Inter', -apple-system, sans-serif; padding: 4px 2px; }}
+                .ct-scorebar {{
+                    background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
+                    color: white;
+                    padding: 12px 16px;
+                    border-radius: 14px;
+                    font-weight: 800;
+                    font-size: 14px;
+                    margin-bottom: 14px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
+                    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+                }}
+                .ct-card {{
+                    background: #ffffff;
+                    border: 2px solid #e0e7ff;
+                    border-radius: 18px;
+                    padding: 16px;
+                    margin-bottom: 16px;
+                    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+                }}
+                .ct-header {{
+                    display: flex;
+                    align-items: stretch;
+                    gap: 10px;
+                    margin-bottom: 12px;
+                }}
+                .ct-num {{
+                    background: linear-gradient(90deg, #2563eb, #7c3aed);
+                    color: white;
+                    font-weight: 800;
+                    font-size: 13px;
+                    padding: 8px 10px;
+                    border-radius: 12px;
+                    white-space: nowrap;
+                    flex: 0 0 104px;
+                    width: 104px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                }}
+                .ct-topic {{
+                    background: #eff6ff;
+                    border: 1.5px solid #bfdbfe;
+                    color: #1d4ed8;
+                    font-size: 12.5px;
+                    font-weight: 700;
+                    padding: 8px 12px;
+                    border-radius: 12px;
+                    flex: 1 1 auto;
+                    min-width: 0;
+                    line-height: 1.35;
+                    display: flex;
+                    align-items: center;
+                    text-align: left;
+                    word-break: break-word;
+                }}
+                .ct-qtext {{
+                    font-size: 15px;
+                    font-weight: 700;
+                    color: #1e293b;
+                    line-height: 1.55;
+                    margin-bottom: 14px;
+                    white-space: pre-line;
+                }}
+                .ct-opts {{ display: flex; flex-direction: column; gap: 8px; }}
+                .ct-opt {{
+                    background: #f8fafc;
+                    border: 2px solid #cbd5e1;
+                    border-radius: 12px;
+                    padding: 11px 14px;
+                    font-size: 14px;
+                    font-weight: 700;
+                    color: #334155;
+                    cursor: pointer;
+                    text-align: left;
+                    transition: all 0.15s ease;
+                }}
+                .ct-opt:hover {{ border-color: #3b82f6; background: #eff6ff; }}
+                .ct-opt.correct {{ background: #dcfce7 !important; border-color: #16a34a !important; color: #14532d !important; }}
+                .ct-opt.wrong {{ background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important; }}
+                .ct-actions {{ display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }}
+                .ct-act-btn {{
+                    border: none;
+                    padding: 9px 14px;
+                    border-radius: 10px;
+                    font-size: 13px;
+                    font-weight: 800;
+                    cursor: pointer;
+                    flex: 1 1 160px;
+                    text-align: left;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }}
+                .ct-act-btn::after {{ content: '▾'; font-size: 12px; opacity: 0.7; }}
+                .ct-btn-hint {{ background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }}
+                .ct-btn-sol {{ background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }}
+                .ct-box {{ display: none; margin-top: 10px; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }}
+                .ct-hint-box {{ background: #fffbeb; color: #78350f; border-left: 5px solid #f59e0b; }}
+                .ct-sol-box {{ background: #f0fdf4; color: #166534; border-left: 5px solid #16a34a; }}
+            </style>
+            <div class="ct-wrap">
+                <div class="ct-scorebar">
+                    <span>⚡ ÇipkoTest Canlı Skor</span>
+                    <span id="ct-score">Doğru: 0 / {len(test_sorulari)} 🏆</span>
+                </div>
+                <div id="ct-root"></div>
+            </div>
+            <script>
+                const qs = {t_json};
+                let sc = 0;
+                const ans = new Set();
+                const rt = document.getElementById('ct-root');
+                qs.forEach((q, qIdx) => {{
+                    const card = document.createElement('div');
+                    card.className = 'ct-card';
+                    const stdNo = 'Soru ' + (qIdx + 1);
+                    const topicTxt = q.kazanim || '{test_baslik}';
+                    const opts = (q.secenekler || []).map((opt, oIdx) =>
+                        `<button class="ct-opt" id="ctopt-${{qIdx}}-${{oIdx}}" onclick="selCtOpt(${{qIdx}}, ${{oIdx}}, ${{q.dogru_index || 0}})">${{opt}}</button>`
+                    ).join('');
+                    card.innerHTML = `
+                        <div class="ct-header">
+                            <span class="ct-num">📌 ${{stdNo}}</span>
+                            <span class="ct-topic">🎯 ${{topicTxt}}</span>
+                        </div>
+                        <div class="ct-qtext">${{q.soru || ''}}</div>
+                        <div class="ct-opts">${{opts}}</div>
+                        <div class="ct-actions">
+                            <button class="ct-act-btn ct-btn-hint" onclick="togCtBox('cthint-${{qIdx}}')"><span>💡 İpucu Göster</span></button>
+                            <button class="ct-act-btn ct-btn-sol" onclick="togCtBox('ctsol-${{qIdx}}')"><span>📖 Adım Adım Çözüm</span></button>
+                        </div>
+                        <div class="ct-box ct-hint-box" id="cthint-${{qIdx}}"><b>💡 İpucu:</b> ${{q.ipucu || ''}}</div>
+                        <div class="ct-box ct-sol-box" id="ctsol-${{qIdx}}"><b>✅ Çözüm:</b> ${{q.cozum || ''}}</div>
+                    `;
+                    rt.appendChild(card);
+                }});
+                window.selCtOpt = function(qIdx, oIdx, cIdx) {{
+                    const btn = document.getElementById(`ctopt-${{qIdx}}-${{oIdx}}`);
+                    const sol = document.getElementById(`ctsol-${{qIdx}}`);
+                    if (oIdx === cIdx) {{
+                        btn.classList.add('correct');
+                        if (!btn.innerHTML.includes('DOĞRU')) btn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
+                        sol.style.display = 'block';
+                        if (!ans.has(qIdx)) {{
+                            sc++; ans.add(qIdx);
+                            document.getElementById('ct-score').innerText = `Doğru: ${{sc}} / ${{qs.length}} 🏆`;
+                        }}
+                    }} else {{
+                        btn.classList.add('wrong');
+                        if (!btn.innerHTML.includes('Tekrar')) btn.innerHTML += ' &nbsp; ❌ <b>Tekrar Dene!</b>';
+                        ans.add(qIdx);
+                    }}
+                }};
+                window.togCtBox = function(id) {{
+                    const el = document.getElementById(id);
+                    el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+                }};
+            </script>
+            """
+            components.html(test_html, height=min(820, len(test_sorulari) * 350 + 80), scrolling=True)
+
+        # Fotoğraftan İkiz Soru Sonucu
         st.markdown("<div id='ikiz-soru-sonuc'></div>", unsafe_allow_html=True)
-        if "ikiz_sonuc" in st.session_state and st.session_state.ikiz_sonuc:
+        if st.session_state.cipko_ana_mod == "fotograftan" and "ikiz_sonuc" in st.session_state and st.session_state.ikiz_sonuc:
             st.markdown("---")
             ikiz_verisi = st.session_state.ikiz_sonuc
             if isinstance(ikiz_verisi, str):
@@ -1851,7 +2334,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 doc_id = f"soru_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
                 ozet_not = f"{kazanim_txt} | İkiz Soru: {ikiz_verisi.get('ikiz_soru', '')[:180]}"
                 data = {
-                    "ders": st.session_state.get("ikiz_ders", ders_secimi),
+                    "ders": st.session_state.get("ikiz_ders", "Matematik"),
                     "tip": "Soru Çözüm",
                     "not": ozet_not,
                     "tarih": datetime.datetime.now().strftime("%Y-%m-%d"),

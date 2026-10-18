@@ -31,7 +31,10 @@ def ask_gemini(prompt, image=None):
     try:
         current_key = _get_gemini_key()
         genai.configure(api_key=current_key, transport="rest")
-        model = genai.GenerativeModel('gemini-3.5-flash-lite')
+        model = genai.GenerativeModel(
+            'gemini-3.5-flash-lite',
+            generation_config={"max_output_tokens": 8192, "temperature": 0.7}
+        )
         if image:
             if isinstance(image, list):
                 response = model.generate_content([prompt] + image)
@@ -264,3 +267,162 @@ def analyze_exam_sheet(image=None, netler_ozeti=""):
         "ders_analizleri": [],
         "haftanin_hedefi": "Yanlış yapılan soruların konularını Hızlı Öğren istasyonundan tekrar et!"
     })
+
+
+MEB_8_SINIF_KONULARI = {
+    "Türkçe": [
+        "Sözcükte ve Söz Öbeklerinde Anlam",
+        "Cümlede Anlam ve Yorum",
+        "Paragrafta Anlam ve Ana Düşünce",
+        "Sözel Mantık ve Muhakeme",
+        "Görsel Okuma ve Grafik Yorumlama",
+        "Fiilimsiler (Eylemsiler)",
+        "Cümlenin Ögeleri",
+        "Fiilde Çatı",
+        "Cümle Türleri",
+        "Yazım Kuralları ve Noktalama İşaretleri",
+        "Anlatım Bozuklukları",
+        "Metin Türleri ve Söz Sanatları",
+    ],
+    "Matematik": [
+        "Çarpanlar ve Katlar (EBOB - EKOK)",
+        "Üslü İfadeler",
+        "Kareköklü İfadeler",
+        "Veri Analizi (Çizgi, Sütun ve Daire Grafiği)",
+        "Basit Olayların Olma Olasılığı",
+        "Cebirsel İfadeler ve Özdeşlikler",
+        "Doğrusal Denklemler ve Eğim",
+        "Eşitsizlikler",
+        "Üçgenler ve Eşlik - Benzerlik",
+        "Dönüşüm Geometrisi",
+        "Geometrik Cisimler (Silindir, Piramit, Koni)",
+    ],
+    "Fen Bilimleri": [
+        "Mevsimler ve İklim",
+        "DNA ve Genetik Kod (Kalıtım, Mutasyon, Biyoteknoloji)",
+        "Basınç (Katı, Sıvı ve Gaz Basıncı)",
+        "Madde ve Endüstri (Periyodik Sistem, Kimyasal Tepkimeler, Asit-Baz)",
+        "Basit Makineler",
+        "Enerji Dönüşümleri ve Çevre Bilimi (Besin Zinciri, Fotosentez, Solunum)",
+        "Elektrik Yükleri ve Elektrik Enerjisi",
+    ],
+    "İnkılap Tarihi": [
+        "Bir Kahraman Doğuyor",
+        "Milli Uyanış: Bağımsızlık Yolunda Atılan Adımlar",
+        "Milli Bir Destan: Ya İstiklal Ya Ölüm!",
+        "Atatürkçülük ve Çağdaşlaşan Türkiye",
+        "Demokratikleşme Çabaları",
+        "Atatürk Dönemi Türk Dış Politikası",
+        "Atatürk'ün Ölümü ve Sonrası",
+    ],
+    "İngilizce": [
+        "Unit 1: Friendship",
+        "Unit 2: Teen Life",
+        "Unit 3: In The Kitchen",
+        "Unit 4: On The Phone",
+        "Unit 5: The Internet",
+        "Unit 6: Adventures",
+        "Unit 7: Tourism",
+        "Unit 8: Chores",
+        "Unit 9: Science",
+        "Unit 10: Natural Forces",
+    ],
+    "Din Kültürü": [
+        "Kader İnancı (Kader ve Kaza, İnsanın İradesi)",
+        "Zekat ve Sadaka İbadeti",
+        "Din ve Hayat (Din, Birey ve Toplum)",
+        "Hz. Muhammed'in (s.a.v.) Örnekliği",
+        "Kur'an-ı Kerim ve Özellikleri",
+    ],
+}
+
+
+def get_ai_lgs_topics(ders, force_ai=False):
+    """Seçilen 8. sınıf LGS dersi için yapay zeka destekli konu listesini döndürür."""
+    varsayilan = MEB_8_SINIF_KONULARI.get(ders, MEB_8_SINIF_KONULARI["Matematik"])
+    if not force_ai:
+        # Hızlı ve kesintisiz deneyim için MEB müfredat konularını + yapay zeka alt başlıklarını getirir
+        prompt = (
+            f"8. Sınıf MEB LGS '{ders}' dersinin en önemli tüm ünite ve alt konularını listele. "
+            "SADECE geçerli bir JSON string dizisi döndür, başka hiçbir metin yazma. "
+            'Örnek: ["1. Konu Adı", "2. Konu Adı"]'
+        )
+        raw = ask_gemini(prompt)
+        try:
+            match = re.search(r"\[.*\]", raw, re.DOTALL)
+            if match:
+                parsed = clean_math_text(json.loads(match.group(0)))
+                if isinstance(parsed, list) and len(parsed) >= 4:
+                    return [str(x).strip() for x in parsed if str(x).strip()]
+        except Exception:
+            pass
+        return varsayilan
+    else:
+        prompt = (
+            f"8. Sınıf MEB LGS '{ders}' dersi için sınavda en çok çıkan 10 spesifik alt konu ve kazanım başlığı öner. "
+            "SADECE geçerli bir JSON string dizisi döndür, başka hiçbir metin yazma."
+        )
+        raw = ask_gemini(prompt)
+        try:
+            match = re.search(r"\[.*\]", raw, re.DOTALL)
+            if match:
+                parsed = clean_math_text(json.loads(match.group(0)))
+                if isinstance(parsed, list) and len(parsed) >= 4:
+                    return [str(x).strip() for x in parsed if str(x).strip()]
+        except Exception:
+            pass
+        return varsayilan
+
+
+def _fetch_test_batch(ders, konu, zorluk, adet, baslangic_no=1):
+    prompt = (
+        f"8. Sınıf MEB LGS müfredatına %100 uygun olarak '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde "
+        f"TAM {adet} ADET çoktan seçmeli yeni nesil LGS sorusu hazırla (Soru {baslangic_no}'den Soru {baslangic_no + adet - 1}'e kadar). "
+        "ÖNEMLİ KURALLAR:\n"
+        "1. Kesinlikle $ işareti veya LaTeX kodu ($m^2$, \\frac vb.) KULLANMA! Birimleri ve üslü/köklü sayıları m², cm², cm³, 2⁵, √3 gibi doğrudan okunaklı Unicode karakterlerle yaz.\n"
+        "2. Her sorunun 4 şıkkı (A, B, C, D), 1 kısa ipucu ve adım adım net çözümü olsun.\n"
+        "3. Yanıtı SADECE geçerli bir JSON dizisi olarak ver, başka hiçbir açıklama yazma. Format:\n"
+        "[\n"
+        "  {\n"
+        f'    "soru_no": "Soru {baslangic_no}",\n'
+        f'    "kazanim": "{konu} ({zorluk})",\n'
+        '    "soru": "Soru hikayesi ve soru kökü...",\n'
+        '    "secenekler": ["A) ...", "B) ...", "C) ...", "D) ..."],\n'
+        '    "dogru_index": 0,\n'
+        '    "ipucu": "Soruyu çözdüren anahtar ipucu...",\n'
+        '    "cozum": "1. Adım: ... 2. Adım: ... Doğru Cevap: A"\n'
+        "  }\n"
+        "]"
+    )
+    raw = ask_gemini(prompt)
+    try:
+        match = re.search(r"\[.*\]", raw, re.DOTALL)
+        if match:
+            veriler = clean_math_text(json.loads(match.group(0)))
+            if isinstance(veriler, list):
+                return veriler
+    except Exception:
+        pass
+    return []
+
+
+def generate_custom_lgs_test(ders, konu, zorluk, soru_sayisi=5):
+    """Seçilen ders, konu, zorluk ve soru sayısına (5, 10, 20) göre interaktif LGS testi üretir."""
+    soru_sayisi = int(soru_sayisi)
+    if soru_sayisi <= 10:
+        sonuc = _fetch_test_batch(ders, konu, zorluk, soru_sayisi, baslangic_no=1)
+    else:
+        ilk_yari = _fetch_test_batch(ders, konu, zorluk, 10, baslangic_no=1)
+        ikinci_yari = _fetch_test_batch(ders, konu, zorluk, soru_sayisi - 10, baslangic_no=11)
+        sonuc = ilk_yari + ikinci_yari
+
+    # Numaraları ve alanları standartlaştır
+    temiz_liste = []
+    for idx, item in enumerate(sonuc, 1):
+        if isinstance(item, dict):
+            item["soru_no"] = f"Soru {idx}"
+            if not item.get("kazanim"):
+                item["kazanim"] = f"{konu} • {zorluk}"
+            temiz_liste.append(item)
+    return temiz_liste
+
