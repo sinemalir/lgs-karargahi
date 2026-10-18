@@ -426,3 +426,114 @@ def generate_custom_lgs_test(ders, konu, zorluk, soru_sayisi=5):
             temiz_liste.append(item)
     return temiz_liste
 
+
+def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
+    """6 farklı çalışma türü (Test Oluştur, Flash Kart, Boşluk Doldur, Doğru/Yanlış, Eşleştir, Karıştırma) için içerik üretir."""
+    adet = int(adet)
+    if calisma_turu == "Test Oluştur":
+        return generate_custom_lgs_test(ders, konu, zorluk, adet)
+
+    elif calisma_turu == "Flash Kart":
+        prompt = (
+            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET arkalı-önlü bilgi kartı (Flash Kart) hazırla. "
+            "Kesinlikle $ işareti veya LaTeX kodu kullanma (m², cm², 2⁵, √3 gibi düz Unicode kullan). "
+            "SADECE geçerli bir JSON dizisi döndür:\n"
+            '[{"soru": "Kartın ön yüzündeki kavram veya kritik LGS sorusu?", "cevap": "Kartın arka yüzündeki net, akılda kalıcı cevap ve püf noktası."}]'
+        )
+        raw = ask_gemini(prompt)
+        try:
+            m = re.search(r"\[.*\]", raw, re.DOTALL)
+            if m:
+                return clean_math_text(json.loads(m.group(0)))
+        except Exception:
+            pass
+        return []
+
+    elif calisma_turu == "Boşluk Doldur":
+        prompt = (
+            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET boşluk doldurma sorusu hazırla. "
+            "Her cümlede kritik kavramın yerine '_______' koy ve 4 seçenek ver (dogru_index: 0, 1, 2 veya 3). "
+            "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
+            '[\n'
+            '  {\n'
+            '    "cumle": "DNA\'nın görev birimine _______ denir.",\n'
+            '    "secenekler": ["A) Gen", "B) Nükleotid", "C) Kromozom", "D) Hücre"],\n'
+            '    "dogru_index": 0,\n'
+            '    "cozum": "Kısa ve net açıklama..."\n'
+            '  }\n'
+            ']'
+        )
+        raw = ask_gemini(prompt)
+        try:
+            m = re.search(r"\[.*\]", raw, re.DOTALL)
+            if m:
+                return clean_math_text(json.loads(m.group(0)))
+        except Exception:
+            pass
+        return []
+
+    elif calisma_turu == "Doğru/Yanlış":
+        prompt = (
+            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET Doğru/Yanlış sorusu hazırla. "
+            "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
+            '[\n'
+            '  {\n'
+            '    "ifade": "Basınç, birim yüzeye dik olarak etki eden kuvvettir.",\n'
+            '    "dogru_mu": true,\n'
+            '    "cozum": "Neden doğru veya yanlış olduğunun kısa açıklaması..."\n'
+            '  }\n'
+            ']'
+        )
+        raw = ask_gemini(prompt)
+        try:
+            m = re.search(r"\[.*\]", raw, re.DOTALL)
+            if m:
+                return clean_math_text(json.loads(m.group(0)))
+        except Exception:
+            pass
+        return []
+
+    elif calisma_turu == "Eşleştir":
+        cift_sayisi = min(adet, 10)
+        prompt = (
+            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {cift_sayisi} ADET kavram-açıklama eşleştirme çifti hazırla. "
+            "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
+            '[\n'
+            '  {"kavram": "Kısa Kavram / Terim / İşlem", "karsilik": "Bunun doğru karşılığı veya tanımı"}\n'
+            ']'
+        )
+        raw = ask_gemini(prompt)
+        try:
+            m = re.search(r"\[.*\]", raw, re.DOTALL)
+            if m:
+                return clean_math_text(json.loads(m.group(0)))
+        except Exception:
+            pass
+        return []
+
+    elif calisma_turu == "Karıştırma":
+        prompt = (
+            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 10)} ADET sıralama / karıştırma sorusu hazırla. "
+            "Öğrenciye karışık sırada verilen adımların, kavramların veya kelimelerin doğru sıralanmış halini bulduracak 4 şıklı soru üret. "
+            "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
+            '[\n'
+            '  {\n'
+            '    "soru": "Karışık verilen [ I. ... | II. ... | III. ... ] ifadelerinin doğru sıralanışı veya birleşimi hangisidir?",\n'
+            '    "secenekler": ["A) ...", "B) ...", "C) ...", "D) ..."],\n'
+            '    "dogru_index": 0,\n'
+            '    "cozum": "Doğru sıralamanın açıklaması..."\n'
+            '  }\n'
+            ']'
+        )
+        raw = ask_gemini(prompt)
+        try:
+            m = re.search(r"\[.*\]", raw, re.DOTALL)
+            if m:
+                return clean_math_text(json.loads(m.group(0)))
+        except Exception:
+            pass
+        return []
+
+    return []
+
+

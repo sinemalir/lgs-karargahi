@@ -17,6 +17,7 @@ from ai_engine import (
     solve_page_questions_structured,
     get_ai_lgs_topics,
     generate_custom_lgs_test,
+    generate_sinotest_activity,
     MEB_8_SINIF_KONULARI,
 )
 from gtts import gTTS
@@ -830,10 +831,10 @@ elif menu == "📚 PDF Havuzu":
                 
                 st.markdown("<div id='pdf-aksiyon-sonuc'></div>", unsafe_allow_html=True)
             
-                # 1) İNTERAKTİF ADIM ADIM SORU ÇÖZÜM KARTLARI (Önce İşaretle -> Doğru/Yanlış -> Çözümü Gör)
+                # 1) İNTERAKTİF ADIM ADIM SORU ÇÖZÜM KARTLARI (OPTİK FORM MANTIĞI: İşaretle -> Bitir ve Gönder -> Doğru/Yanlış ve Çözümler)
                 if st.session_state.get("pdf_cozum_kartlari"):
                     st.markdown("---")
-                    st.markdown("#### 🧩 İnteraktif Soru Çözüm İstasyonu *(Önce bulduğun şıkkı işaretle, Doğru/Yanlış durumunu gör, sonra çözümü aç!)*")
+                    st.markdown("#### 🧩 İnteraktif Soru Çözüm İstasyonu *(Şıkları işaretle, en altta '🏁 Testi Bitir ve Gönder'e basınca doğru/yanlışlar ve çözümler açılsın!)*")
                     cozum_json = json.dumps(st.session_state.pdf_cozum_kartlari, ensure_ascii=False)
                     cozum_html = f"""
                     <style>
@@ -843,13 +844,16 @@ elif menu == "📚 PDF Havuzu":
                         .sol-scorebar {{
                             background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
                             color: white;
-                            padding: 11px 16px;
+                            padding: 12px 16px;
                             border-radius: 14px;
                             font-weight: 800;
                             font-size: 13.5px;
                             display: flex;
                             justify-content: space-between;
                             align-items: center;
+                            position: sticky;
+                            top: 0;
+                            z-index: 10;
                         }}
                         .sol-card {{
                             background: white;
@@ -921,6 +925,12 @@ elif menu == "📚 PDF Havuzu":
                             transition: all 0.15s ease;
                         }}
                         .sol-sik-btn:hover {{ border-color: #3b82f6; background: #eff6ff; }}
+                        .sol-sik-btn.selected {{
+                            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+                            border-color: #1e3a8a !important;
+                            color: #ffffff !important;
+                            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25) !important;
+                        }}
                         .sol-sik-btn.correct {{
                             background: #dcfce7 !important;
                             border-color: #16a34a !important;
@@ -942,6 +952,7 @@ elif menu == "📚 PDF Havuzu":
                         }}
                         .sol-status.ok {{ background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }}
                         .sol-status.err {{ background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }}
+                        .sol-status.empty {{ background: #f1f5f9; color: #475569; border: 1.5px solid #cbd5e1; }}
                         .sol-btn-row {{
                             display: flex;
                             gap: 8px;
@@ -955,7 +966,6 @@ elif menu == "📚 PDF Havuzu":
                             font-size: 13px;
                             font-weight: 800;
                             cursor: pointer;
-                            transition: transform 0.15s ease, filter 0.15s ease;
                             flex: 1 1 190px;
                             width: 100%;
                             text-align: left;
@@ -963,14 +973,23 @@ elif menu == "📚 PDF Havuzu":
                             align-items: center;
                             justify-content: space-between;
                         }}
-                        .sol-action-btn::after {{
-                            content: '▾';
-                            font-size: 12px;
-                            opacity: 0.7;
-                        }}
-                        .sol-action-btn:hover {{ transform: translateY(-1px); filter: brightness(0.97); }}
+                        .sol-action-btn::after {{ content: '▾'; font-size: 12px; opacity: 0.7; }}
                         .btn-hint {{ background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }}
                         .btn-steps {{ background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; display: none; }}
+                        .sol-submit-btn {{
+                            background: linear-gradient(90deg, #16a34a 0%, #059669 100%);
+                            color: white;
+                            border: none;
+                            border-radius: 14px;
+                            padding: 15px 20px;
+                            font-size: 15.5px;
+                            font-weight: 900;
+                            cursor: pointer;
+                            width: 100%;
+                            box-shadow: 0 6px 18px rgba(22, 163, 74, 0.25);
+                            margin-top: 6px;
+                        }}
+                        .sol-submit-btn:hover {{ filter: brightness(0.96); }}
                         .sol-panel {{
                             display: none;
                             margin-top: 10px;
@@ -991,18 +1010,18 @@ elif menu == "📚 PDF Havuzu":
                         }}
                     </style>
                     <div class="sol-wrap">
-                        <div class="sol-scorebar">
-                            <span>📊 Sayfa Durumu</span>
-                            <span id="sol-score-txt">✅ Doğru: 0 &nbsp;|&nbsp; ❌ Yanlış: 0</span>
+                        <div class="sol-scorebar" id="sol-top-bar">
+                            <span>📝 Optik Cevap Formu</span>
+                            <span id="sol-score-txt">İşaretlenen: 0 / {len(st.session_state.pdf_cozum_kartlari)}</span>
                         </div>
                         <div id="sol-root" style="display:flex; flex-direction:column; gap:14px;"></div>
+                        <button class="sol-submit-btn" id="sol-submit-btn" onclick="submitPageOptik()">🏁 Testi Bitir ve Gönder (Cevapları Kontrol Et)</button>
                     </div>
                     <script>
                         const items = {cozum_json};
                         const root = document.getElementById('sol-root');
-                        let dCount = 0;
-                        let yCount = 0;
-                        const markedSet = new Set();
+                        const userPicks = {{}};
+                        let isSubmitted = false;
 
                         items.forEach((item, idx) => {{
                             const card = document.createElement('div');
@@ -1013,9 +1032,10 @@ elif menu == "📚 PDF Havuzu":
                             const rawAns = String(item.dogru_sik || 'A').trim().toUpperCase();
                             const ansMatch = rawAns.match(/[ABCD]/);
                             const cleanAns = ansMatch ? ansMatch[0] : 'A';
+                            item._cleanAns = cleanAns;
                             const stepsHtml = (item.adimlar || []).map(s => `<div class="step-item">👉 ${{s}}</div>`).join('');
                             const sikBtns = ['A', 'B', 'C', 'D'].map(harf =>
-                                `<button class="sol-sik-btn" id="sik-${{idx}}-${{harf}}" onclick="markSik(${{idx}}, '${{harf}}', '${{cleanAns}}')">${{harf}}</button>`
+                                `<button class="sol-sik-btn" id="sik-${{idx}}-${{harf}}" onclick="pickSik(${{idx}}, '${{harf}}')">${{harf}}</button>`
                             ).join('');
 
                             card.innerHTML = `
@@ -1023,7 +1043,7 @@ elif menu == "📚 PDF Havuzu":
                                     <span class="sol-num">📌 ${{stdSoruNo}}</span>
                                     <span class="sol-kazanim">🎯 ${{item.kazanim || 'LGS Kazanımı'}}</span>
                                 </div>
-                                <div class="sol-pick-label" id="lbl-${{idx}}">👇 Bulduğun şıkkı işaretle:</div>
+                                <div class="sol-pick-label" id="lbl-${{idx}}">👇 Cevabını işaretle:</div>
                                 <div class="sol-abcd-row">${{sikBtns}}</div>
                                 <div class="sol-status" id="st-${{idx}}"></div>
                                 <div class="sol-btn-row">
@@ -1036,34 +1056,80 @@ elif menu == "📚 PDF Havuzu":
                             root.appendChild(card);
                         }});
 
-                        window.markSik = function(idx, secilen, dogru) {{
-                            if (markedSet.has(idx)) return;
-                            markedSet.add(idx);
-                            const secBtn = document.getElementById(`sik-${{idx}}-${{secilen}}`);
-                            const dogruBtn = document.getElementById(`sik-${{idx}}-${{dogru}}`);
-                            const stBox = document.getElementById(`st-${{idx}}`);
-                            const stepBtn = document.getElementById(`btn-ss-${{idx}}`);
-
-                            if (secilen === dogru) {{
-                                secBtn.classList.add('correct');
-                                secBtn.innerText = secilen + ' ✅';
-                                stBox.className = 'sol-status ok';
-                                stBox.innerHTML = `🎉 <b>DOĞRU!</b> Harika çözdün (${{dogru}} şıkkı). Şimdi çözümü inceleyebilirsin.`;
-                                dCount++;
-                            }} else {{
-                                secBtn.classList.add('wrong');
-                                secBtn.innerText = secilen + ' ❌';
-                                if (dogruBtn) {{
-                                    dogruBtn.classList.add('correct');
-                                    dogruBtn.innerText = dogru + ' ✔️';
+                        window.pickSik = function(idx, secilen) {{
+                            if (isSubmitted) return;
+                            userPicks[idx] = secilen;
+                            ['A', 'B', 'C', 'D'].forEach(h => {{
+                                const b = document.getElementById(`sik-${{idx}}-${{h}}`);
+                                if (b) {{
+                                    b.classList.remove('selected');
+                                    b.innerText = h;
                                 }}
-                                stBox.className = 'sol-status err';
-                                stBox.innerHTML = `❌ <b>YANLIŞ!</b> İşaretlediğin: <b>${{secilen}}</b> &nbsp;|&nbsp; Doğru Cevap: <b>${{dogru}}</b>. Alttan çözümü gör!`;
-                                yCount++;
+                            }});
+                            const activeBtn = document.getElementById(`sik-${{idx}}-${{secilen}}`);
+                            if (activeBtn) {{
+                                activeBtn.classList.add('selected');
+                                activeBtn.innerText = secilen + ' ✓';
                             }}
-                            stBox.style.display = 'block';
-                            stepBtn.style.display = 'flex';
-                            document.getElementById('sol-score-txt').innerHTML = `✅ Doğru: ${{dCount}} &nbsp;|&nbsp; ❌ Yanlış: ${{yCount}}`;
+                            const count = Object.keys(userPicks).length;
+                            document.getElementById('sol-score-txt').innerText = `İşaretlenen: ${{count}} / ${{items.length}}`;
+                        }};
+
+                        window.submitPageOptik = function() {{
+                            if (isSubmitted) return;
+                            isSubmitted = true;
+                            let dCount = 0;
+                            let yCount = 0;
+                            let bCount = 0;
+
+                            items.forEach((item, idx) => {{
+                                const dogru = item._cleanAns;
+                                const secilen = userPicks[idx];
+                                const stBox = document.getElementById(`st-${{idx}}`);
+                                const stepBtn = document.getElementById(`btn-ss-${{idx}}`);
+                                const dogruBtn = document.getElementById(`sik-${{idx}}-${{dogru}}`);
+
+                                ['A', 'B', 'C', 'D'].forEach(h => {{
+                                    const b = document.getElementById(`sik-${{idx}}-${{h}}`);
+                                    if (b) b.classList.remove('selected');
+                                }});
+
+                                if (!secilen) {{
+                                    bCount++;
+                                    if (dogruBtn) {{
+                                        dogruBtn.classList.add('correct');
+                                        dogruBtn.innerText = dogru + ' ✔️';
+                                    }}
+                                    stBox.className = 'sol-status empty';
+                                    stBox.innerHTML = `⭕ <b>BOŞ BIRAKILDI</b> &nbsp;|&nbsp; Doğru Cevap: <b>${{dogru}}</b>`;
+                                }} else if (secilen === dogru) {{
+                                    dCount++;
+                                    const secBtn = document.getElementById(`sik-${{idx}}-${{secilen}}`);
+                                    secBtn.classList.add('correct');
+                                    secBtn.innerText = secilen + ' ✅';
+                                    stBox.className = 'sol-status ok';
+                                    stBox.innerHTML = `🎉 <b>DOĞRU!</b> (${{dogru}} şıkkı)`;
+                                }} else {{
+                                    yCount++;
+                                    const secBtn = document.getElementById(`sik-${{idx}}-${{secilen}}`);
+                                    secBtn.classList.add('wrong');
+                                    secBtn.innerText = secilen + ' ❌';
+                                    if (dogruBtn) {{
+                                        dogruBtn.classList.add('correct');
+                                        dogruBtn.innerText = dogru + ' ✔️';
+                                    }}
+                                    stBox.className = 'sol-status err';
+                                    stBox.innerHTML = `❌ <b>YANLIŞ!</b> Senin Cevabın: <b>${{secilen}}</b> &nbsp;|&nbsp; Doğru Cevap: <b>${{dogru}}</b>`;
+                                }}
+                                stBox.style.display = 'block';
+                                stepBtn.style.display = 'flex';
+                            }});
+
+                            document.getElementById('sol-score-txt').innerHTML = `✅ Doğru: ${{dCount}} &nbsp;|&nbsp; ❌ Yanlış: ${{yCount}} &nbsp;|&nbsp; ⭕ Boş: ${{bCount}}`;
+                            const subBtn = document.getElementById('sol-submit-btn');
+                            subBtn.innerHTML = `🏆 Sonuç: ${{dCount}} Doğru, ${{yCount}} Yanlış, ${{bCount}} Boş (Çözümler Açıldı!)`;
+                            subBtn.style.background = 'linear-gradient(90deg, #2563eb 0%, #7c3aed 100%)';
+                            document.getElementById('sol-top-bar').scrollIntoView({{ behavior: 'smooth' }});
                         }};
 
                         window.toggleP = function(id) {{
@@ -1072,12 +1138,12 @@ elif menu == "📚 PDF Havuzu":
                         }};
                     </script>
                     """
-                    components.html(cozum_html, height=min(780, len(st.session_state.pdf_cozum_kartlari) * 280 + 70), scrolling=True)
+                    components.html(cozum_html, height=min(820, len(st.session_state.pdf_cozum_kartlari) * 290 + 110), scrolling=True)
 
-                # 2) BU SAYFADAN İNTERAKTİF İKİZ SORU MEYDAN OKUMASI (Önce İşaretle -> Doğru/Yanlış -> Çözümü Gör)
+                # 2) BU SAYFADAN İNTERAKTİF İKİZ SORU MEYDAN OKUMASI (OPTİK MANTIĞI)
                 if st.session_state.get("pdf_ikiz_quiz"):
                     st.markdown("---")
-                    st.markdown("#### 🎯 Bu Sayfanın İkiz Soru Arenası *(Önce şıkkı işaretle, Doğru/Yanlış durumunu gör, sonra çözümü aç!)*")
+                    st.markdown("#### 🎯 Bu Sayfanın İkiz Soru Arenası *(Şıkları işaretle, en altta '🏁 Testi Bitir ve Gönder'e bas!)*")
                     q_data = st.session_state.pdf_ikiz_quiz
                     q_json = json.dumps(q_data, ensure_ascii=False)
                     ikiz_html = f"""
@@ -1101,8 +1167,13 @@ elif menu == "📚 PDF Havuzu":
                         .q-options {{ display: flex; flex-direction: column; gap: 8px; }}
                         .q-opt {{
                             background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 12px;
-                            padding: 11px 14px; font-size: 14px; font-weight: 600; color: #334155;
+                            padding: 11px 14px; font-size: 14px; font-weight: 700; color: #334155;
                             cursor: pointer; text-align: left;
+                        }}
+                        .q-opt.selected {{
+                            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+                            border-color: #1e3a8a !important;
+                            color: #ffffff !important;
                         }}
                         .q-opt.correct {{ background: #dcfce7 !important; border-color: #16a34a !important; color: #14532d !important; }}
                         .q-opt.wrong {{ background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important; }}
@@ -1115,28 +1186,33 @@ elif menu == "📚 PDF Havuzu":
                             background: #e0e7ff; border: 1px solid #c7d2fe; padding: 9px 14px; border-radius: 10px;
                             font-size: 13px; font-weight: 800; color: #3730a3; cursor: pointer; display: none;
                         }}
+                        .q-submit {{
+                            background: linear-gradient(90deg, #16a34a 0%, #059669 100%);
+                            color: white; border: none; border-radius: 14px; padding: 14px 20px;
+                            font-size: 15px; font-weight: 900; width: 100%; cursor: pointer;
+                        }}
                         .q-box {{ display: none; margin-top: 10px; padding: 12px; border-radius: 12px; font-size: 13.5px; }}
                         .q-hint-box {{ background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }}
                         .q-sol-box {{ background: #f0fdf4; color: #166534; border: 1px solid #86efac; }}
                     </style>
                     <div class="q-container">
-                        <div class="q-scorebar">
+                        <div class="q-scorebar" id="p-top-bar">
                             <span>⚡ İkiz Soru Meydan Okuması</span>
-                            <span id="p-score">✅ Doğru: 0 &nbsp;|&nbsp; ❌ Yanlış: 0</span>
+                            <span id="p-score">İşaretlenen: 0 / {len(q_data)}</span>
                         </div>
                         <div id="p-quiz-root"></div>
+                        <button class="q-submit" id="p-sub-btn" onclick="subPQuiz()">🏁 Testi Bitir ve Gönder</button>
                     </div>
                     <script>
                         const qs = {q_json};
-                        let scD = 0;
-                        let scY = 0;
-                        const ans = new Set();
+                        const picks = {{}};
+                        let done = false;
                         const rt = document.getElementById('p-quiz-root');
                         qs.forEach((q, qIdx) => {{
                             const card = document.createElement('div');
                             card.className = 'q-card';
                             const opts = (q.secenekler || []).map((opt, oIdx) =>
-                                `<button class="q-opt" id="popt-${{qIdx}}-${{oIdx}}" onclick="selPOpt(${{qIdx}}, ${{oIdx}}, ${{q.dogru_index || 0}})">${{opt}}</button>`
+                                `<button class="q-opt" id="popt-${{qIdx}}-${{oIdx}}" onclick="selPOpt(${{qIdx}}, ${{oIdx}})">${{opt}}</button>`
                             ).join('');
                             card.innerHTML = `
                                 <div class="q-badge">🔥 İkiz Soru ${{qIdx + 1}}</div>
@@ -1151,27 +1227,49 @@ elif menu == "📚 PDF Havuzu":
                             `;
                             rt.appendChild(card);
                         }});
-                        window.selPOpt = function(qIdx, oIdx, cIdx) {{
-                            if (ans.has(qIdx)) return;
-                            ans.add(qIdx);
-                            const btn = document.getElementById(`popt-${{qIdx}}-${{oIdx}}`);
-                            const cBtn = document.getElementById(`popt-${{qIdx}}-${{cIdx}}`);
-                            const solBtn = document.getElementById(`pbtn-sol-${{qIdx}}`);
-                            if (oIdx === cIdx) {{
-                                btn.classList.add('correct');
-                                btn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
-                                scD++;
-                            }} else {{
-                                btn.classList.add('wrong');
-                                btn.innerHTML += ' &nbsp; ❌ <b>YANLIŞ!</b>';
-                                if (cBtn) {{
-                                    cBtn.classList.add('correct');
-                                    cBtn.innerHTML += ' &nbsp; ✔️ <b>Doğru Cevap</b>';
+                        window.selPOpt = function(qIdx, oIdx) {{
+                            if (done) return;
+                            picks[qIdx] = oIdx;
+                            (qs[qIdx].secenekler || []).forEach((_, idx) => {{
+                                const b = document.getElementById(`popt-${{qIdx}}-${{idx}}`);
+                                if (b) b.classList.remove('selected');
+                            }});
+                            const cur = document.getElementById(`popt-${{qIdx}}-${{oIdx}}`);
+                            if (cur) cur.classList.add('selected');
+                            document.getElementById('p-score').innerText = `İşaretlenen: ${{Object.keys(picks).length}} / ${{qs.length}}`;
+                        }};
+                        window.subPQuiz = function() {{
+                            if (done) return;
+                            done = true;
+                            let scD = 0, scY = 0, scB = 0;
+                            qs.forEach((q, qIdx) => {{
+                                const cIdx = q.dogru_index || 0;
+                                const uIdx = picks[qIdx];
+                                const cBtn = document.getElementById(`popt-${{qIdx}}-${{cIdx}}`);
+                                const solBtn = document.getElementById(`pbtn-sol-${{qIdx}}`);
+                                (q.secenekler || []).forEach((_, idx) => {{
+                                    const b = document.getElementById(`popt-${{qIdx}}-${{idx}}`);
+                                    if (b) b.classList.remove('selected');
+                                }});
+                                if (uIdx === undefined) {{
+                                    scB++;
+                                    if (cBtn) {{ cBtn.classList.add('correct'); cBtn.innerHTML += ' &nbsp; ✔️ <b>Doğru Cevap</b>'; }}
+                                }} else if (uIdx === cIdx) {{
+                                    scD++;
+                                    const uBtn = document.getElementById(`popt-${{qIdx}}-${{uIdx}}`);
+                                    if (uBtn) {{ uBtn.classList.add('correct'); uBtn.innerHTML += ' &nbsp; ✅ <b>DOĞRU!</b>'; }}
+                                }} else {{
+                                    scY++;
+                                    const uBtn = document.getElementById(`popt-${{qIdx}}-${{uIdx}}`);
+                                    if (uBtn) {{ uBtn.classList.add('wrong'); uBtn.innerHTML += ' &nbsp; ❌ <b>YANLIŞ!</b>'; }}
+                                    if (cBtn) {{ cBtn.classList.add('correct'); cBtn.innerHTML += ' &nbsp; ✔️ <b>Doğru Cevap</b>'; }}
                                 }}
-                                scY++;
-                            }}
-                            solBtn.style.display = 'inline-block';
-                            document.getElementById('p-score').innerHTML = `✅ Doğru: ${{scD}} &nbsp;|&nbsp; ❌ Yanlış: ${{scY}}`;
+                                if (solBtn) solBtn.style.display = 'inline-block';
+                            }});
+                            document.getElementById('p-score').innerHTML = `✅ Doğru: ${{scD}} | ❌ Yanlış: ${{scY}} | ⭕ Boş: ${{scB}}`;
+                            const sb = document.getElementById('p-sub-btn');
+                            sb.innerHTML = `🏆 Sonuç: ${{scD}} Doğru, ${{scY}} Yanlış, ${{scB}} Boş (Çözümler Açıldı!)`;
+                            sb.style.background = 'linear-gradient(90deg, #2563eb 0%, #7c3aed 100%)';
                         }};
                         window.togPBox = function(id) {{
                             const el = document.getElementById(id);
@@ -1179,7 +1277,7 @@ elif menu == "📚 PDF Havuzu":
                         }};
                     </script>
                     """
-                    components.html(ikiz_html, height=len(q_data) * 340 + 80, scrolling=True)
+                    components.html(ikiz_html, height=len(q_data) * 350 + 120, scrolling=True)
 
                 # 3) BU SAYFANIN İNFOGRAFİK HAP ÖZETİ
                 if st.session_state.get("pdf_ozet_kart"):
@@ -1689,6 +1787,10 @@ elif menu == "🤖 Soru Çöz & İkiz":
         st.session_state.cipko_ders = None
     if "cipko_konu" not in st.session_state:
         st.session_state.cipko_konu = None
+    if "cipko_coklu_sec" not in st.session_state:
+        st.session_state.cipko_coklu_sec = False
+    if "cipko_turler" not in st.session_state:
+        st.session_state.cipko_turler = ["Test Oluştur"]
     if "cipko_zorluk" not in st.session_state:
         st.session_state.cipko_zorluk = "Orta"
     if "cipko_soru_sayisi" not in st.session_state:
@@ -1696,15 +1798,30 @@ elif menu == "🤖 Soru Çöz & İkiz":
     if "ai_konu_havuzu" not in st.session_state:
         st.session_state.ai_konu_havuzu = {}
 
+    DERS_LISTESI = ["Türkçe", "Matematik", "Fen Bilimleri", "İnkılap Tarihi", "İngilizce", "Din Kültürü"]
+    CALISMA_TURLERI = [
+        ("📝 Test Oluştur", "Test Oluştur"),
+        ("🎴 Flash Kart", "Flash Kart"),
+        ("✏️ Boşluk Doldur", "Boşluk Doldur"),
+        ("✅ Doğru/Yanlış", "Doğru/Yanlış"),
+        ("🧩 Eşleştir", "Eşleştir"),
+        ("🔀 Karıştırma", "Karıştırma"),
+    ]
+    ZORLUK_LISTESI = ["Kolay", "Orta", "Zor"]
+    ADET_LISTESI = [5, 10, 20]
+
     # SinoTest Özel Mobil Pill & Segmented Bar CSS
     st.markdown("""
     <style>
-        /* Üst 3'lü Segmented Bar (⚡ Hızlı test | Kaynağımdan | 📷 Fotoğraftan) ve Alt Barlar Mobilde Yan Yana */
+        /* Üst 3'lü Segmented Bar ve Alt Barlar Mobilde Yan Yana */
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tab_0),
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_sub_0),
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_0),
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_2),
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_4),
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tur_0),
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tur_2),
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tur_4),
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_zor_0),
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_adet_0) {
             display: flex !important;
@@ -1718,13 +1835,16 @@ elif menu == "🤖 Soru Çöz & İkiz":
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_0) > div[data-testid="stColumn"],
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_2) > div[data-testid="stColumn"],
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_ders_4) > div[data-testid="stColumn"],
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tur_0) > div[data-testid="stColumn"],
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tur_2) > div[data-testid="stColumn"],
+        div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tur_4) > div[data-testid="stColumn"],
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_zor_0) > div[data-testid="stColumn"],
         div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_adet_0) > div[data-testid="stColumn"] {
             min-width: 0 !important;
             flex: 1 1 0% !important;
             width: auto !important;
         }
-        /* SinoTest Seçim Pill Butonları (Beyaz Yuvarlak Kapsül Görünümü) */
+        /* SinoTest Seçim Pill Butonları (Seçilmemiş Hal: Beyaz Yuvarlak Kapsül) */
         div[class*="st-key-cipko_"] button {
             border-radius: 999px !important;
             min-height: 44px !important;
@@ -1734,7 +1854,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
             transition: all 0.18s ease !important;
             box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
             background: #ffffff !important;
-            border: 1.5px solid #e2e8f0 !important;
+            border: 1.5px solid #cbd5e1 !important;
         }
         div[class*="st-key-cipko_"] button p,
         div[class*="st-key-cipko_"] button span,
@@ -1750,10 +1870,24 @@ elif menu == "🤖 Soru Çöz & İkiz":
             padding: 10px 14px !important;
             min-height: 46px !important;
         }
+        /* Başlat Butonu Her Zaman Parlak Yeşil/Mavi Vurgulu */
+        html body div[class*="st-key-"].st-key-cipko_start_test_btn button {
+            background: linear-gradient(135deg, #16a34a 0%, #059669 100%) !important;
+            border: 2px solid #047857 !important;
+            box-shadow: 0 6px 16px rgba(22, 163, 74, 0.28) !important;
+            min-height: 50px !important;
+        }
+        html body div[class*="st-key-"].st-key-cipko_start_test_btn button p,
+        html body div[class*="st-key-"].st-key-cipko_start_test_btn button span,
+        html body div[class*="st-key-"].st-key-cipko_start_test_btn button div {
+            color: #ffffff !important;
+            font-weight: 900 !important;
+            font-size: 15px !important;
+        }
     </style>
     """, unsafe_allow_html=True)
 
-    # Aktif Seçilen Pill Butonlarını Mavi Çerçeveli ve Vurgulu Yapmak İçin Dinamik CSS
+    # Aktif Seçilen Pill Butonlarının Rengini Net Biçimde Değiştiren Yüksek Öncelikli CSS
     aktif_keys = []
     if st.session_state.cipko_ana_mod == "hizli_test":
         aktif_keys.append("cipko_tab_0")
@@ -1767,15 +1901,19 @@ elif menu == "🤖 Soru Çöz & İkiz":
     else:
         aktif_keys.append("cipko_sub_1")
 
-    DERS_LISTESI = ["Türkçe", "Matematik", "Fen Bilimleri", "İnkılap Tarihi", "İngilizce", "Din Kültürü"]
     if st.session_state.cipko_ders in DERS_LISTESI:
         aktif_keys.append(f"cipko_ders_{DERS_LISTESI.index(st.session_state.cipko_ders)}")
 
-    ZORLUK_LISTESI = ["Kolay", "Orta", "Zor"]
+    for t_idx, (_, t_val) in enumerate(CALISMA_TURLERI):
+        if t_val in st.session_state.cipko_turler:
+            aktif_keys.append(f"cipko_tur_{t_idx}")
+
+    if st.session_state.cipko_coklu_sec:
+        aktif_keys.append("cipko_multi_toggle")
+
     if st.session_state.cipko_zorluk in ZORLUK_LISTESI:
         aktif_keys.append(f"cipko_zor_{ZORLUK_LISTESI.index(st.session_state.cipko_zorluk)}")
 
-    ADET_LISTESI = [5, 10, 20]
     if st.session_state.cipko_soru_sayisi in ADET_LISTESI:
         aktif_keys.append(f"cipko_adet_{ADET_LISTESI.index(st.session_state.cipko_soru_sayisi)}")
 
@@ -1787,13 +1925,16 @@ elif menu == "🤖 Soru Çöz & İkiz":
     aktif_css_kurallari = ""
     for a_key in aktif_keys:
         aktif_css_kurallari += f"""
-        .st-key-{a_key} button {{
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
-            border: 2px solid #2563eb !important;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.16) !important;
+        html body div[class*="st-key-"].st-key-{a_key} button {{
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+            border: 2px solid #1e3a8a !important;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+            transform: translateY(-1px) !important;
         }}
-        .st-key-{a_key} button p, .st-key-{a_key} button span, .st-key-{a_key} button div {{
-            color: #1d4ed8 !important;
+        html body div[class*="st-key-"].st-key-{a_key} button p,
+        html body div[class*="st-key-"].st-key-{a_key} button span,
+        html body div[class*="st-key-"].st-key-{a_key} button div {{
+            color: #ffffff !important;
             font-weight: 800 !important;
         }}
         """
@@ -1805,13 +1946,13 @@ elif menu == "🤖 Soru Çöz & İkiz":
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <div>
                 <span style="font-size:24px; font-weight:900; background:linear-gradient(90deg, #1d4ed8, #7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⚡ SinoTest</span>
-                <div style="font-size:12.5px; color:#64748b; font-weight:600;">Sınırsız Yapay Zeka Test & İkiz Soru İstasyonu</div>
+                <div style="font-size:12.5px; color:#64748b; font-weight:600;">Sınırsız Yapay Zeka Çalışma & İkiz Soru İstasyonu</div>
             </div>
             <span style="background:#eff6ff; color:#1d4ed8; font-size:12px; font-weight:800; padding:5px 12px; border-radius:99px; border:1px solid #bfdbfe;">♾️ Sınırsız Hak</span>
         </div>
         """, unsafe_allow_html=True)
 
-        # 1) ÜST 3'LÜ SEGMENTED BAR: [⚡ Hızlı test | Kaynağımdan | 📷 Fotoğraftan]
+        # 1) ÜST 3'LÜ SEGMENTED BAR: [⚡ Hızlı test | 📚 Kaynağımdan | 📷 Fotoğraftan]
         t_col1, t_col2, t_col3 = st.columns(3, gap="small")
         with t_col1:
             if st.button("⚡ Hızlı test", key="cipko_tab_0", use_container_width=True):
@@ -1829,7 +1970,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
         st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
 
         # =========================================================================
-        # MOD 1: ⚡ HIZLI TEST (Ders Seç -> AI Konuları Getirsin -> Zorluk -> 5/10/20)
+        # MOD 1: ⚡ HIZLI TEST (Ders -> Konu -> Çalışma Türü (6 Mod) -> Zorluk -> 5/10/20)
         # =========================================================================
         if st.session_state.cipko_ana_mod == "hizli_test":
             # Alt Segmented Bar: [Konudan seç | Konu yaz]
@@ -1845,16 +1986,17 @@ elif menu == "🤖 Soru Çöz & İkiz":
 
             st.markdown("<div style='font-size:17px; font-weight:800; color:#0f172a; margin:14px 0 8px 0;'>Hangi ders?</div>", unsafe_allow_html=True)
 
-            # 6 LGS Dersi (2'li Yan Yana Kapsül Butonlar — Görseldeki Gibi)
+            # 6 LGS Dersi (2'li Yan Yana Kapsül Butonlar — Seçilen Mavi Olur)
             for r_idx in range(0, 6, 2):
                 d_col1, d_col2 = st.columns(2, gap="small")
                 for c_offset, d_col in enumerate([d_col1, d_col2]):
                     d_idx = r_idx + c_offset
                     ders_adi = DERS_LISTESI[d_idx]
+                    secili_mi = (st.session_state.cipko_ders == ders_adi)
+                    etiket = f"✓ {ders_adi}" if secili_mi else ders_adi
                     with d_col:
-                        if st.button(ders_adi, key=f"cipko_ders_{d_idx}", use_container_width=True):
+                        if st.button(etiket, key=f"cipko_ders_{d_idx}", use_container_width=True):
                             st.session_state.cipko_ders = ders_adi
-                            # Ders seçildiğinde yapay zeka konuları getirsin
                             if ders_adi not in st.session_state.ai_konu_havuzu:
                                 with st.spinner(f"🤖 Yapay zeka {ders_adi} konularını getiriyor..."):
                                     st.session_state.ai_konu_havuzu[ders_adi] = get_ai_lgs_topics(ders_adi)
@@ -1863,12 +2005,44 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             st.session_state.hedef_scroll = "cipko-konu-alani"
                             st.rerun()
 
+            # ÇALIŞMA TÜRÜ (Görseldeki 6'lı Grid + Çoklu Seç)
+            tur_baslik_col, coklu_col = st.columns([2.2, 1.2], gap="small")
+            with tur_baslik_col:
+                st.markdown("<div style='font-size:17px; font-weight:800; color:#0f172a; margin:14px 0 6px 0;'>Çalışma türü</div>", unsafe_allow_html=True)
+            with coklu_col:
+                st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+                coklu_etiket = "☑️ Çoklu seç (Açık)" if st.session_state.cipko_coklu_sec else "⬜ Çoklu seç"
+                if st.button(coklu_etiket, key="cipko_multi_toggle", use_container_width=True):
+                    st.session_state.cipko_coklu_sec = not st.session_state.cipko_coklu_sec
+                    if not st.session_state.cipko_coklu_sec and len(st.session_state.cipko_turler) > 1:
+                        st.session_state.cipko_turler = [st.session_state.cipko_turler[0]]
+                    st.rerun()
+
+            for tr_row in range(0, 6, 2):
+                tc1, tc2 = st.columns(2, gap="small")
+                for tc_off, t_col in enumerate([tc1, tc2]):
+                    t_idx = tr_row + tc_off
+                    t_gorunen, t_kod = CALISMA_TURLERI[t_idx]
+                    secili_tur_mu = (t_kod in st.session_state.cipko_turler)
+                    btn_metin = f"✓ {t_gorunen}" if secili_tur_mu else t_gorunen
+                    with t_col:
+                        if st.button(btn_metin, key=f"cipko_tur_{t_idx}", use_container_width=True):
+                            if st.session_state.cipko_coklu_sec:
+                                if t_kod in st.session_state.cipko_turler:
+                                    if len(st.session_state.cipko_turler) > 1:
+                                        st.session_state.cipko_turler.remove(t_kod)
+                                else:
+                                    st.session_state.cipko_turler.append(t_kod)
+                            else:
+                                st.session_state.cipko_turler = [t_kod]
+                            st.rerun()
+
             # Ders Seçildiyse Konu, Zorluk ve Soru Sayısı Alanını Aç
             st.markdown("<div id='cipko-konu-alani'></div>", unsafe_allow_html=True)
             secili_ders = st.session_state.cipko_ders
 
             if not secili_ders:
-                st.info("👆 Konuları görmek ve hızlı teste başlamak için yukarıdan bir **ders seç**!")
+                st.info("👆 Konuları görmek ve çalışmaya başlamak için yukarıdan bir **ders seç**!")
             else:
                 st.markdown("---")
                 if st.session_state.cipko_konu_mod == "sec":
@@ -1890,7 +2064,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         st.session_state.cipko_konu = tum_konular[0]
 
                     for k_idx, k_ad in enumerate(tum_konular):
-                        isaret = "✅ " if st.session_state.cipko_konu == k_ad else "• "
+                        isaret = "✓ " if st.session_state.cipko_konu == k_ad else "• "
                         if st.button(f"{isaret}{k_ad}", key=f"cipko_konu_btn_{k_idx}", use_container_width=True):
                             st.session_state.cipko_konu = k_ad
                             st.session_state.hedef_scroll = "cipko-ayar-alani"
@@ -1898,53 +2072,67 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 else:
                     st.markdown(f"<div style='font-size:16.5px; font-weight:800; color:#0f172a; margin-bottom:6px;'>✍️ {secili_ders} Konusu Yaz</div>", unsafe_allow_html=True)
                     yazilan_konu = st.text_input(
-                        "Test çözmek istediğin konuyu veya kazanımı yaz:",
+                        "Çalışmak istediğin konuyu veya kazanımı yaz:",
                         value="" if (not st.session_state.cipko_konu or st.session_state.cipko_konu.startswith("🌟")) else st.session_state.cipko_konu,
                         placeholder=f"Örn: {MEB_8_SINIF_KONULARI.get(secili_ders, ['Özel Konu'])[0]}",
                         key="cipko_yazilan_konu_input"
                     )
                     st.session_state.cipko_konu = yazilan_konu.strip() if yazilan_konu.strip() else "Genel Karma"
 
-                # ZORLUK SEVİYESİ VE SORU SAYISI (5 - 10 - 20)
+                # ZORLUK SEVİYESİ VE SORU/İÇERİK SAYISI (5 - 10 - 20)
                 st.markdown("<div id='cipko-ayar-alani'></div>", unsafe_allow_html=True)
                 st.markdown("<div style='font-size:16.5px; font-weight:800; color:#0f172a; margin:14px 0 8px 0;'>🔥 Zorluk seviyesi</div>", unsafe_allow_html=True)
                 z_col1, z_col2, z_col3 = st.columns(3, gap="small")
                 ZORLUK_ETIKET = [("🟢 Kolay", "Kolay"), ("🟡 Orta", "Orta"), ("🔴 Zor", "Zor")]
                 for z_i, (z_goster, z_deger) in enumerate(ZORLUK_ETIKET):
+                    z_sec = (st.session_state.cipko_zorluk == z_deger)
+                    z_txt = f"✓ {z_goster}" if z_sec else z_goster
                     with [z_col1, z_col2, z_col3][z_i]:
-                        if st.button(z_goster, key=f"cipko_zor_{z_i}", use_container_width=True):
+                        if st.button(z_txt, key=f"cipko_zor_{z_i}", use_container_width=True):
                             st.session_state.cipko_zorluk = z_deger
                             st.rerun()
 
-                st.markdown("<div style='font-size:16.5px; font-weight:800; color:#0f172a; margin:14px 0 8px 0;'>🔢 Soru sayısı</div>", unsafe_allow_html=True)
+                st.markdown("<div style='font-size:16.5px; font-weight:800; color:#0f172a; margin:14px 0 8px 0;'>🔢 Soru / Kart sayısı</div>", unsafe_allow_html=True)
                 a_col1, a_col2, a_col3 = st.columns(3, gap="small")
                 for a_i, adet_val in enumerate([5, 10, 20]):
+                    a_sec = (st.session_state.cipko_soru_sayisi == adet_val)
+                    a_txt = f"✓ {adet_val} Adet" if a_sec else f"{adet_val} Adet"
                     with [a_col1, a_col2, a_col3][a_i]:
-                        if st.button(f"{adet_val} Soru", key=f"cipko_adet_{a_i}", use_container_width=True):
+                        if st.button(a_txt, key=f"cipko_adet_{a_i}", use_container_width=True):
                             st.session_state.cipko_soru_sayisi = adet_val
                             st.rerun()
 
                 secili_konu_son = st.session_state.cipko_konu or "Genel Karma"
                 secili_zorluk_son = st.session_state.cipko_zorluk
                 secili_adet_son = st.session_state.cipko_soru_sayisi
+                secili_turler_son = st.session_state.cipko_turler or ["Test Oluştur"]
+                turler_ozet_str = ", ".join(secili_turler_son)
 
                 st.markdown(f"""
-                <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:14px; padding:10px 14px; margin:12px 0; font-size:13px; color:#334155; font-weight:700;">
-                    📌 <b>Seçimin:</b> {secili_ders} &nbsp;|&nbsp; 🎯 {secili_konu_son} &nbsp;|&nbsp; 🔥 {secili_zorluk_son} &nbsp;|&nbsp; 🔢 {secili_adet_son} Soru
+                <div style="background:#eff6ff; border:2px solid #93c5fd; border-radius:14px; padding:12px 14px; margin:12px 0; font-size:13.5px; color:#1e3a8a; font-weight:700;">
+                    📌 <b>Seçimin:</b> {secili_ders} &nbsp;|&nbsp; 🎯 {secili_konu_son} &nbsp;|&nbsp; 🧩 <b>{turler_ozet_str}</b> &nbsp;|&nbsp; 🔥 {secili_zorluk_son} &nbsp;|&nbsp; 🔢 {secili_adet_son} Adet
                 </div>
                 """, unsafe_allow_html=True)
 
-                if st.button(f"🚀 SinoTest'i Başlat ({secili_adet_son} Soru)", key="cipko_start_test_btn", use_container_width=True):
-                    with st.spinner(f"🤖 SinoTest {secili_ders} - '{secili_konu_son}' ({secili_zorluk_son}) için {secili_adet_son} soruluk LGS testini hazırlıyor..."):
-                        st.session_state.cipko_aktif_test = generate_custom_lgs_test(
-                            ders=secili_ders,
-                            konu=secili_konu_son,
-                            zorluk=secili_zorluk_son,
-                            soru_sayisi=secili_adet_son
-                        )
-                        st.session_state.cipko_test_baslik = f"{secili_ders} • {secili_konu_son} ({secili_zorluk_son})"
-                        st.session_state.hedef_scroll = "cipko-test-arena-sonuc"
-                        st.rerun()
+                if st.button(f"🚀 SinoTest'i Başlat ({turler_ozet_str})", key="cipko_start_test_btn", use_container_width=True):
+                    uretilen_paketler = []
+                    for tur_adi in secili_turler_son:
+                        with st.spinner(f"🤖 SinoTest '{secili_ders} - {secili_konu_son}' için [{tur_adi}] ({secili_adet_son} adet) hazırlıyor..."):
+                            veriler = generate_sinotest_activity(
+                                ders=secili_ders,
+                                konu=secili_konu_son,
+                                zorluk=secili_zorluk_son,
+                                adet=secili_adet_son,
+                                calisma_turu=tur_adi
+                            )
+                            uretilen_paketler.append({
+                                "tur": tur_adi,
+                                "baslik": f"{secili_ders} • {secili_konu_son} ({secili_zorluk_son})",
+                                "veriler": veriler
+                            })
+                    st.session_state.cipko_aktif_paketler = uretilen_paketler
+                    st.session_state.hedef_scroll = "cipko-test-arena-sonuc"
+                    st.rerun()
 
         # =========================================================================
         # MOD 2: 📚 KAYNAĞIMDAN (Kütüphanedeki PDF'lerden Seçip Test Üretme)
@@ -1954,7 +2142,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
             pdf_lib_dir.mkdir(exist_ok=True)
             kayitli_pdfler = sorted(pdf_lib_dir.glob("*.pdf"), key=lambda x: x.stat().st_mtime, reverse=True)
             if not kayitli_pdfler:
-                st.info("📚 Henüz kütüphanende yüklü bir PDF yok. '📚 PDF Havuzu' istasyonundan veya '📷 Fotoğraftan' sekmesinden kaynak yükleyebilirsin!")
+                st.info("📚 Henüz kütüphanende yüklü bir PDF yok. '📚 PDF Havuzu' istasyonundan veya '📷 Fotoğraftan' sekmesinden kaynak yükebilirsin!")
             else:
                 secilen_pdf_ad = st.selectbox("📖 Kütüphanendeki Kaynağı Seç:", [p.stem for p in kayitli_pdfler])
                 secilen_pdf_yol = next((p for p in kayitli_pdfler if p.stem == secilen_pdf_ad), kayitli_pdfler[0])
@@ -1967,8 +2155,12 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 st.image(img_k, caption=f"{secilen_pdf_ad} - Sayfa {sayfa_k}", use_container_width=True)
                 if st.button("🎯 Bu Sayfadan SinoTest Üret", use_container_width=True):
                     with st.spinner("Kaynağındaki sayfadan yeni nesil LGS soruları hazırlanıyor..."):
-                        st.session_state.cipko_aktif_test = generate_lgs_quiz_list(image=img_k)
-                        st.session_state.cipko_test_baslik = f"{secilen_pdf_ad} (Sayfa {sayfa_k})"
+                        veriler_k = generate_lgs_quiz_list(image=img_k)
+                        st.session_state.cipko_aktif_paketler = [{
+                            "tur": "Test Oluştur",
+                            "baslik": f"{secilen_pdf_ad} (Sayfa {sayfa_k})",
+                            "veriler": veriler_k
+                        }]
                         st.session_state.hedef_scroll = "cipko-test-arena-sonuc"
                         st.rerun()
 
@@ -2013,216 +2205,499 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     st.session_state.hedef_scroll = "ikiz-soru-sonuc"
 
         # =========================================================================
-        # SİNOTEST HIZLI TEST ARENASI SONUÇ EKRANI (Önce İşaretle -> Doğru/Yanlış -> Çözümü Gör)
+        # SİNOTEST ARENASI SONUÇ EKRANI (6 ÇALIŞMA TÜRÜ + OPTİK FORM GÖNDER MANTIĞI)
         # =========================================================================
         st.markdown("<div id='cipko-test-arena-sonuc'></div>", unsafe_allow_html=True)
-        if st.session_state.get("cipko_aktif_test") and st.session_state.cipko_ana_mod in ("hizli_test", "kaynagimdan"):
-            st.markdown("---")
-            test_sorulari = st.session_state.cipko_aktif_test
-            test_baslik = st.session_state.get("cipko_test_baslik", "SinoTest Hızlı LGS Testi")
-            st.markdown(f"#### 🏆 {test_baslik}")
-            st.caption("👇 Önce cevabını işaretle; sistem Doğru/Yanlış durumunu belirledikten sonra **'📖 Adım Adım Çözümü Gör'** butonu açılır!")
-            t_json = json.dumps(test_sorulari, ensure_ascii=False)
-            test_html = f"""
-            <style>
-                * {{ box-sizing: border-box; }}
-                body {{ margin: 0; padding: 0; background: transparent; }}
-                .ct-wrap {{ font-family: 'Inter', -apple-system, sans-serif; padding: 4px 2px; }}
-                .ct-scorebar {{
-                    background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
-                    color: white;
-                    padding: 12px 16px;
-                    border-radius: 14px;
-                    font-weight: 800;
-                    font-size: 13.5px;
-                    margin-bottom: 14px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    position: sticky;
-                    top: 0;
-                    z-index: 10;
-                    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-                }}
-                .ct-card {{
-                    background: #ffffff;
-                    border: 2px solid #e0e7ff;
-                    border-radius: 18px;
-                    padding: 16px;
-                    margin-bottom: 16px;
-                    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
-                }}
-                .ct-header {{
-                    display: flex;
-                    align-items: stretch;
-                    gap: 10px;
-                    margin-bottom: 12px;
-                }}
-                .ct-num {{
-                    background: linear-gradient(90deg, #2563eb, #7c3aed);
-                    color: white;
-                    font-weight: 800;
-                    font-size: 13px;
-                    padding: 8px 10px;
-                    border-radius: 12px;
-                    white-space: nowrap;
-                    flex: 0 0 104px;
-                    width: 104px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    text-align: center;
-                }}
-                .ct-topic {{
-                    background: #eff6ff;
-                    border: 1.5px solid #bfdbfe;
-                    color: #1d4ed8;
-                    font-size: 12.5px;
-                    font-weight: 700;
-                    padding: 8px 12px;
-                    border-radius: 12px;
-                    flex: 1 1 auto;
-                    min-width: 0;
-                    line-height: 1.35;
-                    display: flex;
-                    align-items: center;
-                    text-align: left;
-                    word-break: break-word;
-                }}
-                .ct-qtext {{
-                    font-size: 15px;
-                    font-weight: 700;
-                    color: #1e293b;
-                    line-height: 1.55;
-                    margin-bottom: 14px;
-                    white-space: pre-line;
-                }}
-                .ct-opts {{ display: flex; flex-direction: column; gap: 8px; }}
-                .ct-opt {{
-                    background: #f8fafc;
-                    border: 2px solid #cbd5e1;
-                    border-radius: 12px;
-                    padding: 11px 14px;
-                    font-size: 14px;
-                    font-weight: 700;
-                    color: #334155;
-                    cursor: pointer;
-                    text-align: left;
-                    transition: all 0.15s ease;
-                }}
-                .ct-opt:hover {{ border-color: #3b82f6; background: #eff6ff; }}
-                .ct-opt.correct {{ background: #dcfce7 !important; border-color: #16a34a !important; color: #14532d !important; }}
-                .ct-opt.wrong {{ background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important; }}
-                .ct-status {{
-                    display: none;
-                    margin-top: 10px;
-                    padding: 9px 12px;
-                    border-radius: 10px;
-                    font-size: 13.5px;
-                    font-weight: 800;
-                    text-align: center;
-                }}
-                .ct-status.ok {{ background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }}
-                .ct-status.err {{ background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }}
-                .ct-actions {{ display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }}
-                .ct-act-btn {{
-                    border: none;
-                    padding: 10px 14px;
-                    border-radius: 10px;
-                    font-size: 13px;
-                    font-weight: 800;
-                    cursor: pointer;
-                    flex: 1 1 180px;
-                    width: 100%;
-                    text-align: left;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                }}
-                .ct-act-btn::after {{ content: '▾'; font-size: 12px; opacity: 0.7; }}
-                .ct-btn-hint {{ background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }}
-                .ct-btn-sol {{ background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; display: none; }}
-                .ct-box {{ display: none; margin-top: 10px; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }}
-                .ct-hint-box {{ background: #fffbeb; color: #78350f; border-left: 5px solid #f59e0b; }}
-                .ct-sol-box {{ background: #f0fdf4; color: #166534; border-left: 5px solid #16a34a; }}
-            </style>
-            <div class="ct-wrap">
-                <div class="ct-scorebar">
-                    <span>⚡ SinoTest Canlı Skor</span>
-                    <span id="ct-score">✅ Doğru: 0 &nbsp;|&nbsp; ❌ Yanlış: 0 &nbsp;/&nbsp; {len(test_sorulari)}</span>
-                </div>
-                <div id="ct-root"></div>
-            </div>
-            <script>
-                const qs = {t_json};
-                let scD = 0;
-                let scY = 0;
-                const ans = new Set();
-                const rt = document.getElementById('ct-root');
-                const harfler = ['A', 'B', 'C', 'D'];
-                qs.forEach((q, qIdx) => {{
-                    const card = document.createElement('div');
-                    card.className = 'ct-card';
-                    const stdNo = 'Soru ' + (qIdx + 1);
-                    const topicTxt = q.kazanim || '{test_baslik}';
-                    const opts = (q.secenekler || []).map((opt, oIdx) =>
-                        `<button class="ct-opt" id="ctopt-${{qIdx}}-${{oIdx}}" onclick="selCtOpt(${{qIdx}}, ${{oIdx}}, ${{q.dogru_index || 0}})">${{opt}}</button>`
-                    ).join('');
-                    card.innerHTML = `
-                        <div class="ct-header">
-                            <span class="ct-num">📌 ${{stdNo}}</span>
-                            <span class="ct-topic">🎯 ${{topicTxt}}</span>
-                        </div>
-                        <div class="ct-qtext">${{q.soru || ''}}</div>
-                        <div class="ct-opts">${{opts}}</div>
-                        <div class="ct-status" id="ctst-${{qIdx}}"></div>
-                        <div class="ct-actions">
-                            <button class="ct-act-btn ct-btn-hint" onclick="togCtBox('cthint-${{qIdx}}')"><span>💡 İpucu Göster</span></button>
-                            <button class="ct-act-btn ct-btn-sol" id="ctbtn-sol-${{qIdx}}" onclick="togCtBox('ctsol-${{qIdx}}')"><span>📖 Adım Adım Çözümü Gör</span></button>
-                        </div>
-                        <div class="ct-box ct-hint-box" id="cthint-${{qIdx}}"><b>💡 İpucu:</b> ${{q.ipucu || ''}}</div>
-                        <div class="ct-box ct-sol-box" id="ctsol-${{qIdx}}"><b>✅ Adım Adım Çözüm:</b> ${{q.cozum || ''}}</div>
-                    `;
-                    rt.appendChild(card);
-                }});
-                window.selCtOpt = function(qIdx, oIdx, cIdx) {{
-                    if (ans.has(qIdx)) return;
-                    ans.add(qIdx);
-                    const btn = document.getElementById(`ctopt-${{qIdx}}-${{oIdx}}`);
-                    const cBtn = document.getElementById(`ctopt-${{qIdx}}-${{cIdx}}`);
-                    const stEl = document.getElementById(`ctst-${{qIdx}}`);
-                    const solBtn = document.getElementById(`ctbtn-sol-${{qIdx}}`);
-                    const secHarf = harfler[oIdx] || '';
-                    const dogruHarf = harfler[cIdx] || '';
+        if st.session_state.get("cipko_aktif_paketler") and st.session_state.cipko_ana_mod in ("hizli_test", "kaynagimdan"):
+            for p_idx, paket in enumerate(st.session_state.cipko_aktif_paketler):
+                st.markdown("---")
+                tur_adi = paket.get("tur", "Test Oluştur")
+                paket_baslik = paket.get("baslik", "SinoTest Çalışması")
+                paket_veriler = paket.get("veriler", [])
+                st.markdown(f"#### 🏆 [{tur_adi}] — {paket_baslik}")
 
-                    if (oIdx === cIdx) {{
-                        btn.classList.add('correct');
-                        btn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
-                        stEl.className = 'ct-status ok';
-                        stEl.innerHTML = `✅ <b>DOĞRU!</b> (${{dogruHarf}} şıkkı) — Şimdi alttaki butondan çözümü inceleyebilirsin.`;
-                        scD++;
-                    }} else {{
-                        btn.classList.add('wrong');
-                        btn.innerHTML += ' &nbsp; ❌ <b>YANLIŞ!</b>';
-                        if (cBtn) {{
-                            cBtn.classList.add('correct');
-                            cBtn.innerHTML += ' &nbsp; ✔️ <b>Doğru Şık</b>';
+                v_json = json.dumps(paket_veriler, ensure_ascii=False)
+
+                if tur_adi in ("Test Oluştur", "Boşluk Doldur", "Doğru/Yanlış", "Karıştırma"):
+                    st.caption("👇 Önce tüm sorularda cevabını işaretle (seçtiğin şık mavi yanar). Bitirince en alttaki **'🏁 Testi Bitir ve Gönder'** butonuna basarak doğru/yanlış sonuçlarını ve çözümleri gör!")
+                    optik_html = f"""
+                    <style>
+                        * {{ box-sizing: border-box; }}
+                        body {{ margin: 0; padding: 0; background: transparent; }}
+                        .ct-wrap {{ font-family: 'Inter', -apple-system, sans-serif; padding: 4px 2px; }}
+                        .ct-scorebar {{
+                            background: linear-gradient(90deg, #1d4ed8 0%, #4f46e5 100%);
+                            color: white;
+                            padding: 12px 16px;
+                            border-radius: 14px;
+                            font-weight: 800;
+                            font-size: 13.5px;
+                            margin-bottom: 14px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            flex-wrap: wrap;
+                            gap: 8px;
+                            position: sticky;
+                            top: 0;
+                            z-index: 10;
+                            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
                         }}
-                        stEl.className = 'ct-status err';
-                        stEl.innerHTML = `❌ <b>YANLIŞ!</b> İşaretlediğin: <b>${{secHarf}}</b> &nbsp;|&nbsp; Doğru Cevap: <b>${{dogruHarf}}</b> — Alttan çözümü gör!`;
-                        scY++;
-                    }}
-                    stEl.style.display = 'block';
-                    solBtn.style.display = 'flex';
-                    document.getElementById('ct-score').innerHTML = `✅ Doğru: ${{scD}} &nbsp;|&nbsp; ❌ Yanlış: ${{scY}} &nbsp;/&nbsp; ${{qs.length}}`;
-                }};
-                window.togCtBox = function(id) {{
-                    const el = document.getElementById(id);
-                    el.style.display = (el.style.display === 'block') ? 'none' : 'block';
-                }};
-            </script>
-            """
-            components.html(test_html, height=min(820, len(test_sorulari) * 360 + 80), scrolling=True)
+                        .ct-card {{
+                            background: #ffffff;
+                            border: 2px solid #e0e7ff;
+                            border-radius: 18px;
+                            padding: 16px;
+                            margin-bottom: 16px;
+                            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+                        }}
+                        .ct-header {{
+                            display: flex;
+                            align-items: stretch;
+                            gap: 10px;
+                            margin-bottom: 12px;
+                        }}
+                        .ct-num {{
+                            background: linear-gradient(90deg, #2563eb, #7c3aed);
+                            color: white;
+                            font-weight: 800;
+                            font-size: 13px;
+                            padding: 8px 10px;
+                            border-radius: 12px;
+                            white-space: nowrap;
+                            flex: 0 0 104px;
+                            width: 104px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                        }}
+                        .ct-topic {{
+                            background: #eff6ff;
+                            border: 1.5px solid #bfdbfe;
+                            color: #1d4ed8;
+                            font-size: 12.5px;
+                            font-weight: 700;
+                            padding: 8px 12px;
+                            border-radius: 12px;
+                            flex: 1 1 auto;
+                            min-width: 0;
+                            line-height: 1.35;
+                            display: flex;
+                            align-items: center;
+                            text-align: left;
+                            word-break: break-word;
+                        }}
+                        .ct-qtext {{
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: #1e293b;
+                            line-height: 1.55;
+                            margin-bottom: 14px;
+                            white-space: pre-line;
+                        }}
+                        .ct-opts {{ display: flex; flex-direction: column; gap: 8px; }}
+                        .ct-opt {{
+                            background: #f8fafc;
+                            border: 2px solid #cbd5e1;
+                            border-radius: 12px;
+                            padding: 11px 14px;
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #334155;
+                            cursor: pointer;
+                            text-align: left;
+                            transition: all 0.15s ease;
+                        }}
+                        .ct-opt:hover {{ border-color: #3b82f6; background: #eff6ff; }}
+                        .ct-opt.selected {{
+                            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+                            border-color: #1e3a8a !important;
+                            color: #ffffff !important;
+                            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+                        }}
+                        .ct-opt.correct {{ background: #dcfce7 !important; border-color: #16a34a !important; color: #14532d !important; }}
+                        .ct-opt.wrong {{ background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important; }}
+                        .ct-status {{
+                            display: none;
+                            margin-top: 10px;
+                            padding: 9px 12px;
+                            border-radius: 10px;
+                            font-size: 13.5px;
+                            font-weight: 800;
+                            text-align: center;
+                        }}
+                        .ct-status.ok {{ background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }}
+                        .ct-status.err {{ background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }}
+                        .ct-actions {{ display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }}
+                        .ct-act-btn {{
+                            border: none;
+                            padding: 10px 14px;
+                            border-radius: 10px;
+                            font-size: 13px;
+                            font-weight: 800;
+                            cursor: pointer;
+                            flex: 1 1 180px;
+                            width: 100%;
+                            text-align: left;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                        }}
+                        .ct-act-btn::after {{ content: '▾'; font-size: 12px; opacity: 0.7; }}
+                        .ct-btn-hint {{ background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }}
+                        .ct-btn-sol {{ background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; display: none; }}
+                        .ct-box {{ display: none; margin-top: 10px; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }}
+                        .ct-hint-box {{ background: #fffbeb; color: #78350f; border-left: 5px solid #f59e0b; }}
+                        .ct-sol-box {{ background: #f0fdf4; color: #166534; border-left: 5px solid #16a34a; }}
+                        .ct-submit-bar {{
+                            margin: 18px 0 10px 0;
+                            text-align: center;
+                        }}
+                        .ct-submit-btn {{
+                            width: 100%;
+                            background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+                            color: #ffffff;
+                            border: none;
+                            padding: 15px 20px;
+                            border-radius: 16px;
+                            font-size: 16px;
+                            font-weight: 900;
+                            cursor: pointer;
+                            box-shadow: 0 6px 18px rgba(22, 163, 74, 0.32);
+                            transition: all 0.2s ease;
+                        }}
+                        .ct-submit-btn:hover {{ transform: translateY(-1px); }}
+                        .ct-submit-btn:disabled {{
+                            background: #64748b;
+                            cursor: default;
+                            transform: none;
+                            box-shadow: none;
+                        }}
+                    </style>
+                    <div class="ct-wrap">
+                        <div class="ct-scorebar" id="ct-top-bar">
+                            <span>📝 SinoTest Optik Durumu ({tur_adi})</span>
+                            <span id="ct-score">İşaretlenen: 0 / {len(paket_veriler)}</span>
+                        </div>
+                        <div id="ct-root"></div>
+                        <div class="ct-submit-bar">
+                            <button class="ct-submit-btn" id="ct-finish-btn" onclick="submitCtTest()">🏁 Testi Bitir ve Gönder (Sonuçları & Çözümleri Gör)</button>
+                        </div>
+                    </div>
+                    <script>
+                        const qs = {v_json};
+                        const userChoices = {{}};
+                        let isSubmitted = false;
+                        const rt = document.getElementById('ct-root');
+                        const harfler = ['A', 'B', 'C', 'D'];
+                        qs.forEach((q, qIdx) => {{
+                            const card = document.createElement('div');
+                            card.className = 'ct-card';
+                            const stdNo = 'Soru ' + (qIdx + 1);
+                            const topicTxt = q.kazanim || '{paket_baslik}';
+                            const opts = (q.secenekler || []).map((opt, oIdx) =>
+                                `<button class="ct-opt" id="ctopt-${{qIdx}}-${{oIdx}}" data-raw="${{encodeURIComponent(opt)}}" onclick="selCtOpt(${{qIdx}}, ${{oIdx}})">${{opt}}</button>`
+                            ).join('');
+                            card.innerHTML = `
+                                <div class="ct-header">
+                                    <span class="ct-num">📌 ${{stdNo}}</span>
+                                    <span class="ct-topic">🎯 ${{topicTxt}}</span>
+                                </div>
+                                <div class="ct-qtext">${{q.soru || ''}}</div>
+                                <div class="ct-opts">${{opts}}</div>
+                                <div class="ct-status" id="ctst-${{qIdx}}"></div>
+                                <div class="ct-actions">
+                                    <button class="ct-act-btn ct-btn-hint" onclick="togCtBox('cthint-${{qIdx}}')"><span>💡 İpucu Göster</span></button>
+                                    <button class="ct-act-btn ct-btn-sol" id="ctbtn-sol-${{qIdx}}" onclick="togCtBox('ctsol-${{qIdx}}')"><span>📖 Adım Adım Çözümü Gör</span></button>
+                                </div>
+                                <div class="ct-box ct-hint-box" id="cthint-${{qIdx}}"><b>💡 İpucu:</b> ${{q.ipucu || ''}}</div>
+                                <div class="ct-box ct-sol-box" id="ctsol-${{qIdx}}"><b>✅ Adım Adım Çözüm:</b> ${{q.cozum || ''}}</div>
+                            `;
+                            rt.appendChild(card);
+                        }});
+
+                        window.selCtOpt = function(qIdx, oIdx) {{
+                            if (isSubmitted) return;
+                            userChoices[qIdx] = oIdx;
+                            const optList = qs[qIdx].secenekler || [];
+                            for (let i = 0; i < optList.length; i++) {{
+                                const b = document.getElementById(`ctopt-${{qIdx}}-${{i}}`);
+                                if (!b) continue;
+                                const rawTxt = decodeURIComponent(b.getAttribute('data-raw'));
+                                if (i === oIdx) {{
+                                    b.classList.add('selected');
+                                    b.innerHTML = '✓ ' + rawTxt;
+                                }} else {{
+                                    b.classList.remove('selected');
+                                    b.innerHTML = rawTxt;
+                                }}
+                            }}
+                            const answeredCount = Object.keys(userChoices).length;
+                            document.getElementById('ct-score').innerHTML = `İşaretlenen: ${{answeredCount}} / ${{qs.length}}`;
+                        }};
+
+                        window.submitCtTest = function() {{
+                            if (isSubmitted) return;
+                            isSubmitted = true;
+                            let scD = 0;
+                            let scY = 0;
+                            let scB = 0;
+
+                            qs.forEach((q, qIdx) => {{
+                                const cIdx = q.dogru_index || 0;
+                                const uIdx = userChoices[qIdx];
+                                const optList = q.secenekler || [];
+                                const cBtn = document.getElementById(`ctopt-${{qIdx}}-${{cIdx}}`);
+                                const stEl = document.getElementById(`ctst-${{qIdx}}`);
+                                const solBtn = document.getElementById(`ctbtn-sol-${{qIdx}}`);
+                                const dogruEtiket = (optList.length === 2) ? (optList[cIdx] || '') : (harfler[cIdx] || '');
+
+                                for (let i = 0; i < optList.length; i++) {{
+                                    const b = document.getElementById(`ctopt-${{qIdx}}-${{i}}`);
+                                    if (b) {{
+                                        b.classList.remove('selected');
+                                        b.innerHTML = decodeURIComponent(b.getAttribute('data-raw'));
+                                    }}
+                                }}
+
+                                if (uIdx === undefined) {{
+                                    scB++;
+                                    if (cBtn) {{
+                                        cBtn.classList.add('correct');
+                                        cBtn.innerHTML += ' &nbsp; ✔️ <b>Doğru Cevap</b>';
+                                    }}
+                                    stEl.className = 'ct-status err';
+                                    stEl.innerHTML = `⚪ <b>BOŞ BIRAKILDI!</b> Doğru Cevap: <b>${{dogruEtiket}}</b> — Alttan çözümü incele!`;
+                                }} else if (uIdx === cIdx) {{
+                                    scD++;
+                                    const uBtn = document.getElementById(`ctopt-${{qIdx}}-${{uIdx}}`);
+                                    if (uBtn) {{
+                                        uBtn.classList.add('correct');
+                                        uBtn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
+                                    }}
+                                    stEl.className = 'ct-status ok';
+                                    stEl.innerHTML = `✅ <b>DOĞRU!</b> (${{dogruEtiket}}) — Alttaki butondan adım adım çözümü görebilirsin.`;
+                                }} else {{
+                                    scY++;
+                                    const uBtn = document.getElementById(`ctopt-${{qIdx}}-${{uIdx}}`);
+                                    const secEtiket = (optList.length === 2) ? (optList[uIdx] || '') : (harfler[uIdx] || '');
+                                    if (uBtn) {{
+                                        uBtn.classList.add('wrong');
+                                        uBtn.innerHTML += ' &nbsp; ❌ <b>Senin Seçimin</b>';
+                                    }}
+                                    if (cBtn) {{
+                                        cBtn.classList.add('correct');
+                                        cBtn.innerHTML += ' &nbsp; ✔️ <b>Doğru Cevap</b>';
+                                    }}
+                                    stEl.className = 'ct-status err';
+                                    stEl.innerHTML = `❌ <b>YANLIŞ!</b> İşaretlediğin: <b>${{secEtiket}}</b> &nbsp;|&nbsp; Doğru Cevap: <b>${{dogruEtiket}}</b>`;
+                                }}
+                                stEl.style.display = 'block';
+                                solBtn.style.display = 'flex';
+                            }});
+
+                            document.getElementById('ct-score').innerHTML = `✅ Doğru: ${{scD}} &nbsp;|&nbsp; ❌ Yanlış: ${{scY}} &nbsp;|&nbsp; ⚪ Boş: ${{scB}}`;
+                            const fBtn = document.getElementById('ct-finish-btn');
+                            fBtn.disabled = true;
+                            fBtn.innerHTML = `✅ Test Tamamlandı — Doğru: ${{scD}} | Yanlış: ${{scY}} | Boş: ${{scB}}`;
+                            document.getElementById('ct-top-bar').scrollIntoView({{ behavior: 'smooth' }});
+                        }};
+
+                        window.togCtBox = function(id) {{
+                            const el = document.getElementById(id);
+                            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+                        }};
+                    </script>
+                    """
+                    components.html(optik_html, height=min(860, len(paket_veriler) * 350 + 130), scrolling=True)
+
+                elif tur_adi == "Flash Kart":
+                    st.caption("👇 Kartların üzerine tıklayarak arka yüzündeki **cevabı ve kritik LGS ipucunu** çevirip görebilirsin!")
+                    flash_html = f"""
+                    <style>
+                        * {{ box-sizing: border-box; }}
+                        body {{ margin: 0; padding: 0; background: transparent; font-family: 'Inter', -apple-system, sans-serif; }}
+                        .fc-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; padding: 6px 2px; }}
+                        .fc-item {{
+                            background: #ffffff;
+                            border: 2px solid #93c5fd;
+                            border-radius: 18px;
+                            padding: 18px 16px;
+                            min-height: 175px;
+                            cursor: pointer;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: space-between;
+                            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.08);
+                            transition: all 0.2s ease;
+                        }}
+                        .fc-item:hover {{ transform: translateY(-2px); border-color: #2563eb; }}
+                        .fc-item.flipped {{
+                            background: linear-gradient(135deg, #eff6ff 0%, #dcfce7 100%);
+                            border-color: #16a34a;
+                        }}
+                        .fc-badge {{
+                            display: inline-block;
+                            background: #dbeafe;
+                            color: #1e40af;
+                            font-size: 11.5px;
+                            font-weight: 800;
+                            padding: 4px 10px;
+                            border-radius: 99px;
+                            margin-bottom: 10px;
+                        }}
+                        .fc-item.flipped .fc-badge {{ background: #bbf7d0; color: #166534; }}
+                        .fc-body {{ font-size: 14.5px; font-weight: 700; color: #1e293b; line-height: 1.5; }}
+                        .fc-foot {{ font-size: 11.5px; color: #64748b; font-weight: 700; margin-top: 12px; text-align: right; }}
+                    </style>
+                    <div class="fc-grid" id="fc-root"></div>
+                    <script>
+                        const cards = {v_json};
+                        const root = document.getElementById('fc-root');
+                        cards.forEach((c, idx) => {{
+                            const el = document.createElement('div');
+                            el.className = 'fc-item';
+                            el.onclick = function() {{
+                                const isF = el.classList.toggle('flipped');
+                                const bdg = el.querySelector('.fc-badge');
+                                const bdy = el.querySelector('.fc-body');
+                                const ft = el.querySelector('.fc-foot');
+                                if (isF) {{
+                                    bdg.innerHTML = '✅ CEVAP & ÖZET (' + (c.kazanim || 'Kazanım') + ')';
+                                    bdy.innerHTML = (c.arka_yuz || '') + (c.ipucu ? `<div style="margin-top:8px;font-size:12.5px;color:#15803d;">💡 <b>İpucu:</b> ${{c.ipucu}}</div>` : '');
+                                    ft.innerHTML = '🔄 Soruya dönmek için tıkla';
+                                }} else {{
+                                    bdg.innerHTML = '🎴 KART ' + (idx + 1) + ' • ' + (c.kazanim || 'Kavram');
+                                    bdy.innerHTML = c.on_yuz || '';
+                                    ft.innerHTML = '👆 Cevabı görmek için karta dokun';
+                                }}
+                            }};
+                            el.innerHTML = `
+                                <div>
+                                    <span class="fc-badge">🎴 KART ${{idx + 1}} • ${{c.kazanim || 'Kavram'}}</span>
+                                    <div class="fc-body">${{c.on_yuz || ''}}</div>
+                                </div>
+                                <div class="fc-foot">👆 Cevabı görmek için karta dokun</div>
+                            `;
+                            root.appendChild(el);
+                        }});
+                    </script>
+                    """
+                    components.html(flash_html, height=min(760, ((len(paket_veriler) + 1) // 2) * 210 + 60), scrolling=True)
+
+                elif tur_adi == "Eşleştir":
+                    st.caption("👇 Her kavramın karşısındaki açılır kutudan eşleşen ifadeyi seç ve en alttaki **'🏁 Eşleştirmeyi Bitir ve Gönder'** butonuna bas!")
+                    eslestir_html = f"""
+                    <style>
+                        * {{ box-sizing: border-box; }}
+                        body {{ margin: 0; padding: 0; background: transparent; font-family: 'Inter', -apple-system, sans-serif; }}
+                        .em-wrap {{ padding: 6px 2px; }}
+                        .em-bar {{
+                            background: linear-gradient(90deg, #1d4ed8, #7c3aed);
+                            color: white;
+                            padding: 12px 16px;
+                            border-radius: 14px;
+                            font-weight: 800;
+                            font-size: 13.5px;
+                            margin-bottom: 14px;
+                            display: flex;
+                            justify-content: space-between;
+                        }}
+                        .em-row {{
+                            background: #ffffff;
+                            border: 2px solid #e2e8f0;
+                            border-radius: 14px;
+                            padding: 12px 14px;
+                            margin-bottom: 10px;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 8px;
+                        }}
+                        .em-left {{ font-size: 14px; font-weight: 800; color: #0f172a; }}
+                        .em-sel {{
+                            width: 100%;
+                            padding: 10px 12px;
+                            border-radius: 10px;
+                            border: 2px solid #cbd5e1;
+                            font-size: 13.5px;
+                            font-weight: 700;
+                            color: #1e293b;
+                            background: #f8fafc;
+                        }}
+                        .em-sel.selected {{ border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }}
+                        .em-fb {{ display: none; font-size: 13px; font-weight: 700; padding: 8px 10px; border-radius: 8px; }}
+                        .em-fb.ok {{ background: #dcfce7; color: #166534; }}
+                        .em-fb.err {{ background: #fee2e2; color: #991b1b; }}
+                        .em-btn {{
+                            width: 100%;
+                            background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+                            color: white;
+                            border: none;
+                            padding: 14px;
+                            border-radius: 14px;
+                            font-size: 15px;
+                            font-weight: 900;
+                            cursor: pointer;
+                            margin-top: 10px;
+                        }}
+                    </style>
+                    <div class="em-wrap">
+                        <div class="em-bar">
+                            <span>🧩 Eşleştirme Etkinliği</span>
+                            <span id="em-score">Toplam: {len(paket_veriler)} Eşleşme</span>
+                        </div>
+                        <div id="em-root"></div>
+                        <button class="em-btn" id="em-submit" onclick="gradeEm()">🏁 Eşleştirmeyi Bitir ve Gönder</button>
+                    </div>
+                    <script>
+                        const pairs = {v_json};
+                        const rights = pairs.map((p, i) => ({{ idx: i, txt: p.sag }}));
+                        for (let i = rights.length - 1; i > 0; i--) {{
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [rights[i], rights[j]] = [rights[j], rights[i]];
+                        }}
+                        const root = document.getElementById('em-root');
+                        pairs.forEach((p, idx) => {{
+                            const row = document.createElement('div');
+                            row.className = 'em-row';
+                            const opts = `<option value="-1">-- Eşleşen karşılığı seç --</option>` +
+                                rights.map(r => `<option value="${{r.idx}}">${{r.txt}}</option>`).join('');
+                            row.innerHTML = `
+                                <div class="em-left">📌 ${{idx + 1}}. ${{p.sol}}</div>
+                                <select class="em-sel" id="emsel-${{idx}}" onchange="this.classList.toggle('selected', this.value !== '-1')">${{opts}}</select>
+                                <div class="em-fb" id="emfb-${{idx}}"></div>
+                            `;
+                            root.appendChild(row);
+                        }});
+                        window.gradeEm = function() {{
+                            let d = 0, y = 0;
+                            pairs.forEach((p, idx) => {{
+                                const sel = document.getElementById(`emsel-${{idx}}`);
+                                const fb = document.getElementById(`emfb-${{idx}}`);
+                                const val = parseInt(sel.value, 10);
+                                sel.disabled = true;
+                                if (val === idx) {{
+                                    d++;
+                                    fb.className = 'em-fb ok';
+                                    fb.innerHTML = `✅ <b>DOĞRU!</b> ${{p.aciklama || ''}}`;
+                                }} else {{
+                                    y++;
+                                    fb.className = 'em-fb err';
+                                    fb.innerHTML = `❌ <b>Doğru Eşleşme:</b> ${{p.sag}} <br><span style="font-weight:600;">${{p.aciklama || ''}}</span>`;
+                                }}
+                                fb.style.display = 'block';
+                            }});
+                            document.getElementById('em-score').innerHTML = `✅ Doğru: ${{d}} | ❌ Yanlış/Boş: ${{y}}`;
+                            const btn = document.getElementById('em-submit');
+                            btn.disabled = true;
+                            btn.style.background = '#64748b';
+                            btn.innerHTML = `✅ Eşleştirme Tamamlandı — Doğru: ${{d}} / ${{pairs.length}}`;
+                        }};
+                    </script>
+                    """
+                    components.html(eslestir_html, height=min(820, len(paket_veriler) * 145 + 140), scrolling=True)
+
 
         # Fotoğraftan İkiz Soru Sonucu
         st.markdown("<div id='ikiz-soru-sonuc'></div>", unsafe_allow_html=True)
