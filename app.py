@@ -1940,15 +1940,119 @@ elif menu == "🤖 Soru Çöz & İkiz":
         """
     st.markdown(f"<style>{aktif_css_kurallari}</style>", unsafe_allow_html=True)
 
+    # =========================================================================
+    # 🏆 SİNOTEST KUPA & 20'LİK DERS ÖDÜL SİSTEMİ (VERİTABANI + CANLI VİTRİN)
+    # =========================================================================
+    DERS_ODUL_META = {
+        "Türkçe": {"ikon": "📘", "odul_adi": "Sözcüklerin Efendisi Madalyası"},
+        "Matematik": {"ikon": "📐", "odul_adi": "Altın Pergel & Sayı Dehası Ödülü"},
+        "Fen Bilimleri": {"ikon": "🔬", "odul_adi": "Bilim Kaşifi & Laboratuvar Kupası"},
+        "İnkılap Tarihi": {"ikon": "🏛️", "odul_adi": "Cumhuriyet Muhafızı Beratı"},
+        "İngilizce": {"ikon": "🌍", "odul_adi": "Global Yıldız & Dil Üstadı Ödülü"},
+        "Din Kültürü": {"ikon": "🌿", "odul_adi": "Hikmet & Erdem Nişanı"},
+    }
+
+    aktif_kullanici_kupa = st.session_state.get("user") or "misafir"
+    kayitli_odul_verisi = get_user_data(aktif_kullanici_kupa, "sinotest_oduller").get("profil", {})
+    if "sinotest_profil" not in st.session_state or not st.session_state.sinotest_profil:
+        varsayilan_sayaclar = {d: 0 for d in DERS_LISTESI}
+        varsayilan_sayaclar.update(kayitli_odul_verisi.get("ders_sayaclari", {}))
+        st.session_state.sinotest_profil = {
+            "toplam_kupa": int(kayitli_odul_verisi.get("toplam_kupa", 0)),
+            "ders_sayaclari": varsayilan_sayaclar,
+            "kazanilan_oduller": list(kayitli_odul_verisi.get("kazanilan_oduller", [])),
+        }
+
+    def sinotest_ilerleme_kaydet(ders_adi, eklenen_soru_sayisi, kazanilan_kupa):
+        prof = st.session_state.sinotest_profil
+        if ders_adi not in prof["ders_sayaclari"]:
+            prof["ders_sayaclari"][ders_adi] = 0
+        eski_sayi = int(prof["ders_sayaclari"][ders_adi])
+        yeni_sayi = eski_sayi + int(eklenen_soru_sayisi)
+        prof["ders_sayaclari"][ders_adi] = yeni_sayi
+        prof["toplam_kupa"] = int(prof["toplam_kupa"]) + int(kazanilan_kupa)
+
+        eski_seviye = eski_sayi // 20
+        yeni_seviye = yeni_sayi // 20
+        yeni_odul_mesaji = None
+        if yeni_seviye > eski_seviye:
+            odul_bilgi = DERS_ODUL_META.get(ders_adi, {"ikon": "🏅", "odul_adi": f"{ders_adi} Özel Ödülü"})
+            for sv in range(eski_seviye + 1, yeni_seviye + 1):
+                rozet_metni = f"{odul_bilgi['ikon']} {ders_adi} {sv}. Kademe Ödülü ({sv * 20} Tamamlama): {odul_bilgi['odul_adi']}"
+                if rozet_metni not in prof["kazanilan_oduller"]:
+                    prof["kazanilan_oduller"].append(rozet_metni)
+                prof["toplam_kupa"] += 10  # 20 tamamlama bonus kupası
+                yeni_odul_mesaji = rozet_metni
+
+        save_user_data(aktif_kullanici_kupa, "sinotest_oduller", "profil", prof)
+        return yeni_odul_mesaji
+
+    prof_aktif = st.session_state.sinotest_profil
+    toplam_odul_sayisi = sum(int(v) // 20 for v in prof_aktif["ders_sayaclari"].values())
+
     with st.container(border=True):
-        # SinoTest Başlık Alanı
-        st.markdown("""
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        # SinoTest Başlık Alanı + Canlı Kupa & Ödül Rozetleri
+        st.markdown(f"""
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
             <div>
                 <span style="font-size:24px; font-weight:900; background:linear-gradient(90deg, #1d4ed8, #7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⚡ SinoTest</span>
-                <div style="font-size:12.5px; color:#64748b; font-weight:600;">Sınırsız Yapay Zeka Çalışma & İkiz Soru İstasyonu</div>
+                <div style="font-size:12.5px; color:#64748b; font-weight:600;">Sınırsız Yapay Zeka Çalışma, Kupa & Ödül İstasyonu</div>
             </div>
-            <span style="background:#eff6ff; color:#1d4ed8; font-size:12px; font-weight:800; padding:5px 12px; border-radius:99px; border:1px solid #bfdbfe;">♾️ Sınırsız Hak</span>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <span id="sino-top-kupa-pill" style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color:#92400e; font-size:13px; font-weight:900; padding:6px 13px; border-radius:99px; border:1.5px solid #f59e0b; box-shadow:0 2px 8px rgba(245,158,11,0.2);">
+                    🏆 <span id="sino-live-kupa">{prof_aktif["toplam_kupa"]}</span> Kupa
+                </span>
+                <span id="sino-top-odul-pill" style="background:linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color:#166534; font-size:13px; font-weight:900; padding:6px 13px; border-radius:99px; border:1.5px solid #22c55e;">
+                    🎁 <span id="sino-live-odul">{toplam_odul_sayisi}</span> Ders Ödülü
+                </span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # 🏆 KUPA & 20'LİK DERS ÖDÜL VİTRİNİ (Her Derste 20 Tamamlamaya Özel Ödül)
+        ders_kartlari_html = ""
+        for d_ad in DERS_LISTESI:
+            d_meta = DERS_ODUL_META.get(d_ad, {"ikon": "📘", "odul_adi": "Özel Ödül"})
+            d_toplam = int(prof_aktif["ders_sayaclari"].get(d_ad, 0))
+            d_odul_adedi = d_toplam // 20
+            d_kalan_icinde = d_toplam % 20
+            d_yuzde = int((d_kalan_icinde / 20.0) * 100)
+            odul_rozet = f"🎁 x{d_odul_adedi} Ödül" if d_odul_adedi > 0 else "🎯 Hedef: 20"
+            odul_bg = "#dcfce7; color:#166534; border:1px solid #86efac;" if d_odul_adedi > 0 else "#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;"
+            ders_kartlari_html += f"""
+            <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:12px; padding:9px 11px; box-shadow:0 2px 6px rgba(15,23,42,0.03);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                    <span style="font-size:12.5px; font-weight:800; color:#0f172a;">{d_meta['ikon']} {d_ad}</span>
+                    <span id="sino-badge-{d_ad}" style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:99px; background:{odul_bg}">{odul_rozet}</span>
+                </div>
+                <div style="background:#e2e8f0; height:8px; border-radius:99px; overflow:hidden; margin-bottom:4px;">
+                    <div id="sino-bar-{d_ad}" style="background:linear-gradient(90deg, #2563eb, #16a34a); width:{d_yuzde}%; height:100%; border-radius:99px; transition:width 0.4s ease;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#475569;">
+                    <span id="sino-cnt-{d_ad}">İlerleme: {d_kalan_icinde} / 20</span>
+                    <span>Toplam: {d_toplam}</span>
+                </div>
+            </div>
+            """
+
+        kazanilan_liste_html = ""
+        if prof_aktif["kazanilan_oduller"]:
+            rozetler_str = "".join(
+                f"<span style='background:#fef3c7; color:#92400e; border:1.5px solid #f59e0b; padding:4px 10px; border-radius:99px; font-size:11.5px; font-weight:800;'>{r}</span>"
+                for r in prof_aktif["kazanilan_oduller"]
+            )
+            kazanilan_liste_html = f"<div style='margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;'>{rozetler_str}</div>"
+
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg, #fffbeb 0%, #eff6ff 100%); border:2px solid #fcd34d; border-radius:16px; padding:12px 14px; margin-bottom:14px;">
+            <div style="font-size:13px; font-weight:900; color:#92400e; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                <span>🏆 SİNOTEST KUPA & DERS ÖDÜL VİTRİNİ</span>
+                <span style="font-size:11.5px; color:#1e40af; font-weight:800;">⚡ Her çözdüğün etkinlik Kupa kazandırır • Her derste 20 tamamlamada Özel Ödül açılır!</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(155px, 1fr)); gap:8px;">
+                {ders_kartlari_html}
+            </div>
+            {kazanilan_liste_html}
         </div>
         """, unsafe_allow_html=True)
 
@@ -2126,9 +2230,11 @@ elif menu == "🤖 Soru Çöz & İkiz":
                                 calisma_turu=tur_adi
                             )
                             uretilen_paketler.append({
+                                "ders": secili_ders,
                                 "tur": tur_adi,
                                 "baslik": f"{secili_ders} • {secili_konu_son} ({secili_zorluk_son})",
-                                "veriler": veriler
+                                "veriler": veriler,
+                                "odul_alindi": False,
                             })
                     st.session_state.cipko_aktif_paketler = uretilen_paketler
                     st.session_state.hedef_scroll = "cipko-test-arena-sonuc"
@@ -2156,10 +2262,13 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 if st.button("🎯 Bu Sayfadan SinoTest Üret", use_container_width=True):
                     with st.spinner("Kaynağındaki sayfadan yeni nesil LGS soruları hazırlanıyor..."):
                         veriler_k = generate_lgs_quiz_list(image=img_k)
+                        tahmini_ders = next((d for d in DERS_LISTESI if d.lower() in secilen_pdf_ad.lower()), "Matematik")
                         st.session_state.cipko_aktif_paketler = [{
+                            "ders": tahmini_ders,
                             "tur": "Test Oluştur",
                             "baslik": f"{secilen_pdf_ad} (Sayfa {sayfa_k})",
-                            "veriler": veriler_k
+                            "veriler": veriler_k,
+                            "odul_alindi": False,
                         }]
                         st.session_state.hedef_scroll = "cipko-test-arena-sonuc"
                         st.rerun()
@@ -2205,21 +2314,101 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     st.session_state.hedef_scroll = "ikiz-soru-sonuc"
 
         # =========================================================================
-        # SİNOTEST ARENASI SONUÇ EKRANI (6 ÇALIŞMA TÜRÜ + OPTİK FORM GÖNDER MANTIĞI)
+        # SİNOTEST ARENASI SONUÇ EKRANI (6 ÇALIŞMA TÜRÜ + KUPA & 20'LİK DERS ÖDÜLÜ)
         # =========================================================================
         st.markdown("<div id='cipko-test-arena-sonuc'></div>", unsafe_allow_html=True)
         if st.session_state.get("cipko_aktif_paketler") and st.session_state.cipko_ana_mod in ("hizli_test", "kaynagimdan"):
             for p_idx, paket in enumerate(st.session_state.cipko_aktif_paketler):
                 st.markdown("---")
                 tur_adi = paket.get("tur", "Test Oluştur")
+                paket_ders = paket.get("ders") or st.session_state.get("cipko_ders") or "Türkçe"
                 paket_baslik = paket.get("baslik", "SinoTest Çalışması")
                 paket_veriler = paket.get("veriler", [])
+                paket_odul_meta = DERS_ODUL_META.get(paket_ders, {"ikon": "🏅", "odul_adi": f"{paket_ders} Özel Ödülü"})
+                mevcut_ders_sayaci = int(prof_aktif["ders_sayaclari"].get(paket_ders, 0))
+                mevcut_toplam_kupa = int(prof_aktif["toplam_kupa"])
+
                 st.markdown(f"#### 🏆 [{tur_adi}] — {paket_baslik}")
 
                 v_json = json.dumps(paket_veriler, ensure_ascii=False)
 
+                # Ortak JS Kupa & 20'lik Ders Ödülü Kutlama Fonksiyonu
+                ortak_odul_js = f"""
+                const SINO_DERS = {json.dumps(paket_ders, ensure_ascii=False)};
+                const SINO_ODUL_ADI = {json.dumps(paket_odul_meta['odul_adi'], ensure_ascii=False)};
+                const SINO_ODUL_IKON = {json.dumps(paket_odul_meta['ikon'], ensure_ascii=False)};
+                const SINO_INIT_DERS_CNT = {mevcut_ders_sayaci};
+                const SINO_INIT_KUPA = {mevcut_toplam_kupa};
+
+                function awardSinoTrophy(completedCount, correctCount, bannerElId) {{
+                    const earnedCups = Math.max(2, completedCount + (correctCount * 2));
+                    const oldCnt = SINO_INIT_DERS_CNT;
+                    const newCnt = oldCnt + completedCount;
+                    const oldLv = Math.floor(oldCnt / 20);
+                    const newLv = Math.floor(newCnt / 20);
+                    const unlockedReward = (newLv > oldLv);
+                    const bonusCups = unlockedReward ? 10 : 0;
+                    const totalEarnedCups = earnedCups + bonusCups;
+                    const newTotalCups = SINO_INIT_KUPA + totalEarnedCups;
+                    const mod20 = newCnt % 20;
+                    const pct = unlockedReward && mod20 === 0 ? 100 : Math.round((mod20 / 20) * 100);
+                    const rem = mod20 === 0 ? 0 : (20 - mod20);
+
+                    // Üstteki Ana Vitrini Canlı Güncelle (window.parent.document)
+                    try {{
+                        const pDoc = window.parent.document;
+                        const kEl = pDoc.getElementById('sino-live-kupa');
+                        if (kEl) kEl.textContent = newTotalCups;
+                        const barEl = pDoc.getElementById('sino-bar-' + SINO_DERS);
+                        if (barEl) barEl.style.width = pct + '%';
+                        const cntEl = pDoc.getElementById('sino-cnt-' + SINO_DERS);
+                        if (cntEl) cntEl.textContent = 'İlerleme: ' + (unlockedReward && mod20 === 0 ? 20 : mod20) + ' / 20';
+                        if (unlockedReward) {{
+                            const bdgEl = pDoc.getElementById('sino-badge-' + SINO_DERS);
+                            if (bdgEl) {{
+                                bdgEl.textContent = '🎁 x' + newLv + ' Ödül';
+                                bdgEl.style.background = '#dcfce7';
+                                bdgEl.style.color = '#166534';
+                            }}
+                        }}
+                    }} catch (e) {{}}
+
+                    const banner = document.getElementById(bannerElId);
+                    if (!banner) return;
+                    banner.style.display = 'block';
+                    if (unlockedReward) {{
+                        banner.innerHTML = `
+                            <div style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #dcfce7 100%); border:3px solid #f59e0b; border-radius:18px; padding:18px; margin:14px 0; text-align:center; box-shadow:0 10px 26px rgba(245,158,11,0.3);">
+                                <div style="font-size:32px; margin-bottom:4px;">🏆🎉🎁🎉🏆</div>
+                                <div style="font-size:17px; font-weight:900; color:#92400e;">TEBRİKLER! ${{SINO_DERS.toUpperCase()}} DERSİNDE ${{newLv * 20}} TAMAMLADIN!</div>
+                                <div style="font-size:15px; font-weight:900; color:#166534; margin:6px 0;">
+                                    🎁 Kazanılan Ödül: ${{SINO_ODUL_IKON}} ${{SINO_ODUL_ADI}} (${{newLv}}. Kademe)
+                                </div>
+                                <div style="font-size:14px; font-weight:800; color:#1e40af;">
+                                    🏆 +${{earnedCups}} Çalışma Kupası + 10 Bonus Altın Kupa = <b>+${{totalEarnedCups}} Kupa Kazandın!</b> (Toplam: ${{newTotalCups}} 🏆)
+                                </div>
+                            </div>
+                        `;
+                    }} else {{
+                        banner.innerHTML = `
+                            <div style="background:linear-gradient(135deg, #eff6ff 0%, #fef3c7 100%); border:2px solid #60a5fa; border-radius:16px; padding:14px 16px; margin:12px 0;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                                    <span style="font-size:15px; font-weight:900; color:#1e3a8a;">🏆 Harika! +${{totalEarnedCups}} Kupa Kazandın! (Toplam: ${{newTotalCups}} 🏆)</span>
+                                    <span style="background:#fef3c7; color:#92400e; border:1px solid #f59e0b; padding:4px 10px; border-radius:99px; font-size:12px; font-weight:800;">
+                                        🎁 ${{SINO_DERS}} Ödülüne ${{rem}} tamamlama kaldı! (${{mod20}} / 20)
+                                    </span>
+                                </div>
+                                <div style="background:#cbd5e1; height:10px; border-radius:99px; overflow:hidden;">
+                                    <div style="background:linear-gradient(90deg, #2563eb, #16a34a); width:${{pct}}%; height:100%; border-radius:99px;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }}
+                }}
+                """
+
                 if tur_adi == "Test Oluştur":
-                    st.caption("👇 Önce tüm sorularda cevabını işaretle (seçtiğin şık mavi yanar). Bitirince en alttaki **'🏁 Testi Bitir ve Gönder'** butonuna basarak doğru/yanlış sonuçlarını ve çözümleri gör!")
+                    st.caption("👇 Önce tüm sorularda cevabını işaretle (seçtiğin şık mavi yanar). Bitirince en alttaki **'🏁 Testi Bitir ve Gönder'** butonuna basarak doğru/yanlış sonuçlarını, çözümleri ve kazandığın **🏆 Kupaları** gör!")
                     optik_html = f"""
                     <style>
                         * {{ box-sizing: border-box; }}
@@ -2370,12 +2559,14 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             <span>📝 SinoTest Optik Durumu (Test)</span>
                             <span id="ct-score">İşaretlenen: 0 / {len(paket_veriler)}</span>
                         </div>
+                        <div id="ct-reward-banner" style="display:none;"></div>
                         <div id="ct-root"></div>
                         <div class="ct-submit-bar">
-                            <button class="ct-submit-btn" id="ct-finish-btn" onclick="submitCtTest()">🏁 Testi Bitir ve Gönder (Sonuçları & Çözümleri Gör)</button>
+                            <button class="ct-submit-btn" id="ct-finish-btn" onclick="submitCtTest()">🏁 Testi Bitir ve Gönder (Sonuçları, Çözümleri & Kupaları Gör)</button>
                         </div>
                     </div>
                     <script>
+                        {ortak_odul_js}
                         const qs = {v_json};
                         const userChoices = {{}};
                         let isSubmitted = false;
@@ -2489,6 +2680,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             const fBtn = document.getElementById('ct-finish-btn');
                             fBtn.disabled = true;
                             fBtn.innerHTML = `✅ Test Tamamlandı — Doğru: ${{scD}} | Yanlış: ${{scY}} | Boş: ${{scB}}`;
+                            awardSinoTrophy(qs.length, scD, 'ct-reward-banner');
                             document.getElementById('ct-top-bar').scrollIntoView({{ behavior: 'smooth' }});
                         }};
 
@@ -2498,7 +2690,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         }};
                     </script>
                     """
-                    components.html(optik_html, height=min(860, len(paket_veriler) * 350 + 130), scrolling=True)
+                    components.html(optik_html, height=min(880, len(paket_veriler) * 350 + 180), scrolling=True)
 
                 elif tur_adi == "Boşluk Doldur":
                     st.caption("👇 Cümledeki boşluğa tıklayıp üstteki **Kelime Havuzu**'ndan kavram seçebilir veya kutucuğa doğrudan yazabilirsin. Bitirince en alttaki **'🏁 Boşlukları Bitir ve Gönder'** butonuna bas!")
@@ -2619,14 +2811,16 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             <span>✏️ Boşluk Doldurma Etkinliği</span>
                             <span id="bd-score">Doldurulan: 0 / {len(paket_veriler)}</span>
                         </div>
+                        <div id="bd-reward-banner" style="display:none;"></div>
                         <div class="bd-bank">
                             <div class="bd-bank-title">🎯 Kelime Havuzu (Önce aşağıdaki bir boşluğa tıkla, sonra buradaki kelimeye dokun veya klavyeyle yaz):</div>
                             <div class="bd-words" id="bd-words"></div>
                         </div>
                         <div id="bd-root"></div>
-                        <button class="bd-submit" id="bd-finish" onclick="gradeBd()">🏁 Boşlukları Bitir ve Gönder (Sonuçları Gör)</button>
+                        <button class="bd-submit" id="bd-finish" onclick="gradeBd()">🏁 Boşlukları Bitir ve Gönder (Sonuçları & Kupaları Gör)</button>
                     </div>
                     <script>
+                        {ortak_odul_js}
                         const rawItems = {v_json};
                         const items = rawItems.map((it, idx) => {{
                             let ans = it.cevap || it.dogru_cevap || '';
@@ -2743,11 +2937,12 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             const btn = document.getElementById('bd-finish');
                             btn.disabled = true;
                             btn.innerHTML = `✅ Tamamlandı — Doğru: ${{d}} | Yanlış: ${{y}} | Boş: ${{b}}`;
+                            awardSinoTrophy(items.length, d, 'bd-reward-banner');
                             document.getElementById('bd-top').scrollIntoView({{ behavior: 'smooth' }});
                         }};
                     </script>
                     """
-                    components.html(bosluk_html, height=min(860, len(paket_veriler) * 190 + 220), scrolling=True)
+                    components.html(bosluk_html, height=min(880, len(paket_veriler) * 190 + 260), scrolling=True)
 
                 elif tur_adi == "Doğru/Yanlış":
                     st.caption("👇 Her cümlenin altındaki **'✅ DOĞRU'** veya **'❌ YANLIŞ'** butonuna bas (seçtiğin mavi yanar). Bitirince en alttaki **'🏁 Doğru/Yanlış'ı Bitir ve Gönder'** butonuna bas!")
@@ -2844,10 +3039,12 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             <span>✅ Doğru / Yanlış Etkinliği</span>
                             <span id="dy-score">İşaretlenen: 0 / {len(paket_veriler)}</span>
                         </div>
+                        <div id="dy-reward-banner" style="display:none;"></div>
                         <div id="dy-root"></div>
-                        <button class="dy-submit" id="dy-finish" onclick="gradeDy()">🏁 Doğru/Yanlış'ı Bitir ve Gönder</button>
+                        <button class="dy-submit" id="dy-finish" onclick="gradeDy()">🏁 Doğru/Yanlış'ı Bitir ve Gönder (Sonuçları & Kupaları Gör)</button>
                     </div>
                     <script>
+                        {ortak_odul_js}
                         const rawDy = {v_json};
                         const dyItems = rawDy.map((it, idx) => {{
                             const txt = it.ifade || it.soru || it.cumle || '';
@@ -2933,18 +3130,31 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             const fBtn = document.getElementById('dy-finish');
                             fBtn.disabled = true;
                             fBtn.innerHTML = `✅ Tamamlandı — Doğru: ${{d}} | Yanlış: ${{y}} | Boş: ${{b}}`;
+                            awardSinoTrophy(dyItems.length, d, 'dy-reward-banner');
                             document.getElementById('dy-top').scrollIntoView({{ behavior: 'smooth' }});
                         }};
                     </script>
                     """
-                    components.html(dy_html, height=min(860, len(paket_veriler) * 210 + 130), scrolling=True)
+                    components.html(dy_html, height=min(880, len(paket_veriler) * 210 + 180), scrolling=True)
 
                 elif tur_adi == "Flash Kart":
-                    st.caption("👇 Kartların üzerine tıklayarak arka yüzündeki **cevabı ve kritik LGS ipucunu** çevirip görebilirsin!")
+                    st.caption("👇 Kartların üzerine tıklayarak arka yüzündeki **cevabı ve kritik LGS ipucunu** çevirip görebilirsin! Tüm kartları inceledikten sonra alttaki butonla **🏆 Kupalarını** al!")
                     flash_html = f"""
                     <style>
                         * {{ box-sizing: border-box; }}
                         body {{ margin: 0; padding: 0; background: transparent; font-family: 'Inter', -apple-system, sans-serif; }}
+                        .fc-bar {{
+                            background: linear-gradient(90deg, #1d4ed8 0%, #7c3aed 100%);
+                            color: white;
+                            padding: 12px 16px;
+                            border-radius: 14px;
+                            font-weight: 800;
+                            font-size: 13.5px;
+                            margin-bottom: 12px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }}
                         .fc-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; padding: 6px 2px; }}
                         .fc-item {{
                             background: #ffffff;
@@ -2977,10 +3187,32 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         .fc-item.flipped .fc-badge {{ background: #bbf7d0; color: #166534; }}
                         .fc-body {{ font-size: 14.5px; font-weight: 700; color: #1e293b; line-height: 1.55; }}
                         .fc-foot {{ font-size: 11.5px; color: #2563eb; font-weight: 800; margin-top: 12px; text-align: right; }}
+                        .fc-submit {{
+                            width: 100%;
+                            background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+                            color: white;
+                            border: none;
+                            padding: 15px;
+                            border-radius: 16px;
+                            font-size: 15.5px;
+                            font-weight: 900;
+                            cursor: pointer;
+                            margin-top: 14px;
+                        }}
+                        .fc-submit:disabled {{ background: #64748b; cursor: default; }}
                     </style>
+                    <div class="fc-bar" id="fc-top">
+                        <span>🎴 Flash Kart Çalışması</span>
+                        <span id="fc-score">İncelenen Kart: 0 / {len(paket_veriler)}</span>
+                    </div>
+                    <div id="fc-reward-banner" style="display:none;"></div>
                     <div class="fc-grid" id="fc-root"></div>
+                    <button class="fc-submit" id="fc-finish" onclick="finishFc()">🏁 Flash Kartları Tamamladım — Kupamı & Ödülümü Al!</button>
                     <script>
+                        {ortak_odul_js}
                         const rawCards = {v_json};
+                        const seenSet = new Set();
+                        let fcDone = false;
                         const root = document.getElementById('fc-root');
                         rawCards.forEach((c, idx) => {{
                             const frontTxt = c.on_yuz || c.soru || c.kavram || c.front || '';
@@ -2990,6 +3222,8 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             const el = document.createElement('div');
                             el.className = 'fc-item';
                             el.onclick = function() {{
+                                seenSet.add(idx);
+                                document.getElementById('fc-score').innerHTML = `İncelenen Kart: ${{seenSet.size}} / ${{rawCards.length}}`;
                                 const isF = el.classList.toggle('flipped');
                                 const bdg = el.querySelector('.fc-badge');
                                 const bdy = el.querySelector('.fc-body');
@@ -3013,9 +3247,18 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             `;
                             root.appendChild(el);
                         }});
+                        window.finishFc = function() {{
+                            if (fcDone) return;
+                            fcDone = true;
+                            const btn = document.getElementById('fc-finish');
+                            btn.disabled = true;
+                            btn.innerHTML = `✅ Flash Kart Çalışması Tamamlandı (${{rawCards.length}} Kart)`;
+                            awardSinoTrophy(rawCards.length, rawCards.length, 'fc-reward-banner');
+                            document.getElementById('fc-top').scrollIntoView({{ behavior: 'smooth' }});
+                        }};
                     </script>
                     """
-                    components.html(flash_html, height=min(780, ((len(paket_veriler) + 1) // 2) * 220 + 60), scrolling=True)
+                    components.html(flash_html, height=min(860, ((len(paket_veriler) + 1) // 2) * 220 + 170), scrolling=True)
 
                 elif tur_adi == "Eşleştir":
                     st.caption("👇 Her kavramın karşısındaki açılır kutudan eşleşen ifadeyi seç (seçtiğin mavi yanar) ve en alttaki **'🏁 Eşleştirmeyi Bitir ve Gönder'** butonuna bas!")
@@ -3078,10 +3321,12 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             <span>🧩 Eşleştirme Etkinliği</span>
                             <span id="em-score">Toplam: {len(paket_veriler)} Eşleşme</span>
                         </div>
+                        <div id="em-reward-banner" style="display:none;"></div>
                         <div id="em-root"></div>
-                        <button class="em-btn" id="em-submit" onclick="gradeEm()">🏁 Eşleştirmeyi Bitir ve Gönder</button>
+                        <button class="em-btn" id="em-submit" onclick="gradeEm()">🏁 Eşleştirmeyi Bitir ve Gönder (Sonuçları & Kupaları Gör)</button>
                     </div>
                     <script>
+                        {ortak_odul_js}
                         const rawPairs = {v_json};
                         const pairs = rawPairs.map(p => ({{
                             sol: p.sol || p.kavram || p.terim || p.soru || '',
@@ -3129,11 +3374,12 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             btn.disabled = true;
                             btn.style.background = '#64748b';
                             btn.innerHTML = `✅ Eşleştirme Tamamlandı — Doğru: ${{d}} / ${{pairs.length}}`;
+                            awardSinoTrophy(pairs.length, d, 'em-reward-banner');
                             document.getElementById('em-top').scrollIntoView({{ behavior: 'smooth' }});
                         }};
                     </script>
                     """
-                    components.html(eslestir_html, height=min(840, len(paket_veriler) * 150 + 140), scrolling=True)
+                    components.html(eslestir_html, height=min(880, len(paket_veriler) * 150 + 180), scrolling=True)
 
                 elif tur_adi == "Karıştırma":
                     st.caption("👇 Karışık verilen kelime/adım kutucuklarına **doğru sırayla dokunarak** üstteki cevap alanına diz (geri almak için üstteki kutucuğa tekrar dokun). Bitirince **'🏁 Sıralamayı Bitir ve Gönder'** butonuna bas!")
@@ -3235,10 +3481,12 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             <span>🔀 Kelime / Kavram Karıştırma (Sıraya Dizme)</span>
                             <span id="kr-score">Tamamlanan: 0 / {len(paket_veriler)}</span>
                         </div>
+                        <div id="kr-reward-banner" style="display:none;"></div>
                         <div id="kr-root"></div>
-                        <button class="kr-submit" id="kr-finish" onclick="gradeKr()">🏁 Sıralamayı Bitir ve Gönder</button>
+                        <button class="kr-submit" id="kr-finish" onclick="gradeKr()">🏁 Sıralamayı Bitir ve Gönder (Sonuçları & Kupaları Gör)</button>
                     </div>
                     <script>
+                        {ortak_odul_js}
                         const rawKr = {v_json};
                         const krItems = rawKr.map((it, idx) => {{
                             let parts = it.parcalar || it.kelimeler || it.adimlar || [];
@@ -3350,11 +3598,39 @@ elif menu == "🤖 Soru Çöz & İkiz":
                             const btn = document.getElementById('kr-finish');
                             btn.disabled = true;
                             btn.innerHTML = `✅ Tamamlandı — Doğru: ${{d}} / ${{krItems.length}}`;
+                            awardSinoTrophy(krItems.length, d, 'kr-reward-banner');
                             document.getElementById('kr-top').scrollIntoView({{ behavior: 'smooth' }});
                         }};
                     </script>
                     """
-                    components.html(karistir_html, height=min(860, len(paket_veriler) * 235 + 140), scrolling=True)
+                    components.html(karistir_html, height=min(880, len(paket_veriler) * 235 + 180), scrolling=True)
+
+                # Kalıcı Kupa & 20'lik Ders Ödülü Kasaya Kaydetme Butonu
+                eklenecek_adet = max(1, len(paket_veriler))
+                eklenecek_kupa = eklenecek_adet * 2
+                if paket.get("odul_alindi"):
+                    st.success(f"🏆 Bu çalışmanın **+{eklenecek_kupa} Kupası** ve **{paket_ders} (+{eklenecek_adet} tamamlama)** ilerlemesi ödül vitrinine kalıcı olarak eklendi!")
+                else:
+                    if st.button(
+                        f"🏆 Kupaları & {paket_ders} İlerlemesini (+{eklenecek_adet} / 20) Vitrine Kaydet",
+                        key=f"claim_cup_{p_idx}_{tur_adi}",
+                        use_container_width=True
+                    ):
+                        kazanilan_odul = sinotest_ilerleme_kaydet(
+                            ders_adi=paket_ders,
+                            eklenen_soru_sayisi=eklenecek_adet,
+                            kazanilan_kupa=eklenecek_kupa
+                        )
+                        paket["odul_alindi"] = True
+                        st.balloons()
+                        if kazanilan_odul:
+                            st.session_state.son_kazanilan_odul = kazanilan_odul
+                        st.rerun()
+
+            if st.session_state.get("son_kazanilan_odul"):
+                st.success(f"🎉🎁 **TEBRİKLER! YENİ 20 TAMAMLAMA DERS ÖDÜLÜ KAZANDIN:** {st.session_state.son_kazanilan_odul} (+10 Bonus Altın Kupa 🏆)")
+                st.session_state.son_kazanilan_odul = None
+
 
 
 
