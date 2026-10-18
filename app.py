@@ -428,7 +428,7 @@ ISTASYON_KISA_AD = [
     ("🏠 Ana Sayfa", "🏠 Ana Sayfa"),
     ("📚 PDF Havuzu", "📚 PDF Havuzu"),
     ("⚡ Hızlı Öğren", "⚡ Hızlı Öğren (Video/Kaynak)"),
-    ("🤖 Soru Çöz & İkiz", "🤖 Soru Çöz & İkiz"),
+    ("⚡ SinoTest", "🤖 Soru Çöz & İkiz"),
     ("📷 Deneme Analizi", "📷 Deneme Analizi"),
     ("❌ Hata & Gelişim", "❌ Hata & Gelişim"),
 ]
@@ -580,11 +580,11 @@ if menu == "🏠 Ana Sayfa":
             
         with st.container(border=True):
             st.markdown("""
-                <div class='station-icon'>🤖</div>
-                <div class='station-title'>Soru Çöz & İkiz Üret</div>
-                <div class='station-desc' style='margin-bottom: 12px;'>Takıldığın sorunun fotoğrafını yükle, adım adım çözümünü ve MEB ikizini al.</div>
+                <div class='station-icon'>⚡</div>
+                <div class='station-title'>SinoTest & İkiz Soru</div>
+                <div class='station-desc' style='margin-bottom: 12px;'>Dersi, konuyu, zorluğu ve soru sayısını (5-10-20) seçip hızlı test çöz veya fotoğraftan ikiz soru üret.</div>
             """, unsafe_allow_html=True)
-            st.button("🤖 Soru Çözücüye Git →", on_click=istasyona_git, args=("🤖 Soru Çöz & İkiz",), key="go_soru", use_container_width=True)
+            st.button("⚡ SinoTest'e Git →", on_click=istasyona_git, args=("🤖 Soru Çöz & İkiz",), key="go_soru", use_container_width=True)
 
     with c2:
         with st.container(border=True):
@@ -830,16 +830,27 @@ elif menu == "📚 PDF Havuzu":
                 
                 st.markdown("<div id='pdf-aksiyon-sonuc'></div>", unsafe_allow_html=True)
             
-                # 1) İNTERAKTİF ADIM ADIM SORU ÇÖZÜM KARTLARI
+                # 1) İNTERAKTİF ADIM ADIM SORU ÇÖZÜM KARTLARI (Önce İşaretle -> Doğru/Yanlış -> Çözümü Gör)
                 if st.session_state.get("pdf_cozum_kartlari"):
                     st.markdown("---")
-                    st.markdown("#### 🧩 İnteraktif Soru Çözüm İstasyonu *(İpucunu aç, adımları tek tek gör ve cevabı kontrol et!)*")
+                    st.markdown("#### 🧩 İnteraktif Soru Çözüm İstasyonu *(Önce bulduğun şıkkı işaretle, Doğru/Yanlış durumunu gör, sonra çözümü aç!)*")
                     cozum_json = json.dumps(st.session_state.pdf_cozum_kartlari, ensure_ascii=False)
                     cozum_html = f"""
                     <style>
                         * {{ box-sizing: border-box; }}
                         body {{ margin: 0; padding: 0; background: transparent; }}
                         .sol-wrap {{ font-family: 'Inter', -apple-system, sans-serif; padding: 4px 2px; display: flex; flex-direction: column; gap: 14px; }}
+                        .sol-scorebar {{
+                            background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
+                            color: white;
+                            padding: 11px 16px;
+                            border-radius: 14px;
+                            font-weight: 800;
+                            font-size: 13.5px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }}
                         .sol-card {{
                             background: white;
                             border: 2px solid #e0e7ff;
@@ -885,6 +896,52 @@ elif menu == "📚 PDF Havuzu":
                             text-align: left;
                             word-break: break-word;
                         }}
+                        .sol-pick-label {{
+                            font-size: 12.5px;
+                            font-weight: 700;
+                            color: #475569;
+                            margin-bottom: 8px;
+                        }}
+                        .sol-abcd-row {{
+                            display: grid;
+                            grid-template-columns: repeat(4, 1fr);
+                            gap: 8px;
+                            margin-bottom: 10px;
+                        }}
+                        .sol-sik-btn {{
+                            background: #f8fafc;
+                            border: 2px solid #cbd5e1;
+                            border-radius: 12px;
+                            padding: 10px 0;
+                            font-size: 14.5px;
+                            font-weight: 800;
+                            color: #1e293b;
+                            cursor: pointer;
+                            text-align: center;
+                            transition: all 0.15s ease;
+                        }}
+                        .sol-sik-btn:hover {{ border-color: #3b82f6; background: #eff6ff; }}
+                        .sol-sik-btn.correct {{
+                            background: #dcfce7 !important;
+                            border-color: #16a34a !important;
+                            color: #14532d !important;
+                        }}
+                        .sol-sik-btn.wrong {{
+                            background: #fee2e2 !important;
+                            border-color: #dc2626 !important;
+                            color: #7f1d1d !important;
+                        }}
+                        .sol-status {{
+                            display: none;
+                            padding: 9px 12px;
+                            border-radius: 10px;
+                            font-size: 13.5px;
+                            font-weight: 800;
+                            margin-bottom: 10px;
+                            text-align: center;
+                        }}
+                        .sol-status.ok {{ background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }}
+                        .sol-status.err {{ background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }}
                         .sol-btn-row {{
                             display: flex;
                             gap: 8px;
@@ -913,8 +970,7 @@ elif menu == "📚 PDF Havuzu":
                         }}
                         .sol-action-btn:hover {{ transform: translateY(-1px); filter: brightness(0.97); }}
                         .btn-hint {{ background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }}
-                        .btn-steps {{ background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }}
-                        .btn-ans {{ background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }}
+                        .btn-steps {{ background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; display: none; }}
                         .sol-panel {{
                             display: none;
                             margin-top: 10px;
@@ -925,13 +981,6 @@ elif menu == "📚 PDF Havuzu":
                         }}
                         .panel-hint {{ background: #fffbeb; border-left: 5px solid #f59e0b; color: #78350f; }}
                         .panel-steps {{ background: #f8fafc; border-left: 5px solid #4f46e5; color: #1e293b; }}
-                        .panel-ans {{
-                            background: linear-gradient(135deg, #10b981, #059669);
-                            color: white;
-                            font-size: 16px;
-                            font-weight: 800;
-                            text-align: center;
-                        }}
                         .step-item {{
                             padding: 8px 10px;
                             margin-bottom: 6px;
@@ -941,45 +990,94 @@ elif menu == "📚 PDF Havuzu":
                             font-weight: 600;
                         }}
                     </style>
-                    <div class="sol-wrap" id="sol-root"></div>
+                    <div class="sol-wrap">
+                        <div class="sol-scorebar">
+                            <span>📊 Sayfa Durumu</span>
+                            <span id="sol-score-txt">✅ Doğru: 0 &nbsp;|&nbsp; ❌ Yanlış: 0</span>
+                        </div>
+                        <div id="sol-root" style="display:flex; flex-direction:column; gap:14px;"></div>
+                    </div>
                     <script>
                         const items = {cozum_json};
                         const root = document.getElementById('sol-root');
+                        let dCount = 0;
+                        let yCount = 0;
+                        const markedSet = new Set();
+
                         items.forEach((item, idx) => {{
                             const card = document.createElement('div');
                             card.className = 'sol-card';
                             const rawNo = String(item.soru_no || (idx + 1)).trim();
                             const numMatch = rawNo.match(/\\d+/);
                             const stdSoruNo = numMatch ? ('Soru ' + numMatch[0]) : rawNo;
+                            const rawAns = String(item.dogru_sik || 'A').trim().toUpperCase();
+                            const ansMatch = rawAns.match(/[ABCD]/);
+                            const cleanAns = ansMatch ? ansMatch[0] : 'A';
                             const stepsHtml = (item.adimlar || []).map(s => `<div class="step-item">👉 ${{s}}</div>`).join('');
+                            const sikBtns = ['A', 'B', 'C', 'D'].map(harf =>
+                                `<button class="sol-sik-btn" id="sik-${{idx}}-${{harf}}" onclick="markSik(${{idx}}, '${{harf}}', '${{cleanAns}}')">${{harf}}</button>`
+                            ).join('');
+
                             card.innerHTML = `
                                 <div class="sol-header">
                                     <span class="sol-num">📌 ${{stdSoruNo}}</span>
                                     <span class="sol-kazanim">🎯 ${{item.kazanim || 'LGS Kazanımı'}}</span>
                                 </div>
+                                <div class="sol-pick-label" id="lbl-${{idx}}">👇 Bulduğun şıkkı işaretle:</div>
+                                <div class="sol-abcd-row">${{sikBtns}}</div>
+                                <div class="sol-status" id="st-${{idx}}"></div>
                                 <div class="sol-btn-row">
-                                    <button class="sol-action-btn btn-hint" onclick="toggleP('sh-${{idx}}')"><span>💡 1. İpucunu Göster</span></button>
-                                    <button class="sol-action-btn btn-steps" onclick="toggleP('ss-${{idx}}')"><span>👣 2. Adım Adım Çözümü Aç</span></button>
-                                    <button class="sol-action-btn btn-ans" onclick="toggleP('sa-${{idx}}')"><span>🏆 3. Doğru Şıkkı Gör</span></button>
+                                    <button class="sol-action-btn btn-hint" onclick="toggleP('sh-${{idx}}')"><span>💡 İpucunu Göster</span></button>
+                                    <button class="sol-action-btn btn-steps" id="btn-ss-${{idx}}" onclick="toggleP('ss-${{idx}}')"><span>👣 Adım Adım Çözümü Gör</span></button>
                                 </div>
                                 <div class="sol-panel panel-hint" id="sh-${{idx}}"><b>💡 Püf Nokta:</b> ${{item.ipucu || ''}}</div>
                                 <div class="sol-panel panel-steps" id="ss-${{idx}}">${{stepsHtml}}</div>
-                                <div class="sol-panel panel-ans" id="sa-${{idx}}">🎉 Doğru Cevap: ${{item.dogru_sik || ''}}</div>
                             `;
                             root.appendChild(card);
                         }});
+
+                        window.markSik = function(idx, secilen, dogru) {{
+                            if (markedSet.has(idx)) return;
+                            markedSet.add(idx);
+                            const secBtn = document.getElementById(`sik-${{idx}}-${{secilen}}`);
+                            const dogruBtn = document.getElementById(`sik-${{idx}}-${{dogru}}`);
+                            const stBox = document.getElementById(`st-${{idx}}`);
+                            const stepBtn = document.getElementById(`btn-ss-${{idx}}`);
+
+                            if (secilen === dogru) {{
+                                secBtn.classList.add('correct');
+                                secBtn.innerText = secilen + ' ✅';
+                                stBox.className = 'sol-status ok';
+                                stBox.innerHTML = `🎉 <b>DOĞRU!</b> Harika çözdün (${{dogru}} şıkkı). Şimdi çözümü inceleyebilirsin.`;
+                                dCount++;
+                            }} else {{
+                                secBtn.classList.add('wrong');
+                                secBtn.innerText = secilen + ' ❌';
+                                if (dogruBtn) {{
+                                    dogruBtn.classList.add('correct');
+                                    dogruBtn.innerText = dogru + ' ✔️';
+                                }}
+                                stBox.className = 'sol-status err';
+                                stBox.innerHTML = `❌ <b>YANLIŞ!</b> İşaretlediğin: <b>${{secilen}}</b> &nbsp;|&nbsp; Doğru Cevap: <b>${{dogru}}</b>. Alttan çözümü gör!`;
+                                yCount++;
+                            }}
+                            stBox.style.display = 'block';
+                            stepBtn.style.display = 'flex';
+                            document.getElementById('sol-score-txt').innerHTML = `✅ Doğru: ${{dCount}} &nbsp;|&nbsp; ❌ Yanlış: ${{yCount}}`;
+                        }};
+
                         window.toggleP = function(id) {{
                             const el = document.getElementById(id);
                             el.style.display = (el.style.display === 'block') ? 'none' : 'block';
                         }};
                     </script>
                     """
-                    components.html(cozum_html, height=min(750, len(st.session_state.pdf_cozum_kartlari) * 240 + 60), scrolling=True)
+                    components.html(cozum_html, height=min(780, len(st.session_state.pdf_cozum_kartlari) * 280 + 70), scrolling=True)
 
-                # 2) BU SAYFADAN İNTERAKTİF İKİZ SORU MEYDAN OKUMASI
+                # 2) BU SAYFADAN İNTERAKTİF İKİZ SORU MEYDAN OKUMASI (Önce İşaretle -> Doğru/Yanlış -> Çözümü Gör)
                 if st.session_state.get("pdf_ikiz_quiz"):
                     st.markdown("---")
-                    st.markdown("#### 🎯 Bu Sayfanın İkiz Soru Arenası *(Şıklara tıkla, kendini test et!)*")
+                    st.markdown("#### 🎯 Bu Sayfanın İkiz Soru Arenası *(Önce şıkkı işaretle, Doğru/Yanlış durumunu gör, sonra çözümü aç!)*")
                     q_data = st.session_state.pdf_ikiz_quiz
                     q_json = json.dumps(q_data, ensure_ascii=False)
                     ikiz_html = f"""
@@ -1008,10 +1106,14 @@ elif menu == "📚 PDF Havuzu":
                         }}
                         .q-opt.correct {{ background: #dcfce7 !important; border-color: #16a34a !important; color: #14532d !important; }}
                         .q-opt.wrong {{ background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important; }}
-                        .q-actions {{ display: flex; gap: 10px; margin-top: 12px; }}
+                        .q-actions {{ display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }}
                         .q-btn-small {{
-                            background: #f1f5f9; border: none; padding: 7px 12px; border-radius: 8px;
-                            font-size: 12px; font-weight: 700; color: #475569; cursor: pointer;
+                            background: #fef3c7; border: 1px solid #fde68a; padding: 9px 14px; border-radius: 10px;
+                            font-size: 13px; font-weight: 800; color: #92400e; cursor: pointer;
+                        }}
+                        .q-btn-sol {{
+                            background: #e0e7ff; border: 1px solid #c7d2fe; padding: 9px 14px; border-radius: 10px;
+                            font-size: 13px; font-weight: 800; color: #3730a3; cursor: pointer; display: none;
                         }}
                         .q-box {{ display: none; margin-top: 10px; padding: 12px; border-radius: 12px; font-size: 13.5px; }}
                         .q-hint-box {{ background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }}
@@ -1020,20 +1122,21 @@ elif menu == "📚 PDF Havuzu":
                     <div class="q-container">
                         <div class="q-scorebar">
                             <span>⚡ İkiz Soru Meydan Okuması</span>
-                            <span id="p-score">Skor: 0 / {len(q_data)} 🏆</span>
+                            <span id="p-score">✅ Doğru: 0 &nbsp;|&nbsp; ❌ Yanlış: 0</span>
                         </div>
                         <div id="p-quiz-root"></div>
                     </div>
                     <script>
                         const qs = {q_json};
-                        let sc = 0;
+                        let scD = 0;
+                        let scY = 0;
                         const ans = new Set();
                         const rt = document.getElementById('p-quiz-root');
                         qs.forEach((q, qIdx) => {{
                             const card = document.createElement('div');
                             card.className = 'q-card';
                             const opts = (q.secenekler || []).map((opt, oIdx) =>
-                                `<button class="q-opt" id="popt-${{qIdx}}-${{oIdx}}" onclick="selPOpt(${{qIdx}}, ${{oIdx}}, ${{q.dogru_index}})">${{opt}}</button>`
+                                `<button class="q-opt" id="popt-${{qIdx}}-${{oIdx}}" onclick="selPOpt(${{qIdx}}, ${{oIdx}}, ${{q.dogru_index || 0}})">${{opt}}</button>`
                             ).join('');
                             card.innerHTML = `
                                 <div class="q-badge">🔥 İkiz Soru ${{qIdx + 1}}</div>
@@ -1041,7 +1144,7 @@ elif menu == "📚 PDF Havuzu":
                                 <div class="q-options">${{opts}}</div>
                                 <div class="q-actions">
                                     <button class="q-btn-small" onclick="togPBox('phint-${{qIdx}}')">💡 İpucu Al</button>
-                                    <button class="q-btn-small" onclick="togPBox('psol-${{qIdx}}')">📖 Çözümü Gör</button>
+                                    <button class="q-btn-sol" id="pbtn-sol-${{qIdx}}" onclick="togPBox('psol-${{qIdx}}')">📖 Çözümü Gör</button>
                                 </div>
                                 <div class="q-box q-hint-box" id="phint-${{qIdx}}"><b>💡 İpucu:</b> ${{q.ipucu || ''}}</div>
                                 <div class="q-box q-sol-box" id="psol-${{qIdx}}"><b>✅ Çözüm:</b> ${{q.cozum || ''}}</div>
@@ -1049,21 +1152,26 @@ elif menu == "📚 PDF Havuzu":
                             rt.appendChild(card);
                         }});
                         window.selPOpt = function(qIdx, oIdx, cIdx) {{
+                            if (ans.has(qIdx)) return;
+                            ans.add(qIdx);
                             const btn = document.getElementById(`popt-${{qIdx}}-${{oIdx}}`);
-                            const sol = document.getElementById(`psol-${{qIdx}}`);
+                            const cBtn = document.getElementById(`popt-${{qIdx}}-${{cIdx}}`);
+                            const solBtn = document.getElementById(`pbtn-sol-${{qIdx}}`);
                             if (oIdx === cIdx) {{
                                 btn.classList.add('correct');
                                 btn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
-                                sol.style.display = 'block';
-                                if (!ans.has(qIdx)) {{
-                                    sc++; ans.add(qIdx);
-                                    document.getElementById('p-score').innerText = `Skor: ${{sc}} / ${{qs.length}} 🏆`;
-                                }}
+                                scD++;
                             }} else {{
                                 btn.classList.add('wrong');
-                                btn.innerHTML += ' &nbsp; ❌ <b>Tekrar Dene!</b>';
-                                ans.add(qIdx);
+                                btn.innerHTML += ' &nbsp; ❌ <b>YANLIŞ!</b>';
+                                if (cBtn) {{
+                                    cBtn.classList.add('correct');
+                                    cBtn.innerHTML += ' &nbsp; ✔️ <b>Doğru Cevap</b>';
+                                }}
+                                scY++;
                             }}
+                            solBtn.style.display = 'inline-block';
+                            document.getElementById('p-score').innerHTML = `✅ Doğru: ${{scD}} &nbsp;|&nbsp; ❌ Yanlış: ${{scY}}`;
                         }};
                         window.togPBox = function(id) {{
                             const el = document.getElementById(id);
@@ -1476,6 +1584,17 @@ elif menu == "⚡ Hızlı Öğren (Video/Kaynak)":
                     cursor: pointer;
                 }}
                 .q-btn-small:hover {{ background: #e2e8f0; }}
+                .q-btn-sol {{
+                    background: #e0e7ff;
+                    border: 1px solid #c7d2fe;
+                    padding: 8px 14px;
+                    border-radius: 8px;
+                    font-size: 12.5px;
+                    font-weight: 800;
+                    color: #3730a3;
+                    cursor: pointer;
+                    display: none;
+                }}
                 .q-box {{
                     display: none;
                     margin-top: 10px;
@@ -1490,13 +1609,14 @@ elif menu == "⚡ Hızlı Öğren (Video/Kaynak)":
             <div class="q-container">
                 <div class="q-scorebar">
                     <span>🎯 LGS Mini Meydan Okuma</span>
-                    <span id="score-text">Skor: 0 / {len(quiz_data)} ✨</span>
+                    <span id="score-text">✅ Doğru: 0 &nbsp;|&nbsp; ❌ Yanlış: 0</span>
                 </div>
                 <div id="quiz-root"></div>
             </div>
             <script>
                 const questions = {quiz_json_str};
-                let score = 0;
+                let scoreD = 0;
+                let scoreY = 0;
                 const answered = new Set();
                 const root = document.getElementById('quiz-root');
 
@@ -1506,7 +1626,7 @@ elif menu == "⚡ Hızlı Öğren (Video/Kaynak)":
                     
                     let optsHtml = '';
                     (q.secenekler || []).forEach((opt, oIdx) => {{
-                        optsHtml += `<button class="q-opt" id="opt-${{qIdx}}-${{oIdx}}" onclick="selectOpt(${{qIdx}}, ${{oIdx}}, ${{q.dogru_index}})">${{opt}}</button>`;
+                        optsHtml += `<button class="q-opt" id="opt-${{qIdx}}-${{oIdx}}" onclick="selectOpt(${{qIdx}}, ${{oIdx}}, ${{q.dogru_index || 0}})">${{opt}}</button>`;
                     }});
 
                     card.innerHTML = `
@@ -1515,7 +1635,7 @@ elif menu == "⚡ Hızlı Öğren (Video/Kaynak)":
                         <div class="q-options">${{optsHtml}}</div>
                         <div class="q-actions">
                             <button class="q-btn-small" onclick="toggleBox('hint-${{qIdx}}')">💡 İpucu Al</button>
-                            <button class="q-btn-small" onclick="toggleBox('sol-${{qIdx}}')">📖 Çözümü Gör</button>
+                            <button class="q-btn-sol" id="btn-sol-${{qIdx}}" onclick="toggleBox('sol-${{qIdx}}')">📖 Çözümü Gör</button>
                         </div>
                         <div class="q-box q-hint-box" id="hint-${{qIdx}}"><b>💡 İpucu:</b> ${{q.ipucu || 'Sorudaki anahtar kelimelere dikkat et!'}}</div>
                         <div class="q-box q-sol-box" id="sol-${{qIdx}}"><b>✅ Adım Adım Çözüm:</b> ${{q.cozum || ''}}</div>
@@ -1524,22 +1644,26 @@ elif menu == "⚡ Hızlı Öğren (Video/Kaynak)":
                 }});
 
                 window.selectOpt = function(qIdx, oIdx, correctIdx) {{
+                    if (answered.has(qIdx)) return;
+                    answered.add(qIdx);
                     const btn = document.getElementById(`opt-${{qIdx}}-${{oIdx}}`);
-                    const solBox = document.getElementById(`sol-${{qIdx}}`);
+                    const cBtn = document.getElementById(`opt-${{qIdx}}-${{correctIdx}}`);
+                    const solBtn = document.getElementById(`btn-sol-${{qIdx}}`);
                     if (oIdx === correctIdx) {{
                         btn.classList.add('correct');
                         btn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
-                        solBox.style.display = 'block';
-                        if (!answered.has(qIdx)) {{
-                            score++;
-                            answered.add(qIdx);
-                            document.getElementById('score-text').innerText = `Skor: ${{score}} / ${{questions.length}} 🏆`;
-                        }}
+                        scoreD++;
                     }} else {{
                         btn.classList.add('wrong');
-                        btn.innerHTML += ' &nbsp; ❌ <b>Tekrar Dene!</b>';
-                        answered.add(qIdx);
+                        btn.innerHTML += ' &nbsp; ❌ <b>YANLIŞ!</b>';
+                        if (cBtn) {{
+                            cBtn.classList.add('correct');
+                            cBtn.innerHTML += ' &nbsp; ✔️ <b>Doğru Cevap</b>';
+                        }}
+                        scoreY++;
                     }}
+                    solBtn.style.display = 'inline-block';
+                    document.getElementById('score-text').innerHTML = `✅ Doğru: ${{scoreD}} &nbsp;|&nbsp; ❌ Yanlış: ${{scoreY}}`;
                 }};
 
                 window.toggleBox = function(id) {{
@@ -1556,7 +1680,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
     import fitz
     from pathlib import Path
 
-    # Varsayılan ÇipkoTest State'leri
+    # Varsayılan SinoTest State'leri
     if "cipko_ana_mod" not in st.session_state:
         st.session_state.cipko_ana_mod = "hizli_test"  # hizli_test | kaynagimdan | fotograftan
     if "cipko_konu_mod" not in st.session_state:
@@ -1572,7 +1696,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
     if "ai_konu_havuzu" not in st.session_state:
         st.session_state.ai_konu_havuzu = {}
 
-    # ÇipkoTest Özel Mobil Pill & Segmented Bar CSS
+    # SinoTest Özel Mobil Pill & Segmented Bar CSS
     st.markdown("""
     <style>
         /* Üst 3'lü Segmented Bar (⚡ Hızlı test | Kaynağımdan | 📷 Fotoğraftan) ve Alt Barlar Mobilde Yan Yana */
@@ -1600,7 +1724,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
             flex: 1 1 0% !important;
             width: auto !important;
         }
-        /* ÇipkoTest Seçim Pill Butonları (Beyaz Yuvarlak Kapsül Görünümü) */
+        /* SinoTest Seçim Pill Butonları (Beyaz Yuvarlak Kapsül Görünümü) */
         div[class*="st-key-cipko_"] button {
             border-radius: 999px !important;
             min-height: 44px !important;
@@ -1676,11 +1800,11 @@ elif menu == "🤖 Soru Çöz & İkiz":
     st.markdown(f"<style>{aktif_css_kurallari}</style>", unsafe_allow_html=True)
 
     with st.container(border=True):
-        # ÇipkoTest Başlık Alanı
+        # SinoTest Başlık Alanı
         st.markdown("""
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <div>
-                <span style="font-size:24px; font-weight:900; background:linear-gradient(90deg, #1d4ed8, #7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⚡ ÇipkoTest</span>
+                <span style="font-size:24px; font-weight:900; background:linear-gradient(90deg, #1d4ed8, #7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⚡ SinoTest</span>
                 <div style="font-size:12.5px; color:#64748b; font-weight:600;">Sınırsız Yapay Zeka Test & İkiz Soru İstasyonu</div>
             </div>
             <span style="background:#eff6ff; color:#1d4ed8; font-size:12px; font-weight:800; padding:5px 12px; border-radius:99px; border:1px solid #bfdbfe;">♾️ Sınırsız Hak</span>
@@ -1810,8 +1934,8 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 </div>
                 """, unsafe_allow_html=True)
 
-                if st.button(f"🚀 Hızlı Testi Başlat ({secili_adet_son} Soru)", key="cipko_start_test_btn", use_container_width=True):
-                    with st.spinner(f"🤖 Yapay zeka {secili_ders} - '{secili_konu_son}' ({secili_zorluk_son}) için {secili_adet_son} soruluk LGS testini hazırlıyor..."):
+                if st.button(f"🚀 SinoTest'i Başlat ({secili_adet_son} Soru)", key="cipko_start_test_btn", use_container_width=True):
+                    with st.spinner(f"🤖 SinoTest {secili_ders} - '{secili_konu_son}' ({secili_zorluk_son}) için {secili_adet_son} soruluk LGS testini hazırlıyor..."):
                         st.session_state.cipko_aktif_test = generate_custom_lgs_test(
                             ders=secili_ders,
                             konu=secili_konu_son,
@@ -1841,7 +1965,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 img_k = Image.frombytes("RGB", [pix_k.width, pix_k.height], pix_k.samples)
                 doc_k.close()
                 st.image(img_k, caption=f"{secilen_pdf_ad} - Sayfa {sayfa_k}", use_container_width=True)
-                if st.button("🎯 Bu Sayfadan İkiz Test Üret", use_container_width=True):
+                if st.button("🎯 Bu Sayfadan SinoTest Üret", use_container_width=True):
                     with st.spinner("Kaynağındaki sayfadan yeni nesil LGS soruları hazırlanıyor..."):
                         st.session_state.cipko_aktif_test = generate_lgs_quiz_list(image=img_k)
                         st.session_state.cipko_test_baslik = f"{secilen_pdf_ad} (Sayfa {sayfa_k})"
@@ -1889,14 +2013,15 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     st.session_state.hedef_scroll = "ikiz-soru-sonuc"
 
         # =========================================================================
-        # ÇİPKOTEST HIZLI TEST ARENASI SONUÇ EKRANI (5 - 10 - 20 SORU İNTERAKTİF)
+        # SİNOTEST HIZLI TEST ARENASI SONUÇ EKRANI (Önce İşaretle -> Doğru/Yanlış -> Çözümü Gör)
         # =========================================================================
         st.markdown("<div id='cipko-test-arena-sonuc'></div>", unsafe_allow_html=True)
         if st.session_state.get("cipko_aktif_test") and st.session_state.cipko_ana_mod in ("hizli_test", "kaynagimdan"):
             st.markdown("---")
             test_sorulari = st.session_state.cipko_aktif_test
-            test_baslik = st.session_state.get("cipko_test_baslik", "Hızlı LGS Testi")
+            test_baslik = st.session_state.get("cipko_test_baslik", "SinoTest Hızlı LGS Testi")
             st.markdown(f"#### 🏆 {test_baslik}")
+            st.caption("👇 Önce cevabını işaretle; sistem Doğru/Yanlış durumunu belirledikten sonra **'📖 Adım Adım Çözümü Gör'** butonu açılır!")
             t_json = json.dumps(test_sorulari, ensure_ascii=False)
             test_html = f"""
             <style>
@@ -1909,7 +2034,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     padding: 12px 16px;
                     border-radius: 14px;
                     font-weight: 800;
-                    font-size: 14px;
+                    font-size: 13.5px;
                     margin-bottom: 14px;
                     display: flex;
                     justify-content: space-between;
@@ -1988,15 +2113,27 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 .ct-opt:hover {{ border-color: #3b82f6; background: #eff6ff; }}
                 .ct-opt.correct {{ background: #dcfce7 !important; border-color: #16a34a !important; color: #14532d !important; }}
                 .ct-opt.wrong {{ background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important; }}
+                .ct-status {{
+                    display: none;
+                    margin-top: 10px;
+                    padding: 9px 12px;
+                    border-radius: 10px;
+                    font-size: 13.5px;
+                    font-weight: 800;
+                    text-align: center;
+                }}
+                .ct-status.ok {{ background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }}
+                .ct-status.err {{ background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }}
                 .ct-actions {{ display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }}
                 .ct-act-btn {{
                     border: none;
-                    padding: 9px 14px;
+                    padding: 10px 14px;
                     border-radius: 10px;
                     font-size: 13px;
                     font-weight: 800;
                     cursor: pointer;
-                    flex: 1 1 160px;
+                    flex: 1 1 180px;
+                    width: 100%;
                     text-align: left;
                     display: flex;
                     align-items: center;
@@ -2004,23 +2141,25 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 }}
                 .ct-act-btn::after {{ content: '▾'; font-size: 12px; opacity: 0.7; }}
                 .ct-btn-hint {{ background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }}
-                .ct-btn-sol {{ background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }}
+                .ct-btn-sol {{ background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; display: none; }}
                 .ct-box {{ display: none; margin-top: 10px; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }}
                 .ct-hint-box {{ background: #fffbeb; color: #78350f; border-left: 5px solid #f59e0b; }}
                 .ct-sol-box {{ background: #f0fdf4; color: #166534; border-left: 5px solid #16a34a; }}
             </style>
             <div class="ct-wrap">
                 <div class="ct-scorebar">
-                    <span>⚡ ÇipkoTest Canlı Skor</span>
-                    <span id="ct-score">Doğru: 0 / {len(test_sorulari)} 🏆</span>
+                    <span>⚡ SinoTest Canlı Skor</span>
+                    <span id="ct-score">✅ Doğru: 0 &nbsp;|&nbsp; ❌ Yanlış: 0 &nbsp;/&nbsp; {len(test_sorulari)}</span>
                 </div>
                 <div id="ct-root"></div>
             </div>
             <script>
                 const qs = {t_json};
-                let sc = 0;
+                let scD = 0;
+                let scY = 0;
                 const ans = new Set();
                 const rt = document.getElementById('ct-root');
+                const harfler = ['A', 'B', 'C', 'D'];
                 qs.forEach((q, qIdx) => {{
                     const card = document.createElement('div');
                     card.className = 'ct-card';
@@ -2036,31 +2175,46 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         </div>
                         <div class="ct-qtext">${{q.soru || ''}}</div>
                         <div class="ct-opts">${{opts}}</div>
+                        <div class="ct-status" id="ctst-${{qIdx}}"></div>
                         <div class="ct-actions">
                             <button class="ct-act-btn ct-btn-hint" onclick="togCtBox('cthint-${{qIdx}}')"><span>💡 İpucu Göster</span></button>
-                            <button class="ct-act-btn ct-btn-sol" onclick="togCtBox('ctsol-${{qIdx}}')"><span>📖 Adım Adım Çözüm</span></button>
+                            <button class="ct-act-btn ct-btn-sol" id="ctbtn-sol-${{qIdx}}" onclick="togCtBox('ctsol-${{qIdx}}')"><span>📖 Adım Adım Çözümü Gör</span></button>
                         </div>
                         <div class="ct-box ct-hint-box" id="cthint-${{qIdx}}"><b>💡 İpucu:</b> ${{q.ipucu || ''}}</div>
-                        <div class="ct-box ct-sol-box" id="ctsol-${{qIdx}}"><b>✅ Çözüm:</b> ${{q.cozum || ''}}</div>
+                        <div class="ct-box ct-sol-box" id="ctsol-${{qIdx}}"><b>✅ Adım Adım Çözüm:</b> ${{q.cozum || ''}}</div>
                     `;
                     rt.appendChild(card);
                 }});
                 window.selCtOpt = function(qIdx, oIdx, cIdx) {{
+                    if (ans.has(qIdx)) return;
+                    ans.add(qIdx);
                     const btn = document.getElementById(`ctopt-${{qIdx}}-${{oIdx}}`);
-                    const sol = document.getElementById(`ctsol-${{qIdx}}`);
+                    const cBtn = document.getElementById(`ctopt-${{qIdx}}-${{cIdx}}`);
+                    const stEl = document.getElementById(`ctst-${{qIdx}}`);
+                    const solBtn = document.getElementById(`ctbtn-sol-${{qIdx}}`);
+                    const secHarf = harfler[oIdx] || '';
+                    const dogruHarf = harfler[cIdx] || '';
+
                     if (oIdx === cIdx) {{
                         btn.classList.add('correct');
-                        if (!btn.innerHTML.includes('DOĞRU')) btn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
-                        sol.style.display = 'block';
-                        if (!ans.has(qIdx)) {{
-                            sc++; ans.add(qIdx);
-                            document.getElementById('ct-score').innerText = `Doğru: ${{sc}} / ${{qs.length}} 🏆`;
-                        }}
+                        btn.innerHTML += ' &nbsp; 🎉 <b>DOĞRU!</b>';
+                        stEl.className = 'ct-status ok';
+                        stEl.innerHTML = `✅ <b>DOĞRU!</b> (${{dogruHarf}} şıkkı) — Şimdi alttaki butondan çözümü inceleyebilirsin.`;
+                        scD++;
                     }} else {{
                         btn.classList.add('wrong');
-                        if (!btn.innerHTML.includes('Tekrar')) btn.innerHTML += ' &nbsp; ❌ <b>Tekrar Dene!</b>';
-                        ans.add(qIdx);
+                        btn.innerHTML += ' &nbsp; ❌ <b>YANLIŞ!</b>';
+                        if (cBtn) {{
+                            cBtn.classList.add('correct');
+                            cBtn.innerHTML += ' &nbsp; ✔️ <b>Doğru Şık</b>';
+                        }}
+                        stEl.className = 'ct-status err';
+                        stEl.innerHTML = `❌ <b>YANLIŞ!</b> İşaretlediğin: <b>${{secHarf}}</b> &nbsp;|&nbsp; Doğru Cevap: <b>${{dogruHarf}}</b> — Alttan çözümü gör!`;
+                        scY++;
                     }}
+                    stEl.style.display = 'block';
+                    solBtn.style.display = 'flex';
+                    document.getElementById('ct-score').innerHTML = `✅ Doğru: ${{scD}} &nbsp;|&nbsp; ❌ Yanlış: ${{scY}} &nbsp;/&nbsp; ${{qs.length}}`;
                 }};
                 window.togCtBox = function(id) {{
                     const el = document.getElementById(id);
@@ -2068,7 +2222,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 }};
             </script>
             """
-            components.html(test_html, height=min(820, len(test_sorulari) * 350 + 80), scrolling=True)
+            components.html(test_html, height=min(820, len(test_sorulari) * 360 + 80), scrolling=True)
 
         # Fotoğraftan İkiz Soru Sonucu
         st.markdown("<div id='ikiz-soru-sonuc'></div>", unsafe_allow_html=True)
@@ -2249,16 +2403,26 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 }}
                 .tw-actions {{ display: flex; gap: 10px; flex-wrap: wrap; }}
                 .tw-action-btn {{
-                    background: #f1f5f9;
-                    border: 1.5px solid #cbd5e1;
+                    background: #fef3c7;
+                    border: 1.5px solid #fde68a;
                     border-radius: 10px;
-                    padding: 8px 14px;
+                    padding: 9px 14px;
                     font-size: 13px;
                     font-weight: 800;
-                    color: #334155;
+                    color: #92400e;
                     cursor: pointer;
                 }}
-                .tw-action-btn:hover {{ background: #e2e8f0; }}
+                .tw-action-sol {{
+                    background: #e0e7ff;
+                    border: 1.5px solid #c7d2fe;
+                    border-radius: 10px;
+                    padding: 9px 14px;
+                    font-size: 13px;
+                    font-weight: 800;
+                    color: #3730a3;
+                    cursor: pointer;
+                    display: none;
+                }}
                 .tw-collapse {{
                     display: none;
                     margin-top: 12px;
@@ -2277,20 +2441,23 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     <div class="tw-card-title">
                         <span>🧩 Senin Sorunun Adım Adım Çözümü</span>
                     </div>
-                    {orijinal_adimlar_html}
-                    <div class="ans-badge">🎯 Doğru Cevap: {orijinal_cevap_txt}</div>
+                    <button class="tw-action-sol" style="display:inline-block; margin-bottom:10px;" onclick="toggleTw('tw-orig-sol')">📖 Senin Sorunun Çözümünü ve Cevabını Gör</button>
+                    <div id="tw-orig-sol" class="tw-collapse" style="background:#f8fafc; border:1.5px solid #e2e8f0;">
+                        {orijinal_adimlar_html}
+                        <div class="ans-badge">🎯 Doğru Cevap: {orijinal_cevap_txt}</div>
+                    </div>
                 </div>
 
                 <div class="tw-card" style="border-color: #a5b4fc;">
                     <div class="tw-card-title">
                         <span>👯 Şimdi Sıra Sende: İkiz Soru Meydan Okuması!</span>
-                        <span style="background:#e0e7ff; color:#3730a3; font-size:12px; padding:4px 10px; border-radius:99px;">Şıkka Tıkla 👇</span>
+                        <span style="background:#e0e7ff; color:#3730a3; font-size:12px; padding:4px 10px; border-radius:99px;">Önce Şıkkı İşaretle 👇</span>
                     </div>
                     <div class="tw-question-box">{ikiz_soru_txt}</div>
                     <div class="tw-opts" id="tw-opts-root"></div>
                     <div class="tw-actions">
                         <button class="tw-action-btn" onclick="toggleTw('tw-hint')">💡 İpucu Al</button>
-                        <button class="tw-action-btn" onclick="toggleTw('tw-sol')">📖 Detaylı Çözümü Gör (Adım Adım)</button>
+                        <button class="tw-action-sol" id="tw-btn-sol" onclick="toggleTw('tw-sol')">📖 Detaylı Çözümü Gör (Adım Adım)</button>
                     </div>
                     <div id="tw-hint" class="tw-collapse" style="background:#fef9c3; border:1.5px solid #fde047; color:#854d0e; font-weight:700; font-size:13.5px;">
                         💡 <b>İpucu:</b> {ikiz_ipucu_txt}
@@ -2304,6 +2471,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
             <script>
                 const opts = {secenekler_json};
                 const correctIndex = {dogru_idx};
+                let twMarked = false;
                 const optsRoot = document.getElementById('tw-opts-root');
                 opts.forEach((optText, idx) => {{
                     const b = document.createElement('button');
@@ -2311,14 +2479,21 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     b.id = 'tw-opt-' + idx;
                     b.innerText = optText;
                     b.onclick = function() {{
+                        if (twMarked) return;
+                        twMarked = true;
+                        const cBtn = document.getElementById('tw-opt-' + correctIndex);
                         if (idx === correctIndex) {{
                             b.classList.add('correct');
-                            if (!b.innerText.includes('DOĞRU')) b.innerText += '  🎉 DOĞRU!';
-                            document.getElementById('tw-sol').style.display = 'block';
+                            b.innerText += '  🎉 DOĞRU!';
                         }} else {{
                             b.classList.add('wrong');
-                            if (!b.innerText.includes('Tekrar')) b.innerText += '  ❌ Tekrar Dene!';
+                            b.innerText += '  ❌ YANLIŞ!';
+                            if (cBtn) {{
+                                cBtn.classList.add('correct');
+                                cBtn.innerText += '  ✔️ Doğru Cevap';
+                            }}
                         }}
+                        document.getElementById('tw-btn-sol').style.display = 'inline-block';
                     }};
                     optsRoot.appendChild(b);
                 }});
@@ -2328,7 +2503,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 }};
             </script>
             """
-            components.html(ikiz_html, height=720, scrolling=True)
+            components.html(ikiz_html, height=740, scrolling=True)
             
             if st.button("💾 Bu Soruyu Hata Defterime Ekle"):
                 doc_id = f"soru_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
