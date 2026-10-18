@@ -310,6 +310,39 @@ st.markdown("""
         width: auto !important;
         flex: 1 1 0% !important;
     }
+    /* PDF İstasyonu "Bu Sayfayla Ne Yapmak İstersin?" Butonları Mobilde Okunaklı Dikey Blok */
+    .st-key-act_coz button,
+    .st-key-act_ikiz button,
+    .st-key-act_ozet button {
+        white-space: normal !important;
+        word-break: normal !important;
+        line-height: 1.3 !important;
+    }
+    @media (max-width: 640px) {
+        div[data-testid="stHorizontalBlock"]:has(.st-key-act_coz) {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(.st-key-act_coz) > div[data-testid="stColumn"] {
+            width: 100% !important;
+            min-width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+        .st-key-act_coz button,
+        .st-key-act_ikiz button,
+        .st-key-act_ozet button {
+            min-height: 48px !important;
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            white-space: normal !important;
+            word-break: normal !important;
+            line-height: 1.35 !important;
+            padding: 10px 14px !important;
+            border-radius: 14px !important;
+            text-align: center !important;
+        }
+    }
     /* Popover Açılır Menü İçeriği Beyaz Zemin Üzerine Temiz Görünüm */
     div[data-testid="stPopoverBody"] {
         background: white !important;
@@ -662,9 +695,27 @@ st.markdown("""
         transform: translateY(-3px);
         box-shadow: 0 12px 26px rgba(37, 99, 235, 0.55);
     }
+    @media (max-width: 640px) {
+        .floating-nav {
+            bottom: 12px !important;
+            right: 12px !important;
+        }
+        .fab-btn {
+            width: 38px !important;
+            height: 38px !important;
+            padding: 0 !important;
+            border-radius: 50% !important;
+            justify-content: center !important;
+            font-size: 16px !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+        }
+        .fab-btn .fab-txt {
+            display: none !important;
+        }
+    }
 </style>
 <div class="floating-nav">
-    <a href="#sayfa-basi" class="fab-btn" title="En Üste Çık">⬆️ Yukarı Çık</a>
+    <a href="#sayfa-basi" class="fab-btn" title="En Üste Çık"><span>⬆️</span><span class="fab-txt"> Yukarı Çık</span></a>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1974,6 +2025,18 @@ elif menu == "🤖 Soru Çöz & İkiz":
             color: #334155 !important;
             font-weight: 700 !important;
         }
+        @media (max-width: 600px) {
+            div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tab_0) {
+                gap: 4px !important;
+            }
+            div[data-testid="stHorizontalBlock"]:has(.st-key-cipko_tab_0) button {
+                padding: 6px 3px !important;
+                font-size: 11px !important;
+                min-height: 38px !important;
+                white-space: nowrap !important;
+                letter-spacing: -0.2px !important;
+            }
+        }
         /* Konu Butonları Çok Satırlı Olabilsin */
         div[class*="st-key-cipko_konu_btn_"] button {
             border-radius: 14px !important;
@@ -2280,29 +2343,33 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 background: linear-gradient(135deg, #fffbeb 0%, #eff6ff 55%, #f5f3ff 100%);
                 border: 2px solid #fcd34d;
                 border-radius: 16px;
-                padding: 10px 12px;
+                padding: 10px 10px;
                 box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
             }}
             .subj-grid {{
                 display: grid;
                 grid-template-columns: repeat(6, minmax(0, 1fr));
                 gap: 6px;
-                margin-bottom: 10px;
+                margin-bottom: 9px;
             }}
-            @media (max-width: 560px) {{
+            @media (max-width: 768px) {{
                 .subj-grid {{ grid-template-columns: repeat(3, minmax(0, 1fr)); }}
             }}
+            @media (max-width: 580px) {{
+                .subj-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 5px !important; }}
+            }}
             .subj-chip {{
-                background: rgba(255,255,255,0.92);
+                background: rgba(255,255,255,0.95);
                 border: 1px solid #e2e8f0;
                 border-radius: 10px;
-                padding: 5px 7px;
+                padding: 5px 8px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.03);
             }}
             .subj-top {{
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                gap: 2px;
+                gap: 3px;
                 margin-bottom: 4px;
             }}
             .subj-name {{
@@ -2316,9 +2383,10 @@ elif menu == "🤖 Soru Çöz & İkiz":
             .subj-bdg {{
                 font-size: 10px;
                 font-weight: 900;
-                padding: 1px 5px;
+                padding: 1px 6px;
                 border-radius: 99px;
                 white-space: nowrap;
+                flex-shrink: 0;
             }}
             .subj-bar {{
                 height: 5px;
@@ -2334,40 +2402,40 @@ elif menu == "🤖 Soru Çöz & İkiz":
             .gift-row {{
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 10px;
+                gap: 8px;
             }}
             .gift-card {{
                 position: relative;
                 border-radius: 14px;
-                padding: 10px 10px;
+                padding: 8px 8px;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
-                gap: 10px;
+                gap: 8px;
                 color: #ffffff;
-                border: 2px solid rgba(255,255,255,0.55);
-                box-shadow: 0 5px 14px rgba(15, 23, 42, 0.12);
+                border: 2px solid rgba(255,255,255,0.6);
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
                 transition: transform 0.18s ease, box-shadow 0.18s ease;
                 user-select: none;
                 overflow: hidden;
             }}
             .gift-card:hover {{
-                transform: translateY(-3px) scale(1.015);
-                box-shadow: 0 10px 22px rgba(15, 23, 42, 0.2);
+                transform: translateY(-2px) scale(1.015);
+                box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
                 border-color: #fde047;
             }}
             .gift-card.pk1 {{ background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%); }}
             .gift-card.pk2 {{ background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%); }}
             .gift-card.pk3 {{ background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%); }}
             .gift-icon-box {{
-                width: 46px;
-                height: 46px;
-                border-radius: 12px;
+                width: 38px;
+                height: 38px;
+                border-radius: 11px;
                 background: rgba(255,255,255,0.22);
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 26px;
+                font-size: 22px;
                 flex-shrink: 0;
                 position: relative;
                 animation: bobGift 2.4s ease-in-out infinite;
@@ -2382,13 +2450,13 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 right: -3px;
                 background: #ffffff;
                 border-radius: 99px;
-                width: 18px;
-                height: 18px;
-                font-size: 11px;
+                width: 16px;
+                height: 16px;
+                font-size: 10px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             }}
             .gift-info {{
                 min-width: 0;
@@ -2396,7 +2464,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 text-align: left;
             }}
             .gift-title {{
-                font-size: 13px;
+                font-size: 12.5px;
                 font-weight: 900;
                 color: #ffffff;
                 line-height: 1.2;
@@ -2406,25 +2474,24 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 text-overflow: ellipsis;
             }}
             .gift-sub {{
-                font-size: 10.5px;
+                font-size: 10px;
                 font-weight: 700;
                 color: #fef08a;
                 line-height: 1.25;
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical;
-                overflow: hidden;
             }}
-            @media (max-width: 520px) {{
+            @media (max-width: 580px) {{
+                .joy-wrap {{ padding: 8px 6px; }}
+                .gift-row {{ gap: 5px; }}
                 .gift-card {{
                     flex-direction: column;
                     text-align: center;
-                    padding: 8px 6px;
-                    gap: 5px;
+                    padding: 7px 4px;
+                    gap: 3px;
                 }}
-                .gift-info {{ text-align: center; }}
-                .gift-title {{ font-size: 11.5px; }}
-                .gift-sub {{ font-size: 9.5px; }}
+                .gift-info {{ text-align: center; width: 100%; }}
+                .gift-icon-box {{ width: 34px; height: 34px; font-size: 19px; }}
+                .gift-title {{ font-size: 11px; line-height: 1.15; white-space: normal; }}
+                .gift-sub {{ font-size: 9px; line-height: 1.2; }}
             }}
         </style>
         <div class="joy-wrap">
@@ -2459,6 +2526,30 @@ elif menu == "🤖 Soru Çöz & İkiz":
             const SUBJECT_STATUS = {json.dumps(ders_durum_js_listesi, ensure_ascii=False)};
             const REMAINING_TOTAL_CUPS = {toplam_kalan_kupa};
 
+            function resizeSelf() {{
+                try {{
+                    const h = (document.body.scrollHeight || document.documentElement.scrollHeight) + 4;
+                    if (window.frameElement) {{
+                        window.frameElement.style.height = h + 'px';
+                    }}
+                    if (window.parent && window.parent.document) {{
+                        const frames = window.parent.document.querySelectorAll('iframe');
+                        frames.forEach(f => {{
+                            try {{
+                                if (f.contentWindow === window || f.contentDocument === document) {{
+                                    f.style.height = h + 'px';
+                                }}
+                            }} catch(e) {{}}
+                        }});
+                    }}
+                }} catch(err) {{}}
+            }}
+            window.addEventListener('load', resizeSelf);
+            window.addEventListener('resize', resizeSelf);
+            setTimeout(resizeSelf, 50);
+            setTimeout(resizeSelf, 250);
+            setTimeout(resizeSelf, 600);
+
             window.openSinoGiftPopup = function(pkgKey) {{
                 const pk = GIFT_DATA[pkgKey];
                 if (!pk) return;
@@ -2484,7 +2575,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     `).join('');
 
                     overlay.innerHTML = `
-                        <div style="background:#ffffff;max-width:440px;width:100%;border-radius:24px;padding:22px 20px;text-align:center;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.38);border:3px solid #f59e0b;font-family:'Inter',sans-serif;" onclick="event.stopPropagation()">
+                        <div style="background:#ffffff;max-width:440px;width:100%;max-height:92vh;overflow-y:auto;border-radius:24px;padding:22px 20px;text-align:center;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.38);border:3px solid #f59e0b;font-family:'Inter',sans-serif;" onclick="event.stopPropagation()">
                             <button onclick="document.getElementById('sino-gift-popup-modal').remove()" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:99px;border:none;background:#f1f5f9;color:#0f172a;font-size:17px;font-weight:900;cursor:pointer;">✕</button>
                             <div style="display:inline-block;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:12px;font-weight:900;padding:4px 14px;border-radius:99px;margin-bottom:10px;">
                                 🔒 ${{pk.kutu_baslik.toUpperCase()}} KİLİTLİ
@@ -2506,7 +2597,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     `;
                 }} else {{
                     overlay.innerHTML = `
-                        <div style="background:#ffffff;max-width:450px;width:100%;border-radius:26px;padding:22px 20px;text-align:center;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.45);border:4px solid ${{pk.tema_renk}};font-family:'Inter',sans-serif;" onclick="event.stopPropagation()">
+                        <div style="background:#ffffff;max-width:450px;width:100%;max-height:92vh;overflow-y:auto;border-radius:26px;padding:22px 20px;text-align:center;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.45);border:4px solid ${{pk.tema_renk}};font-family:'Inter',sans-serif;" onclick="event.stopPropagation()">
                             <button onclick="document.getElementById('sino-gift-popup-modal').remove()" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:99px;border:none;background:#f1f5f9;color:#0f172a;font-size:18px;font-weight:900;cursor:pointer;">✕</button>
                             <div style="display:inline-block;background:${{pk.tema_renk}};color:#ffffff;font-size:12px;font-weight:900;padding:5px 14px;border-radius:99px;margin-bottom:12px;">
                                 🎉 ${{pk.kutu_baslik.toUpperCase()}} AÇILDI!
@@ -2534,7 +2625,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
             }};
         </script>
         """
-        components.html(hediye_html_widget, height=152, scrolling=False)
+        components.html(hediye_html_widget, height=255, scrolling=False)
 
         # Sadece tüm derslerden 20 Kupa tamamlandığında kalıcı veritabanı ödül seçimi butonlarını göster
         if tum_dersler_20_mi:
@@ -2549,18 +2640,18 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         st.balloons()
                         st.rerun()
 
-        # 1) ÜST 3'LÜ SEGMENTED BAR: [⚡ Hızlı test | 📚 Kaynağımdan | 📷 Fotoğraftan]
+        # 1) ÜST 3'LÜ SEGMENTED BAR: [⚡ Hızlı Test | 📚 Kaynağım | 📷 Fotoğraf]
         t_col1, t_col2, t_col3 = st.columns(3, gap="small")
         with t_col1:
-            if st.button("⚡ Hızlı test", key="cipko_tab_0", use_container_width=True):
+            if st.button("⚡ Hızlı Test", key="cipko_tab_0", use_container_width=True):
                 st.session_state.cipko_ana_mod = "hizli_test"
                 st.rerun()
         with t_col2:
-            if st.button("📚 Kaynağımdan", key="cipko_tab_1", use_container_width=True):
+            if st.button("📚 Kaynağım", key="cipko_tab_1", use_container_width=True):
                 st.session_state.cipko_ana_mod = "kaynagimdan"
                 st.rerun()
         with t_col3:
-            if st.button("📷 Fotoğraftan", key="cipko_tab_2", use_container_width=True):
+            if st.button("📷 Fotoğraf", key="cipko_tab_2", use_container_width=True):
                 st.session_state.cipko_ana_mod = "fotograftan"
                 st.rerun()
 
