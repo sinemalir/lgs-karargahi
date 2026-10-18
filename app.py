@@ -408,8 +408,8 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Mobil Hızlı Kontrol Çubuğu (⬅️ Geri | 🏠 Ana Sayfa | 📋 Hızlı Menü | 🚪 Çıkış)
-m_col1, m_col2, m_col3, m_col4 = st.columns([1.1, 1.3, 1.4, 1], gap="small")
+# Mobil Hızlı Kontrol Çubuğu (⬅️ Geri | 🏠 Ana Sayfa | 📋 Menü | 🚪 Çıkış) — Tek Satır
+m_col1, m_col2, m_col3, m_col4 = st.columns([0.9, 1.38, 1.12, 0.9], gap="small")
 with m_col1:
     st.button("⬅️ Geri", on_click=geri_git, use_container_width=True, key="mob_back_btn")
 with m_col2:
@@ -424,9 +424,8 @@ with m_col4:
         st.session_state.user = None
         st.rerun()
 
-# 6 İstasyon İçin Soft Renkli, Hizalı 3x2 Tıklanabilir Buton Izgarası
+# 5 İstasyon İçin Soft Renkli, Kompakt Tıklanabilir Buton Izgarası (Alttaki Ana Sayfa Butonu Kaldırıldı)
 ISTASYON_KISA_AD = [
-    ("🏠 Ana Sayfa", "🏠 Ana Sayfa"),
     ("📚 PDF Havuzu", "📚 PDF Havuzu"),
     ("⚡ Hızlı Öğren", "⚡ Hızlı Öğren (Video/Kaynak)"),
     ("⚡ SinoTest", "🤖 Soru Çöz & İkiz"),
@@ -436,65 +435,107 @@ ISTASYON_KISA_AD = [
 
 st.markdown("""
 <style>
-    /* 6 İstasyon Butonu İçin Ayrı Soft Pastel Renkler ve Tam Hizalama */
-    div[class*="st-key-ist_btn_"] button {
-        min-height: 50px !important;
-        border-radius: 14px !important;
-        font-size: 14.5px !important;
+    /* Üstteki 4'lü Kontrol Çubuğu (Geri | Ana Sayfa | Menü | Çıkış) Mobilde de Tek Satırda Yan Yana Kalsın */
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) > div[data-testid="stColumn"] {
+        min-width: 0 !important;
+        width: auto !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) > div[data-testid="stColumn"]:nth-child(1) { flex: 0.9 1 0% !important; }
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) > div[data-testid="stColumn"]:nth-child(2) { flex: 1.42 1 0% !important; }
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) > div[data-testid="stColumn"]:nth-child(3) { flex: 1.15 1 0% !important; }
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) > div[data-testid="stColumn"]:nth-child(4) { flex: 0.9 1 0% !important; }
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) button {
+        min-height: 40px !important;
+        padding: 7px 6px !important;
+        border-radius: 11px !important;
+        white-space: nowrap !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) button p,
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) button span {
+        font-size: 12.5px !important;
         font-weight: 800 !important;
-        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05) !important;
+        white-space: nowrap !important;
+        letter-spacing: -0.2px !important;
+    }
+
+    /* İstasyon Satırları da Mobilde Alt Alta Düşmesin ( Kompakt 2 Satır ) */
+    div[data-testid="stHorizontalBlock"]:has([class*="st-key-ist_btn_"]) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has([class*="st-key-ist_btn_"]) > div[data-testid="stColumn"] {
+        min-width: 0 !important;
+        width: auto !important;
+        flex: 1 1 0% !important;
+    }
+
+    /* 5 İstasyon Butonu İçin Ayrı Soft Pastel Renkler ve Tam Hizalama */
+    div[class*="st-key-ist_btn_"] button {
+        min-height: 44px !important;
+        padding: 8px 6px !important;
+        border-radius: 12px !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        white-space: nowrap !important;
+        box-shadow: 0 3px 8px rgba(15, 23, 42, 0.05) !important;
         transition: all 0.2s ease !important;
+    }
+    div[class*="st-key-ist_btn_"] button p,
+    div[class*="st-key-ist_btn_"] button span {
+        font-size: 12.5px !important;
+        white-space: nowrap !important;
     }
     div[class*="st-key-ist_btn_"] button:hover {
         transform: translateY(-2px) !important;
         filter: brightness(0.97) !important;
     }
-    /* 0: Ana Sayfa - Soft Gökyüzü Mavisi */
+    /* 0: PDF Havuzu - Soft Lavanta Moru */
     .st-key-ist_btn_0 button {
-        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
-        border: 2px solid #7dd3fc !important;
-    }
-    .st-key-ist_btn_0 button p, .st-key-ist_btn_0 button span, .st-key-ist_btn_0 button div {
-        color: #0369a1 !important;
-    }
-    /* 1: PDF Havuzu - Soft Lavanta Moru */
-    .st-key-ist_btn_1 button {
         background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%) !important;
         border: 2px solid #d8b4fe !important;
     }
-    .st-key-ist_btn_1 button p, .st-key-ist_btn_1 button span, .st-key-ist_btn_1 button div {
+    .st-key-ist_btn_0 button p, .st-key-ist_btn_0 button span, .st-key-ist_btn_0 button div {
         color: #6b21a8 !important;
     }
-    /* 2: Hızlı Öğren - Soft Şeftali / Kehribar */
-    .st-key-ist_btn_2 button {
+    /* 1: Hızlı Öğren - Soft Şeftali / Kehribar */
+    .st-key-ist_btn_1 button {
         background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
         border: 2px solid #fcd34d !important;
     }
-    .st-key-ist_btn_2 button p, .st-key-ist_btn_2 button span, .st-key-ist_btn_2 button div {
+    .st-key-ist_btn_1 button p, .st-key-ist_btn_1 button span, .st-key-ist_btn_1 button div {
         color: #92400e !important;
     }
-    /* 3: Soru Çöz & İkiz - Soft Nane Yeşili */
-    .st-key-ist_btn_3 button {
+    /* 2: SinoTest - Soft Nane Yeşili */
+    .st-key-ist_btn_2 button {
         background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
         border: 2px solid #6ee7b7 !important;
     }
-    .st-key-ist_btn_3 button p, .st-key-ist_btn_3 button span, .st-key-ist_btn_3 button div {
+    .st-key-ist_btn_2 button p, .st-key-ist_btn_2 button span, .st-key-ist_btn_2 button div {
         color: #065f46 !important;
     }
-    /* 4: Deneme Analizi - Soft Gül Kurusu / Pembe */
-    .st-key-ist_btn_4 button {
+    /* 3: Deneme Analizi - Soft Gül Kurusu / Pembe */
+    .st-key-ist_btn_3 button {
         background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%) !important;
         border: 2px solid #fda4af !important;
     }
-    .st-key-ist_btn_4 button p, .st-key-ist_btn_4 button span, .st-key-ist_btn_4 button div {
+    .st-key-ist_btn_3 button p, .st-key-ist_btn_3 button span, .st-key-ist_btn_3 button div {
         color: #9f1239 !important;
     }
-    /* 5: Hata & Gelişim - Soft İndigo */
-    .st-key-ist_btn_5 button {
+    /* 4: Hata & Gelişim - Soft İndigo */
+    .st-key-ist_btn_4 button {
         background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%) !important;
         border: 2px solid #a5b4fc !important;
     }
-    .st-key-ist_btn_5 button p, .st-key-ist_btn_5 button span, .st-key-ist_btn_5 button div {
+    .st-key-ist_btn_4 button p, .st-key-ist_btn_4 button span, .st-key-ist_btn_4 button div {
         color: #3730a3 !important;
     }
 </style>
@@ -502,8 +543,8 @@ st.markdown("""
 
 with st.container(border=True):
     r1_c1, r1_c2, r1_c3 = st.columns(3, gap="small")
-    r2_c1, r2_c2, r2_c3 = st.columns(3, gap="small")
-    grid_cols = [r1_c1, r1_c2, r1_c3, r2_c1, r2_c2, r2_c3]
+    r2_c1, r2_c2 = st.columns(2, gap="small")
+    grid_cols = [r1_c1, r1_c2, r1_c3, r2_c1, r2_c2]
     for idx, (gorunen_ad, tam_hedef) in enumerate(ISTASYON_KISA_AD):
         aktif_mi = (st.session_state.aktif_istasyon == tam_hedef)
         etiket = f"✨ {gorunen_ad}" if aktif_mi else gorunen_ad
