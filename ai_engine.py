@@ -269,6 +269,38 @@ def analyze_exam_sheet(image=None, netler_ozeti=""):
     })
 
 
+def extract_exam_scores(image):
+    """Deneme sonuç/optik görsellerinden 6 dersin Doğru/Yanlış/Boş sayılarını okur.
+    Dönüş: {"turkce": {"D":..,"Y":..,"B":..}, "mat":..., "fen":..., "ink":..., "din":..., "ing":...} veya {}"""
+    max_map = {"turkce": 20, "mat": 20, "fen": 20, "ink": 10, "din": 10, "ing": 10}
+    prompt = (
+        "Bu görseller bir 8. sınıf LGS deneme sınavına ait (sonuç belgesi, karne, optik form veya cevap anahtarı olabilir). "
+        "Görsellerden 6 dersin Doğru, Yanlış ve Boş sayılarını oku. Soru sayıları: Türkçe 20, Matematik 20, Fen Bilimleri 20, "
+        "T.C. İnkılap Tarihi 10, Din Kültürü 10, İngilizce 10. Bir dersin bilgisi görselde yoksa o dersi null yaz. "
+        "Doğru+Yanlış+Boş toplamı o dersin soru sayısını geçmemeli. "
+        "Yanıtı SADECE geçerli bir JSON objesi olarak ver, başka hiçbir metin yazma. Format:\n"
+        '{"turkce": {"D": 15, "Y": 3, "B": 2}, "mat": {"D": 12, "Y": 4, "B": 4}, "fen": {"D": 0, "Y": 0, "B": 0}, '
+        '"ink": {"D": 0, "Y": 0, "B": 0}, "din": {"D": 0, "Y": 0, "B": 0}, "ing": {"D": 0, "Y": 0, "B": 0}}'
+    )
+    raw = ask_gemini(prompt, image=image)
+    sonuc = {}
+    try:
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if not match:
+            return {}
+        veri = json.loads(match.group(0))
+        for anahtar, maks in max_map.items():
+            d_obj = veri.get(anahtar)
+            if not isinstance(d_obj, dict):
+                continue
+            d = max(0, min(maks, int(d_obj.get("D", 0) or 0)))
+            y = max(0, min(maks - d, int(d_obj.get("Y", 0) or 0)))
+            sonuc[anahtar] = {"D": d, "Y": y, "B": maks - d - y}
+    except Exception:
+        return {}
+    return sonuc
+
+
 MEB_8_SINIF_KONULARI = {
     "Türkçe": [
         "Sözcükte ve Söz Öbeklerinde Anlam",

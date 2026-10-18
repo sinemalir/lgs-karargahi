@@ -10,6 +10,7 @@ from ai_engine import (
     ask_gemini,
     generate_twin_question,
     analyze_exam_sheet,
+    extract_exam_scores,
     get_youtube_transcript,
     generate_flashcards_list,
     generate_hap_ozet_structured,
@@ -201,6 +202,55 @@ st.markdown("""
     h1, h2, h3, h4, h5, h6 {
         color: #1e293b !important;
         font-weight: 800;
+    }
+    /* Başlık Puntoları Biraz Küçültüldü (Daha Ferah Kullanıcı Deneyimi) */
+    div[data-testid="stMarkdownContainer"] h1, h1 { font-size: 1.55rem !important; line-height: 1.3 !important; }
+    div[data-testid="stMarkdownContainer"] h2, h2 { font-size: 1.32rem !important; line-height: 1.3 !important; }
+    div[data-testid="stMarkdownContainer"] h3, h3 { font-size: 1.15rem !important; line-height: 1.35 !important; }
+    div[data-testid="stMarkdownContainer"] h4, h4 { font-size: 1.0rem !important; line-height: 1.35 !important; }
+    div[data-testid="stMarkdownContainer"] h5, h5 { font-size: 0.92rem !important; }
+    @media (max-width: 640px) {
+        div[data-testid="stMarkdownContainer"] h1, h1 { font-size: 1.35rem !important; }
+        div[data-testid="stMarkdownContainer"] h2, h2 { font-size: 1.18rem !important; }
+        div[data-testid="stMarkdownContainer"] h3, h3 { font-size: 1.05rem !important; }
+        div[data-testid="stMarkdownContainer"] h4, h4 { font-size: 0.95rem !important; }
+        .brand-title { font-size: 20px !important; }
+        .top-bar { padding: 10px 14px !important; }
+        .hero-card { padding: 18px !important; }
+        .hero-card h2 { font-size: 1.25rem !important; }
+    }
+    /* 📱 Mobilde Yana Taşmayı Engelle */
+    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+    }
+    .block-container, [data-testid="stMainBlockContainer"] {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    @media (max-width: 640px) {
+        .block-container, [data-testid="stMainBlockContainer"] {
+            padding-left: 0.8rem !important;
+            padding-right: 0.8rem !important;
+        }
+    }
+    div[data-testid="stColumn"], div[data-testid="column"] {
+        min-width: 0 !important;
+    }
+    img, iframe, video, svg, canvas {
+        max-width: 100% !important;
+    }
+    div[data-testid="stMarkdownContainer"] {
+        overflow-wrap: break-word;
+    }
+    div[data-testid="stMarkdownContainer"] pre, div[data-testid="stMarkdownContainer"] code {
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+    }
+    div[data-testid="stMarkdownContainer"] table {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
     }
     p, label, li, div[data-testid="stMarkdownContainer"] {
         color: #334155;
@@ -558,6 +608,27 @@ with st.container(border=True):
             )
 
 menu = st.session_state.aktif_istasyon
+
+# 📍 Seçili (Aktif) İstasyon Butonunu Belirgin Farklı Renkte Göster
+_aktif_selector = ".st-key-mob_home_btn button"
+for _i, (_g, _hedef) in enumerate(ISTASYON_KISA_AD):
+    if _hedef == menu:
+        _aktif_selector = f".st-key-ist_btn_{_i} button"
+        break
+st.markdown(f"""
+<style>
+    {_aktif_selector} {{
+        background: linear-gradient(135deg, #f97316 0%, #db2777 100%) !important;
+        border: 2px solid #9d174d !important;
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.28), 0 6px 14px rgba(219, 39, 119, 0.35) !important;
+        transform: translateY(-1px);
+    }}
+    {_aktif_selector} p, {_aktif_selector} span, {_aktif_selector} div {{
+        color: #ffffff !important;
+        font-weight: 900 !important;
+    }}
+</style>
+""", unsafe_allow_html=True)
 
 
 # Sağ Altta Yüzen (Floating) "⬆️ Yukarı Çık" ve "🏠 Ana Menü" Mobil Aksiyon Butonları
@@ -4393,6 +4464,52 @@ elif menu == "📷 Deneme Analizi":
             ("🕌 Din Kültürü", "din", 10, 1.899),
             ("🌍 İngilizce", "ing", 10, 1.508),
         ]
+
+        # Varsayılan değerleri bir kez ata (widget'lara value vermeden session_state üzerinden yönetilir)
+        for _lbl, _k, _mx, _ks in ders_ayar:
+            if f"dn_d_{_k}" not in st.session_state:
+                st.session_state[f"dn_d_{_k}"] = _mx - 2
+            if f"dn_y_{_k}" not in st.session_state:
+                st.session_state[f"dn_y_{_k}"] = 1
+
+        # 🤖 Yüklenen görsellerden D/Y/B otomatik doldurma
+        if deneme_gorselleri:
+            if st.button("🤖 Görsellerden Doğru / Yanlış / Boş Sayılarını Otomatik Doldur", use_container_width=True, key="dn_auto_fill"):
+                with st.spinner("Yapay zeka deneme görsellerini okuyor ve D/Y/B sayılarını çıkarıyor..."):
+                    okunan = extract_exam_scores(deneme_gorselleri[:6])
+                if okunan:
+                    for _lbl, _k, _mx, _ks in ders_ayar:
+                        if _k in okunan:
+                            st.session_state[f"dn_d_{_k}"] = int(okunan[_k]["D"])
+                            st.session_state[f"dn_y_{_k}"] = int(okunan[_k]["Y"])
+                    st.session_state.dn_auto_mesaj = f"✅ {len(okunan)} dersin sonuçları görsellerden dolduruldu! Hatalı olan varsa aşağıdan düzeltebilirsin."
+                else:
+                    st.session_state.dn_auto_mesaj = "⚠️ Görsellerden D/Y/B okunamadı. Sayıları aşağıdan elle girebilirsin."
+                st.rerun()
+            if st.session_state.get("dn_auto_mesaj"):
+                st.info(st.session_state.dn_auto_mesaj)
+        else:
+            st.caption("💡 Deneme sonuç sayfanı yüklersen yapay zeka Doğru / Yanlış / Boş sayılarını senin yerine otomatik doldurur; yanlış okunan olursa düzeltebilirsin.")
+
+        st.markdown("""
+        <style>
+            /* D / Y / B kutuları mobilde de yan yana kalsın */
+            div[data-testid="stHorizontalBlock"]:has([class*="st-key-dn_d_"]) {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                gap: 6px !important;
+            }
+            div[data-testid="stHorizontalBlock"]:has([class*="st-key-dn_d_"]) > div[data-testid="stColumn"] {
+                min-width: 0 !important;
+                width: auto !important;
+                flex: 1 1 0% !important;
+            }
+            div[data-testid="stHorizontalBlock"]:has([class*="st-key-dn_d_"]) div[data-testid="stWidgetLabel"] p {
+                font-size: 12px !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
         
         net_tablosu = {}
         toplam_d, toplam_y, toplam_b, toplam_net = 0, 0, 0, 0.0
@@ -4404,28 +4521,33 @@ elif menu == "📷 Deneme Analizi":
             with hedef_col:
                 with st.container(border=True):
                     st.markdown(
-                        f"<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;'>"
-                        f"<span style='font-weight:800; font-size:15.5px; color:#1e293b;'>{d_label}</span>"
-                        f"<span style='background:#f1f5f9; color:#475569; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:99px;'>Toplam {max_soru} Soru</span>"
+                        f"<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;'>"
+                        f"<span style='font-weight:800; font-size:14.5px; color:#1e293b;'>{d_label}</span>"
+                        f"<span style='background:#f1f5f9; color:#475569; font-size:11px; font-weight:700; padding:3px 9px; border-radius:99px;'>Toplam {max_soru} Soru</span>"
                         f"</div>",
                         unsafe_allow_html=True
                     )
+                    # Sınır dışı değerleri widget çizilmeden önce düzelt
+                    st.session_state[f"dn_d_{d_key}"] = max(0, min(max_soru, int(st.session_state[f"dn_d_{d_key}"])))
+                    kalan_y = max_soru - st.session_state[f"dn_d_{d_key}"]
+                    st.session_state[f"dn_y_{d_key}"] = max(0, min(kalan_y, int(st.session_state[f"dn_y_{d_key}"])))
+                    st.session_state[f"dn_b_{d_key}"] = max_soru - st.session_state[f"dn_d_{d_key}"] - st.session_state[f"dn_y_{d_key}"]
+
                     k1, k2, k3 = st.columns(3, gap="small")
                     with k1:
-                        d_say = st.number_input("✅ Doğru", min_value=0, max_value=max_soru, value=max_soru - 2, key=f"dn_d_{d_key}")
+                        d_say = st.number_input("✅ Doğru", min_value=0, max_value=max_soru, key=f"dn_d_{d_key}")
                     with k2:
-                        kalan_y = max_soru - d_say
-                        y_say = st.number_input("❌ Yanlış", min_value=0, max_value=kalan_y, value=min(1, kalan_y), key=f"dn_y_{d_key}")
+                        y_say = st.number_input("❌ Yanlış", min_value=0, max_value=kalan_y, key=f"dn_y_{d_key}")
                     with k3:
                         b_say = max_soru - d_say - y_say
-                        st.number_input("⭕ Boş", min_value=0, max_value=max_soru, value=b_say, disabled=True, key=f"dn_b_{d_key}")
+                        st.number_input("⭕ Boş", min_value=0, max_value=max_soru, disabled=True, key=f"dn_b_{d_key}")
                     
                     net = max(0.0, round(d_say - (y_say / 3.0), 2))
                     ders_kisa_ad = d_label.split(" ", 1)[1]
                     st.markdown(
-                        f"<div style='background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:7px 12px; margin-top:6px; display:flex; justify-content:space-between; align-items:center;'>"
-                        f"<span style='font-size:13px; font-weight:700; color:#1e40af;'>✨ {ders_kisa_ad} Neti</span>"
-                        f"<span style='background:#2563eb; color:white; font-size:13px; font-weight:800; padding:2px 10px; border-radius:99px;'>{net:.2f} / {max_soru}</span>"
+                        f"<div style='background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:6px 12px; margin-top:4px; display:flex; justify-content:space-between; align-items:center; gap:8px;'>"
+                        f"<span style='font-size:12.5px; font-weight:700; color:#1e40af; white-space:nowrap;'>✨ {ders_kisa_ad} Neti</span>"
+                        f"<span style='background:#2563eb; color:white; font-size:12.5px; font-weight:800; padding:2px 10px; border-radius:99px; white-space:nowrap;'>{net:.2f} / {max_soru}</span>"
                         f"</div>",
                         unsafe_allow_html=True
                     )
