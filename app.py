@@ -4515,11 +4515,8 @@ elif menu == "📷 Deneme Analizi":
         toplam_d, toplam_y, toplam_b, toplam_net = 0, 0, 0, 0.0
         puan_katkisi = 194.75  # MEB taban puan sabiti
         
-        c_left, c_right = st.columns(2, gap="medium")
         for idx, (d_label, d_key, max_soru, katsayi) in enumerate(ders_ayar):
-            hedef_col = c_left if idx < 3 else c_right
-            with hedef_col:
-                with st.container(border=True):
+            with st.container(border=True):
                     st.markdown(
                         f"<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;'>"
                         f"<span style='font-weight:800; font-size:14.5px; color:#1e293b;'>{d_label}</span>"
