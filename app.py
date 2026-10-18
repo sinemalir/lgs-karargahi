@@ -2088,49 +2088,10 @@ elif menu == "🤖 Soru Çöz & İkiz":
     tamamlanan_ders_adedi = sum(1 for d in DERS_LISTESI if int(prof_aktif["ders_sayaclari"].get(d, 0)) >= 20)
     tum_dersler_20_mi = (tamamlanan_ders_adedi == len(DERS_LISTESI))
     secili_paket_key = prof_aktif.get("secilen_hediye_paketi", "")
-
-    # Streamlit Native Popup Modal (@st.dialog) desteği varsa tanımla
-    _dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
-
-    def _hediye_paketi_popup_icerigi(paket_key):
-        pk = HEDIYE_PAKETLERI[paket_key]
-        st.markdown(
-            f'<div style="background:{pk["tema_bg"]}; border:3px solid {pk["tema_renk"]}; border-radius:22px; padding:20px 18px; text-align:center; box-shadow:0 14px 34px rgba(15,23,42,0.14);">'
-            f'<div style="display:inline-block; background:{pk["tema_renk"]}; color:#ffffff; font-size:12px; font-weight:900; padding:4px 14px; border-radius:99px; margin-bottom:10px;">🎁 {pk["kutu_baslik"].upper()} İÇERİĞİ</div>'
-            f'{pk["svg"]}'
-            f'<div style="font-size:26px; margin-top:8px;">{pk["ikonlar"]}</div>'
-            f'<div style="font-size:23px; font-weight:900; color:#0f172a; margin:6px 0 4px 0;">{pk["odul_adi"]}</div>'
-            f'<div style="font-size:13.5px; font-weight:800; color:{pk["tema_renk"]}; margin-bottom:10px;">{pk["alt_baslik"]}</div>'
-            f'<div style="font-size:12.5px; font-weight:600; color:#334155; background:rgba(255,255,255,0.85); padding:10px 12px; border-radius:12px; border:1px solid #cbd5e1;">{pk["detay"]}</div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-        if tum_dersler_20_mi:
-            if secili_paket_key == paket_key:
-                st.success(f"🎉 **BU HEDİYE PAKETİNİ SEÇTİN!** Kazandığın Büyük Ödül: **{pk['odul_adi']}**")
-            else:
-                if st.button(f"🏆 Ödülüm Olarak '{pk['odul_adi']}' Paketini Seç!", key=f"select_prize_modal_{paket_key}", type="primary", use_container_width=True):
-                    st.session_state.sinotest_profil["secilen_hediye_paketi"] = paket_key
-                    save_user_data(aktif_kullanici_kupa, "sinotest_oduller", "profil", st.session_state.sinotest_profil)
-                    st.balloons()
-                    st.rerun()
-        else:
-            eksik_dersler = [
-                f"{d} ({min(20, int(prof_aktif['ders_sayaclari'].get(d, 0)))}/20 🏆)"
-                for d in DERS_LISTESI
-                if int(prof_aktif["ders_sayaclari"].get(d, 0)) < 20
-            ]
-            st.info(
-                f"🔒 **Bu ödülü seçebilmek için tüm derslerden 20 Kupa tamamlamalısın!**\n\n"
-                f"**Tamamlanan Dersler:** {tamamlanan_ders_adedi} / {len(DERS_LISTESI)}\n\n"
-                f"**Kalan Dersler:** {', '.join(eksik_dersler)}"
-            )
-
-    if _dialog_decorator is not None:
-        @_dialog_decorator("🎁 Büyük Ödül Hediye Paketi")
-        def hediye_paketi_modal_ac(paket_key):
-            _hediye_paketi_popup_icerigi(paket_key)
+    toplam_hedef_kupa = len(DERS_LISTESI) * 20  # 6 ders x 20 = 120 Kupa
+    mevcut_hedef_ici_kupa = sum(min(20, int(prof_aktif["ders_sayaclari"].get(d, 0))) for d in DERS_LISTESI)
+    toplam_kalan_kupa = max(0, toplam_hedef_kupa - mevcut_hedef_ici_kupa)
+    genel_ilerleme_yuzde = int((mevcut_hedef_ici_kupa / float(toplam_hedef_kupa)) * 100)
 
     with st.container(border=True):
         # SinoTest Başlık Alanı + Canlı Kupa & 6/6 Ders Durumu
@@ -2138,61 +2099,80 @@ elif menu == "🤖 Soru Çöz & İkiz":
             f'<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">'
             f'<div>'
             f'<span style="font-size:24px; font-weight:900; background:linear-gradient(90deg, #1d4ed8, #7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⚡ SinoTest</span>'
-            f'<div style="font-size:12.5px; color:#64748b; font-weight:600;">Sınırsız Yapay Zeka Çalışma, Kupa & 3 Büyük Hediye Paketi İstasyonu</div>'
+            f'<div style="font-size:12.5px; color:#64748b; font-weight:600;">Sınırsız Yapay Zeka Çalışma, Kupa & Hediye Paketi İstasyonu</div>'
             f'</div>'
             f'<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">'
-            f'<span id="sino-top-kupa-pill" style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color:#92400e; font-size:13px; font-weight:900; padding:6px 13px; border-radius:99px; border:1.5px solid #f59e0b; box-shadow:0 2px 8px rgba(245,158,11,0.2);">'
-            f'🏆 Toplam <span id="sino-live-kupa">{prof_aktif["toplam_kupa"]}</span> Kupa'
+            f'<span id="sino-top-kupa-pill" style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color:#92400e; font-size:13px; font-weight:900; padding:6px 13px; border-radius:99px; border:1.5px solid #f59e0b; box-shadow:0 2px 8px rgba(245,158,11,0.18);">'
+            f'🏆 Kazanılan: <span id="sino-live-kupa">{prof_aktif["toplam_kupa"]}</span> Kupa'
             f'</span>'
             f'<span id="sino-top-odul-pill" style="background:linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color:#166534; font-size:13px; font-weight:900; padding:6px 13px; border-radius:99px; border:1.5px solid #22c55e;">'
-            f'🎁 20 Kupa Tamamlanan Ders: <span id="sino-live-odul">{tamamlanan_ders_adedi}</span> / {len(DERS_LISTESI)}'
+            f'🎯 Tamamlanan Ders: <span id="sino-live-odul">{tamamlanan_ders_adedi}</span> / {len(DERS_LISTESI)}'
             f'</span>'
             f'</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
 
-        # 🏆 1) DERS BAZLI 20 KUPA İLERLEME KARTLARI
+        # 🏆 1) DERS BAZLI 20 KUPA İLERLEME KARTLARI (KULLANICI DOSTU GÖRÜNÜM)
         ders_kartlari_parcalar = []
+        ders_durum_js_listesi = []
         for d_ad in DERS_LISTESI:
             d_meta = DERS_ODUL_META.get(d_ad, {"ikon": "📘", "renk": "#2563eb"})
             d_toplam = int(prof_aktif["ders_sayaclari"].get(d_ad, 0))
             d_tamam_mi = d_toplam >= 20
             d_gosterim = min(20, d_toplam)
+            d_kalan = max(0, 20 - d_gosterim)
             d_yuzde = 100 if d_tamam_mi else int((d_gosterim / 20.0) * 100)
-            odul_rozet = "✅ 20/20 Kupa!" if d_tamam_mi else f"🏆 {d_gosterim} / 20 Kupa"
+            odul_rozet = "✅ 20/20 Tamam!" if d_tamam_mi else f"🏆 {d_gosterim} / 20"
             odul_bg = "#dcfce7; color:#166534; border:1px solid #86efac;" if d_tamam_mi else "#fef3c7; color:#92400e; border:1px solid #fcd34d;"
+            alt_durum_metni = "🎉 Hedef tamamlandı!" if d_tamam_mi else f"⏳ {d_kalan} kupa kaldı"
+            alt_durum_renk = "#16a34a" if d_tamam_mi else "#64748b"
+            ders_durum_js_listesi.append({
+                "ders": d_ad,
+                "ikon": d_meta["ikon"],
+                "renk": d_meta["renk"],
+                "mevcut": d_gosterim,
+                "kalan": d_kalan,
+                "yuzde": d_yuzde,
+                "tamam": d_tamam_mi,
+            })
             ders_kartlari_parcalar.append(
-                f'<div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:12px; padding:9px 11px; box-shadow:0 2px 6px rgba(15,23,42,0.03);">'
-                f'<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">'
-                f'<span style="font-size:12.5px; font-weight:800; color:#0f172a;">{d_meta["ikon"]} {d_ad}</span>'
+                f'<div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:10px 12px; box-shadow:0 2px 8px rgba(15,23,42,0.04);">'
+                f'<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">'
+                f'<span style="font-size:13px; font-weight:800; color:#0f172a;">{d_meta["ikon"]} {d_ad}</span>'
                 f'<span id="sino-badge-{d_ad}" style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:99px; background:{odul_bg}">{odul_rozet}</span>'
                 f'</div>'
-                f'<div style="background:#e2e8f0; height:8px; border-radius:99px; overflow:hidden; margin-bottom:4px;">'
-                f'<div id="sino-bar-{d_ad}" style="background:linear-gradient(90deg, #f59e0b, #16a34a); width:{d_yuzde}%; height:100%; border-radius:99px; transition:width 0.4s ease;"></div>'
+                f'<div style="background:#f1f5f9; height:9px; border-radius:99px; overflow:hidden; margin-bottom:5px; border:1px solid #e2e8f0;">'
+                f'<div id="sino-bar-{d_ad}" style="background:linear-gradient(90deg, {d_meta["renk"]}, #16a34a); width:{d_yuzde}%; height:100%; border-radius:99px; transition:width 0.4s ease;"></div>'
                 f'</div>'
-                f'<div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#475569;">'
-                f'<span id="sino-cnt-{d_ad}">Hedef: {d_gosterim} / 20 🏆</span>'
-                f'<span>Toplam: {d_toplam} 🏆</span>'
+                f'<div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700; color:{alt_durum_renk};">'
+                f'<span id="sino-cnt-{d_ad}">{alt_durum_metni}</span>'
+                f'<span style="color:#94a3b8;">Hedef: 20 🏆</span>'
                 f'</div>'
                 f'</div>'
             )
         ders_kartlari_html = "".join(ders_kartlari_parcalar)
 
+        ust_durum_etiketi = (
+            "🎉 Tüm derslerde 20 Kupa tamamlandı! Şimdi hediye paketini açıp ödülünü seçebilirsin!"
+            if tum_dersler_20_mi
+            else f"🔒 Kalan {toplam_kalan_kupa} kupayı tamamla, 3 sürpriz hediye paketinden birini seç!"
+        )
+
         vitrin_html = (
-            '<div style="background:linear-gradient(135deg, #fffbeb 0%, #eff6ff 100%); border:2px solid #fcd34d; border-radius:16px; padding:12px 14px; margin-bottom:12px;">'
-            '<div style="font-size:13px; font-weight:900; color:#92400e; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">'
-            '<span>🏆 SİNOTEST DERS KUPALARI & BÜYÜK ÖDÜL VİTRİNİ</span>'
-            '<span style="font-size:11.5px; color:#1e40af; font-weight:800;">🎯 Tüm derslerden 20 Kupa kazanan 3 Hediye Paketinden birini seçer!</span>'
+            '<div style="background:linear-gradient(135deg, #fffbeb 0%, #f8fafc 100%); border:2px solid #fde68a; border-radius:16px; padding:12px 14px; margin-bottom:12px;">'
+            '<div style="font-size:13px; font-weight:900; color:#92400e; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">'
+            '<span>🏆 DERS KUPA HEDEFLERİ (HER DERSTE 20 KUPA)</span>'
+            f'<span style="font-size:11.5px; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; padding:3px 10px; border-radius:99px; font-weight:800;">{ust_durum_etiketi}</span>'
             '</div>'
-            f'<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(155px, 1fr)); gap:8px;">{ders_kartlari_html}</div>'
+            f'<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(158px, 1fr)); gap:8px;">{ders_kartlari_html}</div>'
             '</div>'
         )
         st.markdown(vitrin_html, unsafe_allow_html=True)
 
-        # 🎁 2) 3 BÜYÜK HEDİYE PAKETİ (TIKLAYINCA POPUP OLARAK AÇILAN ETKİLEŞİMLİ KUTULAR)
+        # 🎁 2) 3 HEDİYE PAKETİ VİTRİNİ (KULLANICI DOSTU & KİLİTLİ SÜRPRİZ MODU)
         secili_bilgi_banner = ""
-        if secili_paket_key in HEDIYE_PAKETLERI:
+        if tum_dersler_20_mi and secili_paket_key in HEDIYE_PAKETLERI:
             sec_pk = HEDIYE_PAKETLERI[secili_paket_key]
             secili_bilgi_banner = (
                 f'<div style="background:#dcfce7; border:2px solid #16a34a; border-radius:12px; padding:8px 12px; margin-bottom:10px; text-align:center; font-size:13px; font-weight:900; color:#166534;">'
@@ -2200,17 +2180,33 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 f'</div>'
             )
 
+        kutu_alt_yazi = (
+            "🎉 Kilidi Açıldı! İçeriği görmek için tıkla"
+            if tum_dersler_20_mi
+            else "🔒 Kalan kupayı tamamla, hediyeni seç!"
+        )
+        kutu_buton_yazi = (
+            "🎁 Paketi Aç & Ödülü Gör"
+            if tum_dersler_20_mi
+            else "🔒 Kalan Kupayı Tamamla, Hediyeni Seç"
+        )
+        kilit_rozeti_html = (
+            '<span class="lock-pill unlocked">🔓 KİLİDİ AÇIK</span>'
+            if tum_dersler_20_mi
+            else '<span class="lock-pill locked">🔒 KİLİTLİ SÜRPRİZ</span>'
+        )
+
         hediye_html_widget = f"""
         <style>
             * {{ box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }}
-            body {{ margin: 0; padding: 0; background: transparent; }}
+            body {{ margin: 0; padding: 0; background: transparent; overflow: hidden; }}
             .gift-stage {{
-                background: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #0f172a 100%);
-                border: 2px solid #f59e0b;
+                background: linear-gradient(135deg, #ffffff 0%, #fffbeb 55%, #f0f9ff 100%);
+                border: 2px solid #cbd5e1;
                 border-radius: 18px;
-                padding: 14px 14px 16px 14px;
-                color: #ffffff;
-                box-shadow: 0 10px 26px rgba(15, 23, 42, 0.22);
+                padding: 14px 16px 16px 16px;
+                color: #0f172a;
+                box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
             }}
             .gift-stage-head {{
                 display: flex;
@@ -2218,135 +2214,225 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 align-items: center;
                 flex-wrap: wrap;
                 gap: 8px;
-                margin-bottom: 12px;
+                margin-bottom: 10px;
             }}
             .gift-stage-title {{
                 font-size: 14.5px;
                 font-weight: 900;
-                color: #fde047;
-                letter-spacing: 0.3px;
+                color: #0f172a;
+                display: flex;
+                align-items: center;
+                gap: 6px;
             }}
             .gift-stage-sub {{
                 font-size: 11.5px;
-                font-weight: 700;
-                color: #e2e8f0;
-                background: rgba(255,255,255,0.12);
-                padding: 4px 10px;
+                font-weight: 800;
+                color: #92400e;
+                background: #fef3c7;
+                border: 1px solid #fcd34d;
+                padding: 4px 11px;
                 border-radius: 99px;
+            }}
+            .overall-bar-wrap {{
+                background: #f1f5f9;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 8px 12px;
+                margin-bottom: 12px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+            }}
+            .overall-bar-label {{
+                font-size: 12px;
+                font-weight: 800;
+                color: #334155;
+                white-space: nowrap;
+            }}
+            .overall-bar-track {{
+                flex: 1;
+                min-width: 140px;
+                height: 10px;
+                background: #e2e8f0;
+                border-radius: 99px;
+                overflow: hidden;
+            }}
+            .overall-bar-fill {{
+                height: 100%;
+                width: {genel_ilerleme_yuzde}%;
+                background: linear-gradient(90deg, #f59e0b 0%, #16a34a 100%);
+                border-radius: 99px;
+                transition: width 0.4s ease;
             }}
             .gift-grid {{
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
                 gap: 12px;
             }}
-            @media (max-width: 640px) {{
+            @media (max-width: 680px) {{
                 .gift-grid {{ grid-template-columns: 1fr; }}
             }}
             .gift-box-card {{
                 position: relative;
+                background: #ffffff;
                 border-radius: 16px;
-                padding: 16px 12px 14px 12px;
+                padding: 14px 12px;
                 text-align: center;
                 cursor: pointer;
-                border: 2.5px solid rgba(255,255,255,0.35);
-                transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+                border: 2px solid #e2e8f0;
+                box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+                transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
                 user-select: none;
-                overflow: hidden;
             }}
             .gift-box-card:hover {{
-                transform: translateY(-5px) scale(1.02);
-                border-color: #fde047;
-                box-shadow: 0 14px 28px rgba(250, 204, 21, 0.32);
+                transform: translateY(-4px);
+                border-color: #f59e0b;
+                box-shadow: 0 12px 24px rgba(245, 158, 11, 0.18);
             }}
-            .gift-ribbon-v {{
-                position: absolute;
-                top: 0; bottom: 0; left: 50%;
-                width: 14px;
-                transform: translateX(-50%);
-                opacity: 0.28;
-                pointer-events: none;
-            }}
-            .gift-ribbon-h {{
-                position: absolute;
-                left: 0; right: 0; top: 44%;
-                height: 14px;
-                opacity: 0.28;
-                pointer-events: none;
-            }}
-            .gift-icon-wrap {{
-                position: relative;
-                z-index: 2;
-                font-size: 44px;
-                line-height: 1;
+            .lock-pill {{
+                display: inline-block;
+                font-size: 10.5px;
+                font-weight: 900;
+                padding: 3px 9px;
+                border-radius: 99px;
                 margin-bottom: 8px;
-                filter: drop-shadow(0 6px 10px rgba(0,0,0,0.3));
-                animation: floatBox 2.6s ease-in-out infinite;
             }}
-            @keyframes floatBox {{
-                0%, 100% {{ transform: translateY(0px); }}
-                50% {{ transform: translateY(-5px); }}
+            .lock-pill.locked {{
+                background: #fef3c7;
+                color: #92400e;
+                border: 1px solid #fcd34d;
+            }}
+            .lock-pill.unlocked {{
+                background: #dcfce7;
+                color: #166534;
+                border: 1px solid #86efac;
+            }}
+            .gift-svg-box {{
+                width: 78px;
+                height: 78px;
+                margin: 2px auto 8px auto;
+                display: block;
+                transition: transform 0.25s ease;
+            }}
+            .gift-box-card:hover .gift-svg-box {{
+                transform: scale(1.07) rotate(-2deg);
             }}
             .gift-box-name {{
-                position: relative;
-                z-index: 2;
-                font-size: 14px;
+                font-size: 15px;
                 font-weight: 900;
-                color: #ffffff;
+                color: #0f172a;
                 margin-bottom: 4px;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.35);
+            }}
+            .gift-box-desc {{
+                font-size: 11.5px;
+                font-weight: 700;
+                color: #64748b;
+                margin-bottom: 10px;
+                line-height: 1.35;
             }}
             .gift-box-cta {{
-                position: relative;
-                z-index: 2;
                 display: inline-block;
-                margin-top: 6px;
-                background: rgba(255,255,255,0.95);
-                color: #0f172a;
+                width: 100%;
+                background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+                color: #1e40af;
+                border: 1.5px solid #93c5fd;
                 font-size: 11.5px;
-                font-weight: 900;
-                padding: 5px 12px;
-                border-radius: 99px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                font-weight: 800;
+                padding: 7px 10px;
+                border-radius: 10px;
+                transition: background 0.2s ease, color 0.2s ease;
+            }}
+            .gift-box-card:hover .gift-box-cta {{
+                background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+                color: #ffffff;
+                border-color: #1d4ed8;
             }}
         </style>
-        <div class="gift-stage">
+        <div class="gift-stage" id="sino-gift-stage-root">
             {secili_bilgi_banner}
             <div class="gift-stage-head">
-                <span class="gift-stage-title">🎁 BÜYÜK ÖDÜL HEDİYE PAKETLERİ (3 SÜRPRİZ PAKET)</span>
-                <span class="gift-stage-sub">👆 Görsel içeriği görmek için hediye paketlerinin üzerine tıkla!</span>
+                <span class="gift-stage-title">🎁 SÜRPRİZ HEDİYE PAKETLERİ (3 BÜYÜK ÖDÜL)</span>
+                <span class="gift-stage-sub">{"🎉 Tüm dersler tamam! Hediye paketine tıklayıp ödülünü seç!" if tum_dersler_20_mi else "🔒 Kalan kupayı tamamla, hediyeni seç!"}</span>
+            </div>
+            <div class="overall-bar-wrap">
+                <span class="overall-bar-label">🏆 Büyük Ödül Kilidi: <b>{mevcut_hedef_ici_kupa} / {toplam_hedef_kupa} Kupa</b> (%{genel_ilerleme_yuzde})</span>
+                <div class="overall-bar-track"><div class="overall-bar-fill"></div></div>
+                <span class="overall-bar-label" style="color:{"#16a34a" if tum_dersler_20_mi else "#b45309"};">
+                    {"✅ Kilit Açıldı!" if tum_dersler_20_mi else f"⏳ Kalan: {toplam_kalan_kupa} Kupa"}
+                </span>
             </div>
             <div class="gift-grid">
-                <div class="gift-box-card" style="background:linear-gradient(145deg, #ef4444 0%, #991b1b 100%);" onclick="openSinoGiftPopup('paket_1')">
-                    <div class="gift-ribbon-v" style="background:#fde047;"></div>
-                    <div class="gift-ribbon-h" style="background:#fde047;"></div>
-                    <div class="gift-icon-wrap">🎁</div>
+                <!-- 1. Hediye Paketi -->
+                <div class="gift-box-card" style="border-top: 4px solid #ef4444;" onclick="openSinoGiftPopup('paket_1')">
+                    {kilit_rozeti_html}
+                    <svg class="gift-svg-box" viewBox="0 0 100 100">
+                        <path d="M50 24 C35 8, 20 22, 46 28" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
+                        <path d="M50 24 C65 8, 80 22, 54 28" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
+                        <rect x="16" y="26" width="68" height="16" rx="5" fill="#ef4444"/>
+                        <rect x="20" y="42" width="60" height="46" rx="6" fill="#dc2626"/>
+                        <rect x="44" y="26" width="12" height="62" fill="#fbbf24"/>
+                        <rect x="20" y="58" width="60" height="11" fill="#fbbf24"/>
+                        <circle cx="50" cy="63.5" r="11" fill="#ffffff" stroke="#f59e0b" stroke-width="2.5"/>
+                        <text x="50" y="68" font-size="12" text-anchor="middle">{"🔓" if tum_dersler_20_mi else "🔒"}</text>
+                    </svg>
                     <div class="gift-box-name">1. Hediye Paketi</div>
-                    <div style="position:relative;z-index:2;font-size:11.5px;color:#fef08a;font-weight:800;">Sürpriz Lezzet Paketi</div>
-                    <div class="gift-box-cta">🔍 Tıkla & Paketi Aç</div>
+                    <div class="gift-box-desc">{kutu_alt_yazi}</div>
+                    <div class="gift-box-cta">{kutu_buton_yazi}</div>
                 </div>
-                <div class="gift-box-card" style="background:linear-gradient(145deg, #f97316 0%, #9a3412 100%);" onclick="openSinoGiftPopup('paket_2')">
-                    <div class="gift-ribbon-v" style="background:#fde047;"></div>
-                    <div class="gift-ribbon-h" style="background:#fde047;"></div>
-                    <div class="gift-icon-wrap">🎁</div>
+                <!-- 2. Hediye Paketi -->
+                <div class="gift-box-card" style="border-top: 4px solid #f97316;" onclick="openSinoGiftPopup('paket_2')">
+                    {kilit_rozeti_html}
+                    <svg class="gift-svg-box" viewBox="0 0 100 100">
+                        <path d="M50 24 C35 8, 20 22, 46 28" fill="none" stroke="#fde047" stroke-width="6" stroke-linecap="round"/>
+                        <path d="M50 24 C65 8, 80 22, 54 28" fill="none" stroke="#fde047" stroke-width="6" stroke-linecap="round"/>
+                        <rect x="16" y="26" width="68" height="16" rx="5" fill="#f97316"/>
+                        <rect x="20" y="42" width="60" height="46" rx="6" fill="#ea580c"/>
+                        <rect x="44" y="26" width="12" height="62" fill="#fde047"/>
+                        <rect x="20" y="58" width="60" height="11" fill="#fde047"/>
+                        <circle cx="50" cy="63.5" r="11" fill="#ffffff" stroke="#ea580c" stroke-width="2.5"/>
+                        <text x="50" y="68" font-size="12" text-anchor="middle">{"🔓" if tum_dersler_20_mi else "🔒"}</text>
+                    </svg>
                     <div class="gift-box-name">2. Hediye Paketi</div>
-                    <div style="position:relative;z-index:2;font-size:11.5px;color:#fef08a;font-weight:800;">Sürpriz Alışveriş Paketi</div>
-                    <div class="gift-box-cta">🔍 Tıkla & Paketi Aç</div>
+                    <div class="gift-box-desc">{kutu_alt_yazi}</div>
+                    <div class="gift-box-cta">{kutu_buton_yazi}</div>
                 </div>
-                <div class="gift-box-card" style="background:linear-gradient(145deg, #8b5cf6 0%, #4c1d95 100%);" onclick="openSinoGiftPopup('paket_3')">
-                    <div class="gift-ribbon-v" style="background:#fde047;"></div>
-                    <div class="gift-ribbon-h" style="background:#fde047;"></div>
-                    <div class="gift-icon-wrap">🎁</div>
+                <!-- 3. Hediye Paketi -->
+                <div class="gift-box-card" style="border-top: 4px solid #8b5cf6;" onclick="openSinoGiftPopup('paket_3')">
+                    {kilit_rozeti_html}
+                    <svg class="gift-svg-box" viewBox="0 0 100 100">
+                        <path d="M50 24 C35 8, 20 22, 46 28" fill="none" stroke="#facc15" stroke-width="6" stroke-linecap="round"/>
+                        <path d="M50 24 C65 8, 80 22, 54 28" fill="none" stroke="#facc15" stroke-width="6" stroke-linecap="round"/>
+                        <rect x="16" y="26" width="68" height="16" rx="5" fill="#8b5cf6"/>
+                        <rect x="20" y="42" width="60" height="46" rx="6" fill="#7c3aed"/>
+                        <rect x="44" y="26" width="12" height="62" fill="#facc15"/>
+                        <rect x="20" y="58" width="60" height="11" fill="#facc15"/>
+                        <circle cx="50" cy="63.5" r="11" fill="#ffffff" stroke="#7c3aed" stroke-width="2.5"/>
+                        <text x="50" y="68" font-size="12" text-anchor="middle">{"🔓" if tum_dersler_20_mi else "🔒"}</text>
+                    </svg>
                     <div class="gift-box-name">3. Hediye Paketi</div>
-                    <div style="position:relative;z-index:2;font-size:11.5px;color:#fef08a;font-weight:800;">Sürpriz VIP Dilek Paketi</div>
-                    <div class="gift-box-cta">🔍 Tıkla & Paketi Aç</div>
+                    <div class="gift-box-desc">{kutu_alt_yazi}</div>
+                    <div class="gift-box-cta">{kutu_buton_yazi}</div>
                 </div>
             </div>
         </div>
         <script>
             const GIFT_DATA = {json.dumps(HEDIYE_PAKETLERI, ensure_ascii=False)};
             const ALL_20_DONE = {json.dumps(tum_dersler_20_mi)};
-            const DONE_SUBJECT_COUNT = {tamamlanan_ders_adedi};
-            const TOTAL_SUBJECT_COUNT = {len(DERS_LISTESI)};
+            const SUBJECT_STATUS = {json.dumps(ders_durum_js_listesi, ensure_ascii=False)};
+            const REMAINING_TOTAL_CUPS = {toplam_kalan_kupa};
+
+            function syncGiftFrameHeight() {{
+                try {{
+                    const root = document.getElementById('sino-gift-stage-root');
+                    if (root && window.frameElement) {{
+                        window.frameElement.style.height = (root.offsetHeight + 8) + 'px';
+                    }}
+                }} catch (e) {{}}
+            }}
+            window.addEventListener('load', syncGiftFrameHeight);
+            window.addEventListener('resize', syncGiftFrameHeight);
+            setTimeout(syncGiftFrameHeight, 120);
 
             window.openSinoGiftPopup = function(pkgKey) {{
                 const pk = GIFT_DATA[pkgKey];
@@ -2357,66 +2443,88 @@ elif menu == "🤖 Soru Çöz & İkiz":
 
                 overlay = pDoc.createElement('div');
                 overlay.id = 'sino-gift-popup-modal';
-                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.78);backdrop-filter:blur(6px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.2s ease;';
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.72);backdrop-filter:blur(5px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;';
 
-                const statusHtml = ALL_20_DONE
-                    ? `<div style="background:#dcfce7;border:2px solid #16a34a;color:#166534;padding:10px 14px;border-radius:14px;font-size:13px;font-weight:900;margin-top:12px;">🎉 TEBRİKLER! Tüm derslerden 20 Kupa barajını tamamladın! Vitrindeki <b>"Paketi Aç & Seç"</b> butonundan bu hediyeyi kalıcı ödülün yapabilirsin!</div>`
-                    : `<div style="background:#fef3c7;border:2px solid #f59e0b;color:#92400e;padding:10px 14px;border-radius:14px;font-size:12.5px;font-weight:800;margin-top:12px;">🎯 <b>Ödül Kilidi Durumu:</b> ${{DONE_SUBJECT_COUNT}} / ${{TOTAL_SUBJECT_COUNT}} ders 20 Kupa oldu.<br>Tüm derslerden 20 Kupa kazandığında bu hediye paketini ödülün olarak seçebilirsin!</div>`;
+                if (!ALL_20_DONE) {{
+                    // 🔒 KİLİTLİ POPUP: HEDİYE İÇERİĞİ GİZLİ, "KALAN KUPAYI TAMAMLA HEDİYENİ SEÇ" EKRANI
+                    const rowsHtml = SUBJECT_STATUS.map(s => `
+                        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:7px 10px;text-align:left;">
+                            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#0f172a;margin-bottom:4px;">
+                                <span>${{s.ikon}} ${{s.ders}}</span>
+                                <span style="color:${{s.tamam ? '#16a34a' : '#b45309'}};">${{s.tamam ? '✅ 20/20' : s.kalan + ' Kupa kaldı'}}</span>
+                            </div>
+                            <div style="height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;">
+                                <div style="height:100%;width:${{s.yuzde}}%;background:${{s.tamam ? '#16a34a' : '#f59e0b'}};border-radius:99px;"></div>
+                            </div>
+                        </div>
+                    `).join('');
 
-                overlay.innerHTML = `
-                    <div style="background:#ffffff;max-width:460px;width:100%;border-radius:26px;padding:22px 20px;text-align:center;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.45);border:4px solid ${{pk.tema_renk}};font-family:'Inter',sans-serif;" onclick="event.stopPropagation()">
-                        <button onclick="document.getElementById('sino-gift-popup-modal').remove()" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:99px;border:none;background:#f1f5f9;color:#0f172a;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);">✕</button>
-                        <div style="display:inline-block;background:${{pk.tema_renk}};color:#ffffff;font-size:12px;font-weight:900;padding:5px 14px;border-radius:99px;margin-bottom:12px;">
-                            🎁 ${{pk.kutu_baslik.toUpperCase()}} AÇILDI!
+                    overlay.innerHTML = `
+                        <div style="background:#ffffff;max-width:450px;width:100%;border-radius:24px;padding:22px 20px;text-align:center;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.38);border:3px solid #f59e0b;font-family:'Inter',sans-serif;" onclick="event.stopPropagation()">
+                            <button onclick="document.getElementById('sino-gift-popup-modal').remove()" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:99px;border:none;background:#f1f5f9;color:#0f172a;font-size:17px;font-weight:900;cursor:pointer;">✕</button>
+                            <div style="display:inline-block;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:12px;font-weight:900;padding:4px 14px;border-radius:99px;margin-bottom:10px;">
+                                🔒 ${{pk.kutu_baslik.toUpperCase()}} KİLİTLİ
+                            </div>
+                            <div style="font-size:52px;line-height:1.1;margin:4px 0 8px 0;">🎁🔒</div>
+                            <div style="font-size:20px;font-weight:900;color:#0f172a;margin-bottom:6px;">
+                                Kalan Kupayı Tamamla, Hediyeni Seç!
+                            </div>
+                            <div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:14px;line-height:1.45;">
+                                Bu sürpriz hediye paketinin görsel içeriği, <b>tüm derslerden 20 Kupa</b> kazandığında açılır! Toplam <b>${{REMAINING_TOTAL_CUPS}} Kupa</b> daha kazanarak paketi açabilirsin.
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                                ${{rowsHtml}}
+                            </div>
+                            <button onclick="document.getElementById('sino-gift-popup-modal').remove()" style="width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(90deg, #2563eb, #4f46e5);color:#ffffff;font-size:13.5px;font-weight:900;cursor:pointer;">
+                                💪 Hemen Soru Çözüp Kupa Kazanmaya Devam Et!
+                            </button>
                         </div>
-                        <div style="background:${{pk.tema_bg}};border:2px dashed ${{pk.tema_renk}};border-radius:20px;padding:16px 12px;margin-bottom:12px;">
-                            ${{pk.svg}}
-                            <div style="font-size:28px;margin-top:8px;">${{pk.ikonlar}}</div>
-                            <div style="font-size:24px;font-weight:900;color:#0f172a;margin:6px 0;">${{pk.odul_adi}}</div>
-                            <div style="font-size:13.5px;font-weight:800;color:${{pk.tema_renk}};">${{pk.alt_baslik}}</div>
+                    `;
+                }} else {{
+                    // 🔓 KİLİDİ AÇIK POPUP: GÖRSEL HEDİYE İÇERİĞİ AÇILIR VE SEÇİLEBİLİR
+                    overlay.innerHTML = `
+                        <div style="background:#ffffff;max-width:460px;width:100%;border-radius:26px;padding:22px 20px;text-align:center;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.45);border:4px solid ${{pk.tema_renk}};font-family:'Inter',sans-serif;" onclick="event.stopPropagation()">
+                            <button onclick="document.getElementById('sino-gift-popup-modal').remove()" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:99px;border:none;background:#f1f5f9;color:#0f172a;font-size:18px;font-weight:900;cursor:pointer;">✕</button>
+                            <div style="display:inline-block;background:${{pk.tema_renk}};color:#ffffff;font-size:12px;font-weight:900;padding:5px 14px;border-radius:99px;margin-bottom:12px;">
+                                🎉 ${{pk.kutu_baslik.toUpperCase()}} AÇILDI!
+                            </div>
+                            <div style="background:${{pk.tema_bg}};border:2px dashed ${{pk.tema_renk}};border-radius:20px;padding:16px 12px;margin-bottom:12px;">
+                                ${{pk.svg}}
+                                <div style="font-size:28px;margin-top:8px;">${{pk.ikonlar}}</div>
+                                <div style="font-size:24px;font-weight:900;color:#0f172a;margin:6px 0;">${{pk.odul_adi}}</div>
+                                <div style="font-size:13.5px;font-weight:800;color:${{pk.tema_renk}};">${{pk.alt_baslik}}</div>
+                            </div>
+                            <div style="font-size:13px;font-weight:600;color:#334155;line-height:1.5;margin-bottom:12px;">
+                                ${{pk.detay}}
+                            </div>
+                            <div id="sino-gift-chosen-msg" style="display:none;background:#dcfce7;border:2px solid #16a34a;color:#166534;padding:10px;border-radius:12px;font-size:13px;font-weight:900;margin-bottom:10px;">
+                                🎉 Harika Seçim! Ödülün: <b>${{pk.odul_adi}}</b> olarak kaydedildi!
+                            </div>
+                            <button onclick="document.getElementById('sino-gift-chosen-msg').style.display='block'; this.innerHTML='✅ Bu Hediye Paketi Seçildi!'; this.style.background='#16a34a';" style="width:100%;padding:12px;border:none;border-radius:14px;background:linear-gradient(90deg, ${{pk.tema_renk}}, #1e293b);color:#ffffff;font-size:14px;font-weight:900;cursor:pointer;">
+                                🏆 Bu Hediye Paketini Ödülüm Olarak Seç!
+                            </button>
                         </div>
-                        <div style="font-size:13px;font-weight:600;color:#334155;line-height:1.5;">
-                            ${{pk.detay}}
-                        </div>
-                        ${{statusHtml}}
-                        <button onclick="document.getElementById('sino-gift-popup-modal').remove()" style="margin-top:14px;width:100%;padding:12px;border:none;border-radius:14px;background:linear-gradient(90deg, ${{pk.tema_renk}}, #1e293b);color:#ffffff;font-size:14px;font-weight:900;cursor:pointer;">
-                            ✨ Harika! Paketi Kapat
-                        </button>
-                    </div>
-                `;
+                    `;
+                }}
                 overlay.onclick = function() {{ overlay.remove(); }};
                 pDoc.body.appendChild(overlay);
             }};
         </script>
         """
-        components.html(hediye_html_widget, height=235 if not secili_bilgi_banner else 275, scrolling=False)
+        components.html(hediye_html_widget, height=325 if not secili_bilgi_banner else 365, scrolling=False)
 
-        # Hediye Paketlerini Streamlit Popup & Kalıcı Ödül Seçimi Butonları
-        g_col1, g_col2, g_col3 = st.columns(3, gap="small")
-        with g_col1:
-            if st.button("🎁 1. Paketi Aç & Seç", key="open_gift_btn_1", use_container_width=True):
-                if _dialog_decorator is not None:
-                    hediye_paketi_modal_ac("paket_1")
-                else:
-                    st.session_state.acik_hediye_paketi = "paket_1"
-        with g_col2:
-            if st.button("🎁 2. Paketi Aç & Seç", key="open_gift_btn_2", use_container_width=True):
-                if _dialog_decorator is not None:
-                    hediye_paketi_modal_ac("paket_2")
-                else:
-                    st.session_state.acik_hediye_paketi = "paket_2"
-        with g_col3:
-            if st.button("🎁 3. Paketi Aç & Seç", key="open_gift_btn_3", use_container_width=True):
-                if _dialog_decorator is not None:
-                    hediye_paketi_modal_ac("paket_3")
-                else:
-                    st.session_state.acik_hediye_paketi = "paket_3"
-
-        if _dialog_decorator is None and st.session_state.get("acik_hediye_paketi") in HEDIYE_PAKETLERI:
-            _hediye_paketi_popup_icerigi(st.session_state.acik_hediye_paketi)
-            if st.button("✖ Paketi Kapat", key="close_fallback_gift"):
-                st.session_state.acik_hediye_paketi = None
-                st.rerun()
+        # Sadece tüm derslerden 20 Kupa tamamlandığında kalıcı veritabanı ödül seçimi butonlarını göster
+        if tum_dersler_20_mi:
+            g_col1, g_col2, g_col3 = st.columns(3, gap="small")
+            for idx_col, (p_key, p_val) in zip((g_col1, g_col2, g_col3), HEDIYE_PAKETLERI.items()):
+                with idx_col:
+                    secili_mi = (secili_paket_key == p_key)
+                    btn_etiket = f"✅ Seçildi: {p_val['odul_adi']}" if secili_mi else f"🏆 {p_val['kutu_baslik']}ni Seç ({p_val['odul_adi']})"
+                    if st.button(btn_etiket, key=f"claim_final_gift_{p_key}", use_container_width=True):
+                        st.session_state.sinotest_profil["secilen_hediye_paketi"] = p_key
+                        save_user_data(aktif_kullanici_kupa, "sinotest_oduller", "profil", st.session_state.sinotest_profil)
+                        st.balloons()
+                        st.rerun()
 
         # 1) ÜST 3'LÜ SEGMENTED BAR: [⚡ Hızlı test | 📚 Kaynağımdan | 📷 Fotoğraftan]
         t_col1, t_col2, t_col3 = st.columns(3, gap="small")
@@ -2721,15 +2829,15 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         const barEl = pDoc.getElementById('sino-bar-' + SINO_DERS);
                         if (barEl) barEl.style.width = pct + '%';
                         const cntEl = pDoc.getElementById('sino-cnt-' + SINO_DERS);
-                        if (cntEl) cntEl.textContent = 'Hedef: ' + shownCnt + ' / 20 🏆';
+                        if (cntEl) cntEl.textContent = newCnt >= 20 ? '🎉 Hedef tamamlandı!' : ('⏳ ' + rem + ' kupa kaldı');
                         const bdgEl = pDoc.getElementById('sino-badge-' + SINO_DERS);
                         if (bdgEl) {{
                             if (newCnt >= 20) {{
-                                bdgEl.textContent = '✅ 20/20 Kupa!';
+                                bdgEl.textContent = '✅ 20/20 Tamam!';
                                 bdgEl.style.background = '#dcfce7';
                                 bdgEl.style.color = '#166534';
                             }} else {{
-                                bdgEl.textContent = '🏆 ' + shownCnt + ' / 20 Kupa';
+                                bdgEl.textContent = '🏆 ' + shownCnt + ' / 20';
                             }}
                         }}
                     }} catch (e) {{}}
@@ -2743,7 +2851,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                                 <div style="font-size:32px; margin-bottom:4px;">🏆🎉🎁🎉🏆</div>
                                 <div style="font-size:17px; font-weight:900; color:#92400e;">TEBRİKLER! ${{SINO_ODUL_IKON}} ${{SINO_DERS.toUpperCase()}} DERSİNDE 20 KUPA HEDEFİ TAMAMLANDI!</div>
                                 <div style="font-size:14.5px; font-weight:900; color:#166534; margin:6px 0;">
-                                    🎁 Tüm derslerden 20 Kupa tamamlandığında üstteki 3 Büyük Hediye Paketinden (🍔 Whopper Menü / 🛍️ 500 TL Trendyol Çeki / 🌟 Sen ne istersen 500TL) birini seçebilirsin!
+                                    🎁 Tüm derslerde kalan kupaları tamamladığında üstteki 3 Sürpriz Hediye Paketinin kilidi açılacak ve hediyeni seçebileceksin!
                                 </div>
                                 <div style="font-size:13.5px; font-weight:800; color:#1e40af;">
                                     🏆 Bu çalışmadan <b>+${{totalEarnedCups}} Kupa</b> kazandın! Alttaki <b>"Vitrine Kaydet"</b> butonuna basarak kalıcı kaydetmeyi unutma!
