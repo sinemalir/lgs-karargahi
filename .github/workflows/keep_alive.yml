@@ -1,6 +1,9 @@
 name: Streamlit Keep-Alive (Uyanık Tutucu)
 
 on:
+  push:
+    paths:
+      - ".github/workflows/keep_alive.yml"
   schedule:
     # Her 4 saatte bir otomatik çalışır (Streamlit'in uyku moduna geçmesini engeller)
     - cron: "0 */4 * * *"
