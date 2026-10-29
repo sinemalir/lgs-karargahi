@@ -40,23 +40,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# GitHub Pages iframe'i içinden açıldığında üçüncü taraf çerez (SameSite=Lax) engeli yüzünden
-# PDF/dosya yüklemenin hata vermesini önlemek için doğrudan ana uygulamaya yönlendir:
-components.html(
-    """
-    <script>
-    try {
-        if (window.top && window.parent && window.top !== window.parent) {
-            window.top.location.replace("https://lgs-karargahi.streamlit.app/");
-        }
-    } catch (e) {
-        try {
-            window.top.location.href = "https://lgs-karargahi.streamlit.app/";
-        } catch (e2) {}
-    }
-    </script>
-    """,
-    height=0,
+_mobil_pdf_yukleyici = components.declare_component(
+    "mobil_pdf_yukleyici",
+    url="https://sinemalir.github.io/lgs-karargahi/uploader.html",
 )
 
 # --- MODERN, TEMİZ VE KULLANICI DOSTU ÖZEL CSS ---
@@ -833,35 +819,57 @@ elif menu == "📚 PDF Havuzu":
                 placeholder="Örn: Çarpanlar ve Katlar Test 1",
                 key="lib_custom_name"
             )
-            yuklenen_pdf = st.file_uploader("PDF Dosyası Seç", type=["pdf"], key="lib_uploader")
-            if yuklenen_pdf is not None:
-                ham_isim = ozel_kaynak_adi.strip() if ozel_kaynak_adi.strip() else Path(yuklenen_pdf.name).stem
-                temiz_isim = _re.sub(r'[<>:"/\\|?*]', '-', ham_isim).strip() or "Kaynak"
-                hedef_dosya = pdf_lib_dir / f"[{ders_etiketi}] {temiz_isim}.pdf"
-                yukleme_imzasi = f"{yuklenen_pdf.name}_{yuklenen_pdf.size}_{hedef_dosya.name}"
-                # Dosya seçildiği anda otomatik kaydet ve aç
-                if st.session_state.get("son_yuklenen_pdf_imza") != yukleme_imzasi or not hedef_dosya.exists():
-                    hedef_dosya.write_bytes(yuklenen_pdf.getvalue())
-                    st.session_state.son_yuklenen_pdf_imza = yukleme_imzasi
-                    st.session_state.secili_pdf = str(hedef_dosya)
-                    st.session_state.pdf_sayfa_no = 1
-                    st.session_state.pdf_num_top = 1
-                    st.session_state.pdf_cozum_kartlari = None
-                    st.session_state.pdf_ikiz_quiz = None
-                    st.session_state.pdf_ozet_kart = None
-                    st.session_state.hedef_scroll = "acik-kitap-alani"
-                st.success(f"✅ '{hedef_dosya.stem}' kütüphaneye kalıcı olarak eklendi ve aşağıda açıldı!")
-                if st.button("💾 Kaynağı Güncelle ve Aç", key="lib_save_btn", use_container_width=True):
-                    hedef_dosya.write_bytes(yuklenen_pdf.getvalue())
-                    st.session_state.son_yuklenen_pdf_imza = yukleme_imzasi
-                    st.session_state.secili_pdf = str(hedef_dosya)
-                    st.session_state.pdf_sayfa_no = 1
-                    st.session_state.pdf_num_top = 1
-                    st.session_state.pdf_cozum_kartlari = None
-                    st.session_state.pdf_ikiz_quiz = None
-                    st.session_state.pdf_ozet_kart = None
-                    st.session_state.hedef_scroll = "acik-kitap-alani"
-                    st.rerun()
+            ws_ack = st.session_state.get("ws_pdf_ack", "")
+            yuklenen_ws = _mobil_pdf_yukleyici(ack=ws_ack, height=120, key="lib_ws_pdf_uploader")
+            if isinstance(yuklenen_ws, dict) and yuklenen_ws.get("upload_id") and yuklenen_ws.get("b64"):
+                import base64 as _b64
+                up_id = str(yuklenen_ws.get("upload_id", ""))
+                up_name = str(yuklenen_ws.get("name", "Kaynak.pdf"))
+                c_idx = int(yuklenen_ws.get("chunk_index", 0))
+                t_chunks = max(1, int(yuklenen_ws.get("total_chunks", 1)))
+                b64_str = yuklenen_ws.get("b64", "")
+                islenen_anahtar = f"{up_id}:{c_idx}"
+
+                if st.session_state.get("son_islenen_ws_parca") != islenen_anahtar:
+                    ham_isim = ozel_kaynak_adi.strip() if ozel_kaynak_adi.strip() else Path(up_name).stem
+                    temiz_isim = _re.sub(r'[<>:"/\\|?*]', '-', ham_isim).strip() or "Kaynak"
+                    hedef_dosya = pdf_lib_dir / f"[{ders_etiketi}] {temiz_isim}.pdf"
+                    tmp_dosya = pdf_lib_dir / f".tmp_{up_id}.part"
+                    parca_bytes = _b64.b64decode(b64_str)
+
+                    if t_chunks == 1:
+                        hedef_dosya.write_bytes(parca_bytes)
+                        st.session_state.son_islenen_ws_parca = islenen_anahtar
+                        st.session_state.ws_pdf_ack = f"{up_id}:done"
+                        st.session_state.secili_pdf = str(hedef_dosya)
+                        st.session_state.pdf_sayfa_no = 1
+                        st.session_state.pdf_num_top = 1
+                        st.session_state.pdf_cozum_kartlari = None
+                        st.session_state.pdf_ikiz_quiz = None
+                        st.session_state.pdf_ozet_kart = None
+                        st.session_state.hedef_scroll = "acik-kitap-alani"
+                        st.rerun()
+                    else:
+                        mode = "wb" if c_idx == 0 else "ab"
+                        with open(tmp_dosya, mode) as f_out:
+                            f_out.write(parca_bytes)
+                        st.session_state.son_islenen_ws_parca = islenen_anahtar
+                        if c_idx + 1 >= t_chunks:
+                            if hedef_dosya.exists():
+                                hedef_dosya.unlink(missing_ok=True)
+                            tmp_dosya.rename(hedef_dosya)
+                            st.session_state.ws_pdf_ack = f"{up_id}:done"
+                            st.session_state.secili_pdf = str(hedef_dosya)
+                            st.session_state.pdf_sayfa_no = 1
+                            st.session_state.pdf_num_top = 1
+                            st.session_state.pdf_cozum_kartlari = None
+                            st.session_state.pdf_ikiz_quiz = None
+                            st.session_state.pdf_ozet_kart = None
+                            st.session_state.hedef_scroll = "acik-kitap-alani"
+                            st.rerun()
+                        else:
+                            st.session_state.ws_pdf_ack = f"{up_id}:{c_idx}"
+                            st.rerun()
         
         st.markdown("---")
         st.markdown("#### 📖 Kütüphanedeki Kaynaklar")

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Yükleyici</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        body { background: transparent; padding: 2px; overflow: hidden; }
+        .upload-wrap {
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+            border: 2px dashed #818cf8;
+            border-radius: 16px;
+            padding: 14px 16px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+            color: #ffffff;
+            font-size: 14.5px;
+            font-weight: 800;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.22);
+            border: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .upload-btn:active { transform: scale(0.98); }
+        .alt-row {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: #475569;
+            font-weight: 600;
+        }
+        .alt-label {
+            color: #4f46e5;
+            text-decoration: underline;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .status-box {
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #312e81;
+            display: none;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #e0e7ff;
+            border-radius: 99px;
+            margin-top: 6px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #6366f1 0%, #10b981 100%);
+            border-radius: 99px;
+            transition: width 0.2s ease;
+        }
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-wrap" id="drop-zone">
+        <label for="pdf-input-main" class="upload-btn" id="main-btn-label">
+            <span>📄 Telefondan / Bilgisayardan PDF Seç</span>
+        </label>
+        <input type="file" id="pdf-input-main" accept=".pdf,application/pdf">
+        <input type="file" id="pdf-input-any">
+
+        <div class="alt-row">
+            <span>Maksimum 500 MB • PDF</span>
+            <label for="pdf-input-any" class="alt-label">📱 Dosya soluksa (seçilemiyorsa) buraya dokun</label>
+        </div>
+
+        <div class="status-box" id="status-text"></div>
+        <div class="progress-bar-bg" id="progress-bg">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+    </div>
+
+    <script>
+        const CHUNK_SIZE = 3 * 1024 * 1024; // 3 MB parça boyutu (WebSocket dostu)
+        let renderReceived = false;
+        let currentUpload = null;
+        let lastAckProcessed = "";
+
+        function sendToStreamlit(type, payload) {
+            window.parent.postMessage(
+                Object.assign({ isStreamlitMessage: true, type: type }, payload),
+                "*"
+            );
+        }
+
+        function updateHeight() {
+            const h = document.body.scrollHeight || 115;
+            sendToStreamlit("streamlit:setFrameHeight", { height: Math.max(108, h + 6) });
+        }
+
+        // Streamlit el sıkışması (handshake): ilk render gelene kadar tekrarla
+        function sendReady() {
+            sendToStreamlit("streamlit:componentReady", { apiVersion: 1 });
+            updateHeight();
+        }
+
+        const readyInterval = setInterval(() => {
+            if (!renderReceived) {
+                sendReady();
+            } else {
+                clearInterval(readyInterval);
+            }
+        }, 300);
+        sendReady();
+
+        const statusText = document.getElementById("status-text");
+        const progressBg = document.getElementById("progress-bg");
+        const progressFill = document.getElementById("progress-fill");
+        const mainBtnLabel = document.getElementById("main-btn-label");
+
+        function showStatus(msg, color, pct) {
+            statusText.style.display = "block";
+            statusText.style.color = color || "#312e81";
+            statusText.textContent = msg;
+            if (typeof pct === "number") {
+                progressBg.style.display = "block";
+                progressFill.style.width = Math.min(100, Math.max(5, pct)) + "%";
+            } else {
+                progressBg.style.display = "none";
+            }
+            updateHeight();
+        }
+
+        function sendChunk(chunkIndex) {
+            if (!currentUpload) return;
+            const file = currentUpload.file;
+            const start = chunkIndex * CHUNK_SIZE;
+            const end = Math.min(file.size, start + CHUNK_SIZE);
+            const slice = file.slice(start, end);
+
+            const pct = Math.round(((chunkIndex + 0.5) / currentUpload.totalChunks) * 100);
+            if (currentUpload.totalChunks === 1) {
+                showStatus("⏳ '" + file.name + "' kütüphaneye kaydediliyor...", "#4338ca", 65);
+            } else {
+                showStatus(
+                    "⏳ Yükleniyor: %" + pct + " (" + (chunkIndex + 1) + "/" + currentUpload.totalChunks + " parça) - Lütfen bekle...",
+                    "#4338ca",
+                    pct
+                );
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const dataUrl = evt.target.result || "";
+                const commaIdx = dataUrl.indexOf(",");
+                const b64 = commaIdx !== -1 ? dataUrl.substring(commaIdx + 1) : dataUrl;
+
+                sendToStreamlit("streamlit:setComponentValue", {
+                    dataType: "json",
+                    value: {
+                        upload_id: currentUpload.id,
+                        name: file.name,
+                        size: file.size,
+                        chunk_index: chunkIndex,
+                        total_chunks: currentUpload.totalChunks,
+                        b64: b64
+                    }
+                });
+            };
+            reader.onerror = function() {
+                showStatus("❌ Dosya okunurken hata oluştu. Lütfen tekrar dene.", "#dc2626");
+                currentUpload = null;
+            };
+            reader.readAsDataURL(slice);
+        }
+
+        function handleFileSelect(file) {
+            if (!file) return;
+            const lowerName = (file.name || "").toLowerCase();
+            if (!lowerName.endsWith(".pdf") && file.type !== "application/pdf") {
+                showStatus("⚠️ Lütfen geçerli bir PDF (.pdf) dosyası seçin.", "#d97706");
+                return;
+            }
+            if (file.size > 500 * 1024 * 1024) {
+                showStatus("⚠️ Dosya boyutu 500 MB sınırını aşıyor.", "#dc2626");
+                return;
+            }
+
+            const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
+            const uploadId = Date.now().toString(36) + "_" + Math.random().toString(36).substring(2, 7);
+
+            currentUpload = {
+                id: uploadId,
+                file: file,
+                totalChunks: totalChunks,
+                currentChunk: 0
+            };
+
+            sendChunk(0);
+        }
+
+        document.getElementById("pdf-input-main").addEventListener("change", function(e) {
+            if (e.target.files && e.target.files[0]) {
+                handleFileSelect(e.target.files[0]);
+                e.target.value = "";
+            }
+        });
+
+        document.getElementById("pdf-input-any").addEventListener("change", function(e) {
+            if (e.target.files && e.target.files[0]) {
+                handleFileSelect(e.target.files[0]);
+                e.target.value = "";
+            }
+        });
+
+        window.addEventListener("message", function(event) {
+            const data = event.data;
+            if (!data || data.type !== "streamlit:render") return;
+            renderReceived = true;
+            updateHeight();
+
+            const ack = (data.args && data.args.ack) ? String(data.args.ack) : "";
+            if (!ack || ack === lastAckProcessed) return;
+
+            if (currentUpload) {
+                if (ack === currentUpload.id + ":" + currentUpload.currentChunk) {
+                    lastAckProcessed = ack;
+                    const nextChunk = currentUpload.currentChunk + 1;
+                    if (nextChunk < currentUpload.totalChunks) {
+                        currentUpload.currentChunk = nextChunk;
+                        sendChunk(nextChunk);
+                    }
+                } else if (ack === currentUpload.id + ":done") {
+                    lastAckProcessed = ack;
+                    const doneName = currentUpload.file.name;
+                    currentUpload = null;
+                    showStatus("✅ '" + doneName + "' yüklendi ve aşağıda açıldı!", "#059669", 100);
+                    setTimeout(() => {
+                        progressBg.style.display = "none";
+                        updateHeight();
+                    }, 1800);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
