@@ -1,5 +1,11 @@
 import streamlit as st
 import streamlit.components.v1 as components
+
+try:
+    st._config.set_option("server.maxUploadSize", 500)
+    st._config.set_option("server.maxMessageSize", 500)
+except Exception:
+    pass
 import os
 import json
 import importlib
@@ -32,6 +38,25 @@ st.set_page_config(
     page_icon="🎯", 
     layout="centered",
     initial_sidebar_state="collapsed"
+)
+
+# GitHub Pages iframe'i içinden açıldığında üçüncü taraf çerez (SameSite=Lax) engeli yüzünden
+# PDF/dosya yüklemenin hata vermesini önlemek için doğrudan ana uygulamaya yönlendir:
+components.html(
+    """
+    <script>
+    try {
+        if (window.top && window.parent && window.top !== window.parent) {
+            window.top.location.replace("https://lgs-karargahi.streamlit.app/");
+        }
+    } catch (e) {
+        try {
+            window.top.location.href = "https://lgs-karargahi.streamlit.app/";
+        } catch (e2) {}
+    }
+    </script>
+    """,
+    height=0,
 )
 
 # --- MODERN, TEMİZ VE KULLANICI DOSTU ÖZEL CSS ---
@@ -801,7 +826,7 @@ elif menu == "📚 PDF Havuzu":
         st.markdown("### 📚 Dijital PDF & Soru Kütüphanesi")
         st.write("Yüklenen ders notları, testler ve denemeler kalıcı olarak kütüphaneye kaydedilir. İstediğin kaynağın adını değiştirebilir ve tıklayıp hemen açabilirsin!")
         
-        with st.expander("➕ Kütüphaneye Yeni PDF / Test Yükle", expanded=False):
+        with st.expander("➕ Kütüphaneye Yeni PDF / Test Yükle", expanded=True):
             ders_etiketi = st.selectbox("Hangi Ders?", ["Matematik", "Fen Bilimleri", "Türkçe", "T.C. İnkılap Tarihi", "Din Kültürü", "İngilizce", "Genel Deneme"], key="lib_ders")
             ozel_kaynak_adi = st.text_input(
                 "✏️ Kaynak Adı (İsteğe bağlı — boş bırakırsan dosya adı kullanılır):",
@@ -809,25 +834,33 @@ elif menu == "📚 PDF Havuzu":
                 key="lib_custom_name"
             )
             yuklenen_pdf = st.file_uploader("PDF Dosyası Seç", type=["pdf"], key="lib_uploader")
-            if yuklenen_pdf:
+            if yuklenen_pdf is not None:
                 ham_isim = ozel_kaynak_adi.strip() if ozel_kaynak_adi.strip() else Path(yuklenen_pdf.name).stem
                 temiz_isim = _re.sub(r'[<>:"/\\|?*]', '-', ham_isim).strip() or "Kaynak"
                 hedef_dosya = pdf_lib_dir / f"[{ders_etiketi}] {temiz_isim}.pdf"
-                # Gemini Flash dönemindeki gibi dosya seçildiği anda otomatik kaydet (veya butona basınca güncelle)
-                if not hedef_dosya.exists():
+                yukleme_imzasi = f"{yuklenen_pdf.name}_{yuklenen_pdf.size}_{hedef_dosya.name}"
+                # Dosya seçildiği anda otomatik kaydet ve aç
+                if st.session_state.get("son_yuklenen_pdf_imza") != yukleme_imzasi or not hedef_dosya.exists():
                     hedef_dosya.write_bytes(yuklenen_pdf.getvalue())
+                    st.session_state.son_yuklenen_pdf_imza = yukleme_imzasi
                     st.session_state.secili_pdf = str(hedef_dosya)
                     st.session_state.pdf_sayfa_no = 1
                     st.session_state.pdf_num_top = 1
+                    st.session_state.pdf_cozum_kartlari = None
+                    st.session_state.pdf_ikiz_quiz = None
+                    st.session_state.pdf_ozet_kart = None
                     st.session_state.hedef_scroll = "acik-kitap-alani"
-                    st.success(f"✅ '{hedef_dosya.stem}' kütüphaneye kalıcı olarak eklendi ve açıldı!")
-                if st.button("💾 Kütüphaneye Kaydet ve Aç", key="lib_save_btn", use_container_width=True):
+                st.success(f"✅ '{hedef_dosya.stem}' kütüphaneye kalıcı olarak eklendi ve aşağıda açıldı!")
+                if st.button("💾 Kaynağı Güncelle ve Aç", key="lib_save_btn", use_container_width=True):
                     hedef_dosya.write_bytes(yuklenen_pdf.getvalue())
+                    st.session_state.son_yuklenen_pdf_imza = yukleme_imzasi
                     st.session_state.secili_pdf = str(hedef_dosya)
                     st.session_state.pdf_sayfa_no = 1
                     st.session_state.pdf_num_top = 1
+                    st.session_state.pdf_cozum_kartlari = None
+                    st.session_state.pdf_ikiz_quiz = None
+                    st.session_state.pdf_ozet_kart = None
                     st.session_state.hedef_scroll = "acik-kitap-alani"
-                    st.success(f"✅ '{hedef_dosya.stem}' kütüphaneye eklendi!")
                     st.rerun()
         
         st.markdown("---")
