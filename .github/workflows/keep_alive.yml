@@ -1,0 +1,66 @@
+name: Streamlit Keep-Alive (Uyanık Tutucu)
+
+on:
+  schedule:
+    # Her 4 saatte bir otomatik çalışır (Streamlit'in uyku moduna geçmesini engeller)
+    - cron: "0 */4 * * *"
+  workflow_dispatch: # GitHub Actions sekmesinden istenildiğinde manuel de tetiklenebilir
+
+jobs:
+  wake-up-streamlit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Python Kurulumu
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Playwright Kurulumu
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Uygulamayı Ziyaret Et ve Uyandır
+        run: |
+          python - << 'EOF'
+          import asyncio
+          from playwright.async_api import async_playwright
+
+          APP_URL = "https://lgs-karargahi.streamlit.app/"
+
+          async def keep_alive():
+              async with async_playwright() as p:
+                  browser = await p.chromium.launch(headless=True)
+                  context = await browser.new_context(
+                      user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                  )
+                  page = await context.new_page()
+                  print(f"Ziyaret ediliyor: {APP_URL}")
+                  await page.goto(APP_URL, wait_until="domcontentloaded", timeout=60000)
+                  await page.wait_for_timeout(5000)
+
+                  # Eğer uygulama uyumuşsa "Yes, get this app back up!" butonuna tıkla
+                  wake_buttons = [
+                      "button:has-text('Yes, get this app back up')",
+                      "button:has-text('get this app back up')",
+                      "[data-testid='wakeup-button-viewer']",
+                      "[data-testid='wakeup-button-owner']"
+                  ]
+                  for selector in wake_buttons:
+                      btn = page.locator(selector)
+                      if await btn.count() > 0 and await btn.first.is_visible():
+                          print(f"Uyku modu algılandı ({selector}), uyandırma butonuna tıklanıyor...")
+                          await btn.first.click()
+                          await page.wait_for_timeout(25000)
+                          break
+                  else:
+                      print("Uygulama zaten aktif ve uyanık durumda!")
+
+                  # WebSocket bağlantısının kayda geçmesi için kısa süre bekle
+                  await page.wait_for_timeout(8000)
+                  print("Keep-alive ziyareti başarıyla tamamlandı.")
+                  await browser.close()
+
+          asyncio.run(keep_alive())
+          EOF
