@@ -811,11 +811,18 @@ elif menu == "📚 PDF Havuzu":
             yuklenen_pdf = st.file_uploader("PDF Dosyası Seç", type=["pdf"], key="lib_uploader")
             if yuklenen_pdf:
                 ham_isim = ozel_kaynak_adi.strip() if ozel_kaynak_adi.strip() else Path(yuklenen_pdf.name).stem
-                temiz_isim = _re.sub(r'[<>:"/\\|?*]', '-', ham_isim).strip()
+                temiz_isim = _re.sub(r'[<>:"/\\|?*]', '-', ham_isim).strip() or "Kaynak"
                 hedef_dosya = pdf_lib_dir / f"[{ders_etiketi}] {temiz_isim}.pdf"
+                # Gemini Flash dönemindeki gibi dosya seçildiği anda otomatik kaydet (veya butona basınca güncelle)
+                if not hedef_dosya.exists():
+                    hedef_dosya.write_bytes(yuklenen_pdf.getvalue())
+                    st.session_state.secili_pdf = str(hedef_dosya)
+                    st.session_state.pdf_sayfa_no = 1
+                    st.session_state.pdf_num_top = 1
+                    st.session_state.hedef_scroll = "acik-kitap-alani"
+                    st.success(f"✅ '{hedef_dosya.stem}' kütüphaneye kalıcı olarak eklendi ve açıldı!")
                 if st.button("💾 Kütüphaneye Kaydet ve Aç", key="lib_save_btn", use_container_width=True):
-                    with open(hedef_dosya, "wb") as f_out:
-                        f_out.write(yuklenen_pdf.getbuffer())
+                    hedef_dosya.write_bytes(yuklenen_pdf.getvalue())
                     st.session_state.secili_pdf = str(hedef_dosya)
                     st.session_state.pdf_sayfa_no = 1
                     st.session_state.pdf_num_top = 1
@@ -2894,7 +2901,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
             if uploaded_files:
                 for uf in uploaded_files:
                     if uf.name.lower().endswith(".pdf"):
-                        doc = fitz.open(stream=uf.read(), filetype="pdf")
+                        doc = fitz.open(stream=uf.getvalue(), filetype="pdf")
                         for p_idx in range(min(5, len(doc))):
                             pix = doc.load_page(p_idx).get_pixmap(dpi=140)
                             soru_gorselleri.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
@@ -4549,7 +4556,7 @@ elif menu == "📷 Deneme Analizi":
         if deneme_files:
             for df_item in deneme_files:
                 if df_item.name.lower().endswith(".pdf"):
-                    doc = fitz.open(stream=df_item.read(), filetype="pdf")
+                    doc = fitz.open(stream=df_item.getvalue(), filetype="pdf")
                     for p_idx in range(min(10, len(doc))):
                         pix = doc.load_page(p_idx).get_pixmap(dpi=130)
                         deneme_gorselleri.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
