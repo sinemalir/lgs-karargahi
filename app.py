@@ -814,7 +814,8 @@ elif menu == "📚 PDF Havuzu":
                 temiz_isim = _re.sub(r'[<>:"/\\|?*]', '-', ham_isim).strip()
                 hedef_dosya = pdf_lib_dir / f"[{ders_etiketi}] {temiz_isim}.pdf"
                 if st.button("💾 Kütüphaneye Kaydet ve Aç", key="lib_save_btn", use_container_width=True):
-                    hedef_dosya.write_bytes(yuklenen_pdf.getvalue())
+                    with open(hedef_dosya, "wb") as f_out:
+                        f_out.write(yuklenen_pdf.getbuffer())
                     st.session_state.secili_pdf = str(hedef_dosya)
                     st.session_state.pdf_sayfa_no = 1
                     st.session_state.pdf_num_top = 1
