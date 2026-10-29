@@ -38,7 +38,7 @@ st.set_page_config(
 st.markdown("""
 <style>
     .stApp {
-        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 55%, #eef2ff 100%);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     /* Boş oluşan karargah-card divlerini gizle */
@@ -88,27 +88,27 @@ st.markdown("""
     .brand-title {
         font-size: 24px;
         font-weight: 900;
-        background: linear-gradient(90deg, #2563eb, #7c3aed);
+        background: linear-gradient(90deg, #4f46e5, #7c3aed);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         letter-spacing: -0.5px;
     }
     .user-pill {
-        background: #eff6ff;
-        color: #1d4ed8;
+        background: #f5f3ff;
+        color: #5b21b6;
         padding: 6px 14px;
         border-radius: 99px;
         font-size: 13.5px;
         font-weight: 700;
-        border: 1px solid #bfdbfe;
+        border: 1px solid #ddd6fe;
     }
-    /* Hero Kartı */
+    /* Hero Kartı (Soft İndigo & Lavanta Tonu) */
     .hero-card {
-        background: linear-gradient(135deg, #1e40af 0%, #6d28d9 100%);
+        background: linear-gradient(135deg, #5b6cf9 0%, #7c69ef 55%, #9381ff 100%);
         color: white !important;
-        padding: 28px;
+        padding: 26px;
         border-radius: 24px;
-        box-shadow: 0 12px 30px rgba(37, 99, 235, 0.25);
+        box-shadow: 0 10px 24px rgba(91, 108, 249, 0.18);
         margin-bottom: 20px;
         position: relative;
         overflow: hidden;
@@ -117,14 +117,14 @@ st.markdown("""
         color: #ffffff !important;
     }
     .hero-card p {
-        color: #e0e7ff !important;
-        font-size: 15.5px;
+        color: #eef2ff !important;
+        font-size: 15px;
         margin-top: 6px;
         margin-bottom: 0;
     }
     .hero-badge {
         display: inline-block;
-        background: rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.22);
         color: #ffffff !important;
         padding: 5px 12px;
         border-radius: 99px;
@@ -263,19 +263,19 @@ st.markdown("""
     div[data-testid="stPopover"] {
         width: 100% !important;
     }
-    /* Tüm Butonlar, Download Butonu ve 📋 Menü (Popover) Butonu Aynı Mavi-Mor Gradyan Stilde */
+    /* Tüm Butonlar, Download Butonu ve 📋 Menü (Popover) Butonu Soft İndigo-Lavanta Gradyan Stilde */
     .stButton > button,
     .stDownloadButton > button,
     div[data-testid="stPopover"] button,
     [data-testid="stPopover"] > div > button {
         width: 100% !important;
-        background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%) !important;
+        background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%) !important;
         color: white !important;
         font-weight: 700 !important;
         border-radius: 12px !important;
         padding: 10px 14px !important;
-        border: none !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22) !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+        box-shadow: 0 3px 10px rgba(99, 102, 241, 0.18) !important;
         transition: all 0.2s ease !important;
     }
     .stButton > button p, .stButton > button span, .stButton > button div,
@@ -291,7 +291,7 @@ st.markdown("""
     }
     .stButton > button:hover, .stDownloadButton > button:hover, div[data-testid="stPopover"] > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35) !important;
+        box-shadow: 0 5px 14px rgba(99, 102, 241, 0.28) !important;
     }
     /* Mobilde Önceki/Sonraki Sayfa Barı ve PDF Kart Butonları Alt Alta Düşmesin, Yan Yana Kalsın */
     div[data-testid="stHorizontalBlock"]:has(.st-key-pdf_prev_top),
@@ -539,13 +539,20 @@ st.markdown("""
         padding: 7px 6px !important;
         border-radius: 11px !important;
         white-space: nowrap !important;
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%) !important;
+        border: 1.5px solid #c7d2fe !important;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
     }
     div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) button p,
-    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) button span {
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) button span,
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) button div,
+    div[data-testid="stHorizontalBlock"]:has(.st-key-mob_back_btn) button svg {
         font-size: 12.5px !important;
         font-weight: 800 !important;
         white-space: nowrap !important;
         letter-spacing: -0.2px !important;
+        color: #4338ca !important;
+        fill: #4338ca !important;
     }
 
     /* İstasyon Satırları da Mobilde Alt Alta Düşmesin ( Kompakt 2 Satır ) */
@@ -569,7 +576,7 @@ st.markdown("""
         font-size: 13px !important;
         font-weight: 800 !important;
         white-space: nowrap !important;
-        box-shadow: 0 3px 8px rgba(15, 23, 42, 0.05) !important;
+        box-shadow: 0 2px 7px rgba(15, 23, 42, 0.04) !important;
         transition: all 0.2s ease !important;
     }
     div[class*="st-key-ist_btn_"] button p,
@@ -579,44 +586,44 @@ st.markdown("""
     }
     div[class*="st-key-ist_btn_"] button:hover {
         transform: translateY(-2px) !important;
-        filter: brightness(0.97) !important;
+        filter: brightness(0.98) !important;
     }
-    /* 0: PDF Havuzu - Soft Lavanta Moru */
+    /* 0: PDF Havuzu - Soft Lavanta */
     .st-key-ist_btn_0 button {
-        background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%) !important;
-        border: 2px solid #d8b4fe !important;
+        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%) !important;
+        border: 1.5px solid #ddd6fe !important;
     }
     .st-key-ist_btn_0 button p, .st-key-ist_btn_0 button span, .st-key-ist_btn_0 button div {
-        color: #6b21a8 !important;
+        color: #5b21b6 !important;
     }
-    /* 1: Hızlı Öğren - Soft Şeftali / Kehribar */
+    /* 1: Hızlı Öğren - Soft Kayısı / Krem */
     .st-key-ist_btn_1 button {
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
-        border: 2px solid #fcd34d !important;
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+        border: 1.5px solid #fde68a !important;
     }
     .st-key-ist_btn_1 button p, .st-key-ist_btn_1 button span, .st-key-ist_btn_1 button div {
-        color: #92400e !important;
+        color: #b45309 !important;
     }
     /* 2: SinoTest - Soft Nane Yeşili */
     .st-key-ist_btn_2 button {
-        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
-        border: 2px solid #6ee7b7 !important;
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+        border: 1.5px solid #a7f3d0 !important;
     }
     .st-key-ist_btn_2 button p, .st-key-ist_btn_2 button span, .st-key-ist_btn_2 button div {
-        color: #065f46 !important;
+        color: #047857 !important;
     }
-    /* 3: Deneme Analizi - Soft Gül Kurusu / Pembe */
+    /* 3: Deneme Analizi - Soft Pudra / Gül */
     .st-key-ist_btn_3 button {
-        background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%) !important;
-        border: 2px solid #fda4af !important;
+        background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%) !important;
+        border: 1.5px solid #fecdd3 !important;
     }
     .st-key-ist_btn_3 button p, .st-key-ist_btn_3 button span, .st-key-ist_btn_3 button div {
-        color: #9f1239 !important;
+        color: #be123c !important;
     }
-    /* 4: Hata & Gelişim - Soft İndigo */
+    /* 4: Hata & Gelişim - Soft Gökyüzü Mavisi */
     .st-key-ist_btn_4 button {
-        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%) !important;
-        border: 2px solid #a5b4fc !important;
+        background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%) !important;
+        border: 1.5px solid #c7d2fe !important;
     }
     .st-key-ist_btn_4 button p, .st-key-ist_btn_4 button span, .st-key-ist_btn_4 button div {
         color: #3730a3 !important;
@@ -642,7 +649,7 @@ with st.container(border=True):
 
 menu = st.session_state.aktif_istasyon
 
-# 📍 Seçili (Aktif) İstasyon Butonunu Belirgin Farklı Renkte Göster
+# 📍 Seçili (Aktif) İstasyon Butonunu Soft ama Belirgin İndigo-Lavanta Renginde Göster
 _aktif_selector = ".st-key-mob_home_btn button"
 for _i, (_g, _hedef) in enumerate(ISTASYON_KISA_AD):
     if _hedef == menu:
@@ -651,14 +658,14 @@ for _i, (_g, _hedef) in enumerate(ISTASYON_KISA_AD):
 st.markdown(f"""
 <style>
     {_aktif_selector} {{
-        background: linear-gradient(135deg, #f97316 0%, #db2777 100%) !important;
-        border: 2px solid #9d174d !important;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.28), 0 6px 14px rgba(219, 39, 119, 0.35) !important;
+        background: linear-gradient(135deg, #5b6cf9 0%, #7c69ef 100%) !important;
+        border: 1.5px solid #4f46e5 !important;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.20), 0 5px 12px rgba(99, 102, 241, 0.25) !important;
         transform: translateY(-1px);
     }}
     {_aktif_selector} p, {_aktif_selector} span, {_aktif_selector} div {{
         color: #ffffff !important;
-        font-weight: 900 !important;
+        font-weight: 800 !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -677,14 +684,14 @@ st.markdown("""
         gap: 10px;
     }
     .fab-btn {
-        background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: white !important;
         text-decoration: none !important;
         padding: 12px 16px;
         border-radius: 99px;
         font-weight: 800;
         font-size: 13.5px;
-        box-shadow: 0 8px 22px rgba(37, 99, 235, 0.4);
+        box-shadow: 0 6px 18px rgba(99, 102, 241, 0.28);
         display: flex;
         align-items: center;
         gap: 6px;
@@ -693,7 +700,7 @@ st.markdown("""
     }
     .fab-btn:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 26px rgba(37, 99, 235, 0.55);
+        box-shadow: 0 10px 22px rgba(99, 102, 241, 0.38);
     }
     @media (max-width: 640px) {
         .floating-nav {
@@ -707,7 +714,7 @@ st.markdown("""
             border-radius: 50% !important;
             justify-content: center !important;
             font-size: 16px !important;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
         }
         .fab-btn .fab-txt {
             display: none !important;
@@ -894,11 +901,11 @@ elif menu == "📚 PDF Havuzu":
                 st.markdown("<div id='acik-kitap-alani'></div>", unsafe_allow_html=True)
                 st.markdown("---")
                 
-                # Mobil Uyumlu Kompakt Açık Kaynak Başlık Kartı
+                # Mobil Uyumlu Kompakt Açık Kaynak Başlık Kartı (Soft Pastel Ton)
                 st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <div style="font-size: 14.5px; font-weight: 800; line-height: 1.35; flex: 1;">📖 {aktif_pdf.stem}</div>
-                    <span style="background: #2563eb; color: white; font-size: 12.5px; font-weight: 800; padding: 4px 12px; border-radius: 99px; white-space: nowrap;">
+                <div style="background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%); color: #312e81; border: 1.5px solid #c7d2fe; border-radius: 16px; padding: 12px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div style="font-size: 14.5px; font-weight: 800; line-height: 1.35; flex: 1; color: #312e81;">📖 {aktif_pdf.stem}</div>
+                    <span style="background: #6366f1; color: white; font-size: 12.5px; font-weight: 800; padding: 4px 12px; border-radius: 99px; white-space: nowrap;">
                         Sayfa {st.session_state.pdf_sayfa_no} / {toplam_sayfa}
                     </span>
                 </div>
@@ -2045,11 +2052,11 @@ elif menu == "🤖 Soru Çöz & İkiz":
             padding: 10px 14px !important;
             min-height: 46px !important;
         }
-        /* Başlat Butonu Her Zaman Parlak Yeşil/Mavi Vurgulu */
+        /* Başlat Butonu Soft Nane-Zümrüt Vurgulu */
         html body div[class*="st-key-"].st-key-cipko_start_test_btn button {
-            background: linear-gradient(135deg, #16a34a 0%, #059669 100%) !important;
-            border: 2px solid #047857 !important;
-            box-shadow: 0 6px 16px rgba(22, 163, 74, 0.28) !important;
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+            border: 1.5px solid #059669 !important;
+            box-shadow: 0 5px 14px rgba(16, 185, 129, 0.22) !important;
             min-height: 50px !important;
         }
         html body div[class*="st-key-"].st-key-cipko_start_test_btn button p,
@@ -2101,9 +2108,9 @@ elif menu == "🤖 Soru Çöz & İkiz":
     for a_key in aktif_keys:
         aktif_css_kurallari += f"""
         html body div[class*="st-key-"].st-key-{a_key} button {{
-            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
-            border: 2px solid #1e3a8a !important;
-            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+            background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%) !important;
+            border: 1.5px solid #4f46e5 !important;
+            box-shadow: 0 3px 10px rgba(99, 102, 241, 0.22) !important;
             transform: translateY(-1px) !important;
         }}
         html body div[class*="st-key-"].st-key-{a_key} button p,
@@ -2119,12 +2126,12 @@ elif menu == "🤖 Soru Çöz & İkiz":
     # 🏆 SİNOTEST KUPA & 3 BÜYÜK HEDİYE PAKETİ ÖDÜL SİSTEMİ (POPUP VİTRİN)
     # =========================================================================
     DERS_ODUL_META = {
-        "Türkçe": {"ikon": "📘", "renk": "#2563eb"},
-        "Matematik": {"ikon": "📐", "renk": "#dc2626"},
-        "Fen Bilimleri": {"ikon": "🔬", "renk": "#16a34a"},
-        "İnkılap Tarihi": {"ikon": "🏛️", "renk": "#d97706"},
-        "İngilizce": {"ikon": "🌍", "renk": "#7c3aed"},
-        "Din Kültürü": {"ikon": "🌿", "renk": "#0d9488"},
+        "Türkçe": {"ikon": "📘", "renk": "#6366f1"},
+        "Matematik": {"ikon": "📐", "renk": "#f43f5e"},
+        "Fen Bilimleri": {"ikon": "🔬", "renk": "#10b981"},
+        "İnkılap Tarihi": {"ikon": "🏛️", "renk": "#f59e0b"},
+        "İngilizce": {"ikon": "🌍", "renk": "#8b5cf6"},
+        "Din Kültürü": {"ikon": "🌿", "renk": "#14b8a6"},
     }
 
     HEDIYE_PAKETLERI = {
@@ -2340,11 +2347,11 @@ elif menu == "🤖 Soru Çöz & İkiz":
             * {{ box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }}
             html, body {{ margin: 0; padding: 0; background: transparent; overflow: hidden; }}
             .joy-wrap {{
-                background: linear-gradient(135deg, #fffbeb 0%, #eff6ff 55%, #f5f3ff 100%);
-                border: 2px solid #fcd34d;
+                background: linear-gradient(135deg, #fffdf7 0%, #f5f7ff 55%, #faf5ff 100%);
+                border: 1.5px solid #fde68a;
                 border-radius: 16px;
                 padding: 10px 10px;
-                box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+                box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
             }}
             .subj-grid {{
                 display: grid;
@@ -2412,26 +2419,33 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                color: #ffffff;
-                border: 2px solid rgba(255,255,255,0.6);
-                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+                color: #1e293b;
+                box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
                 transition: transform 0.18s ease, box-shadow 0.18s ease;
                 user-select: none;
                 overflow: hidden;
             }}
             .gift-card:hover {{
                 transform: translateY(-2px) scale(1.015);
-                box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
-                border-color: #fde047;
+                box-shadow: 0 6px 14px rgba(15, 23, 42, 0.10);
             }}
-            .gift-card.pk1 {{ background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%); }}
-            .gift-card.pk2 {{ background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%); }}
-            .gift-card.pk3 {{ background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%); }}
+            .gift-card.pk1 {{
+                background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
+                border: 1.5px solid #fda4af;
+            }}
+            .gift-card.pk2 {{
+                background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+                border: 1.5px solid #fdba74;
+            }}
+            .gift-card.pk3 {{
+                background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+                border: 1.5px solid #d8b4fe;
+            }}
             .gift-icon-box {{
                 width: 38px;
                 height: 38px;
                 border-radius: 11px;
-                background: rgba(255,255,255,0.22);
+                background: rgba(255,255,255,0.68);
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -2439,6 +2453,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 flex-shrink: 0;
                 position: relative;
                 animation: bobGift 2.4s ease-in-out infinite;
+                box-shadow: 0 2px 6px rgba(15,23,42,0.06);
             }}
             @keyframes bobGift {{
                 0%, 100% {{ transform: translateY(0); }}
@@ -2456,7 +2471,7 @@ elif menu == "🤖 Soru Çöz & İkiz":
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.12);
             }}
             .gift-info {{
                 min-width: 0;
@@ -2466,19 +2481,23 @@ elif menu == "🤖 Soru Çöz & İkiz":
             .gift-title {{
                 font-size: 12.5px;
                 font-weight: 900;
-                color: #ffffff;
                 line-height: 1.2;
                 margin-bottom: 2px;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
             }}
+            .gift-card.pk1 .gift-title {{ color: #9f1239; }}
+            .gift-card.pk2 .gift-title {{ color: #9a3412; }}
+            .gift-card.pk3 .gift-title {{ color: #5b21b6; }}
             .gift-sub {{
                 font-size: 10px;
                 font-weight: 700;
-                color: #fef08a;
                 line-height: 1.25;
             }}
+            .gift-card.pk1 .gift-sub {{ color: #be123c; }}
+            .gift-card.pk2 .gift-sub {{ color: #c2410c; }}
+            .gift-card.pk3 .gift-sub {{ color: #6d28d9; }}
             @media (max-width: 580px) {{
                 .joy-wrap {{ padding: 8px 6px; }}
                 .gift-row {{ gap: 5px; }}
@@ -4633,9 +4652,9 @@ elif menu == "📷 Deneme Analizi":
                     net = max(0.0, round(d_say - (y_say / 3.0), 2))
                     ders_kisa_ad = d_label.split(" ", 1)[1]
                     st.markdown(
-                        f"<div style='background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:6px 12px; margin-top:4px; display:flex; justify-content:space-between; align-items:center; gap:8px;'>"
-                        f"<span style='font-size:12.5px; font-weight:700; color:#1e40af; white-space:nowrap;'>✨ {ders_kisa_ad} Neti</span>"
-                        f"<span style='background:#2563eb; color:white; font-size:12.5px; font-weight:800; padding:2px 10px; border-radius:99px; white-space:nowrap;'>{net:.2f} / {max_soru}</span>"
+                        f"<div style='background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:6px 12px; margin-top:4px; display:flex; justify-content:space-between; align-items:center; gap:8px;'>"
+                        f"<span style='font-size:12.5px; font-weight:700; color:#4c1d95; white-space:nowrap;'>✨ {ders_kisa_ad} Neti</span>"
+                        f"<span style='background:#6366f1; color:white; font-size:12.5px; font-weight:800; padding:2px 10px; border-radius:99px; white-space:nowrap;'>{net:.2f} / {max_soru}</span>"
                         f"</div>",
                         unsafe_allow_html=True
                     )
@@ -4649,21 +4668,21 @@ elif menu == "📷 Deneme Analizi":
         
         lgs_puani = min(500.0, max(100.0, round(puan_katkisi, 2)))
         
-        # Anlık Canlı LGS Puan & Net Rozet Kartı
+        # Anlık Canlı LGS Puan & Net Rozet Kartı (Soft Pastel-Canlı Tema)
         puan_renk = "#10b981" if lgs_puani >= 420 else ("#6366f1" if lgs_puani >= 350 else "#f59e0b")
         st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; padding: 20px; color: white; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 12px; margin: 12px 0; box-shadow: 0 10px 25px rgba(15,23,42,0.18);">
+        <div style="background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 55%, #ecfdf5 100%); border: 1.5px solid #c7d2fe; border-radius: 20px; padding: 18px; color: #1e293b; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 12px; margin: 12px 0; box-shadow: 0 6px 18px rgba(99, 102, 241, 0.10);">
             <div style="text-align: center;">
-                <div style="font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Toplam Doğru / Yanlış / Boş</div>
-                <div style="font-size: 20px; font-weight: 800; color: #f8fafc; margin-top: 4px;">✅ {toplam_d} D &nbsp;|&nbsp; ❌ {toplam_y} Y &nbsp;|&nbsp; ⭕ {toplam_b} B</div>
+                <div style="font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">Toplam Doğru / Yanlış / Boş</div>
+                <div style="font-size: 18px; font-weight: 800; color: #1e293b; margin-top: 4px;">✅ {toplam_d} D &nbsp;|&nbsp; ❌ {toplam_y} Y &nbsp;|&nbsp; ⭕ {toplam_b} B</div>
             </div>
             <div style="text-align: center;">
-                <div style="font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Toplam Net (90 Soru)</div>
-                <div style="font-size: 24px; font-weight: 900; color: #38bdf8; margin-top: 4px;">{toplam_net:.2f} Net</div>
+                <div style="font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">Toplam Net (90 Soru)</div>
+                <div style="font-size: 22px; font-weight: 900; color: #4f46e5; margin-top: 4px;">{toplam_net:.2f} Net</div>
             </div>
-            <div style="text-align: center; background: {puan_renk}; padding: 10px 22px; border-radius: 16px;">
-                <div style="font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 800; text-transform: uppercase;">🏆 MEB LGS Puanı</div>
-                <div style="font-size: 28px; font-weight: 900; color: white;">{lgs_puani:.2f}</div>
+            <div style="text-align: center; background: {puan_renk}; padding: 10px 22px; border-radius: 16px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10);">
+                <div style="font-size: 11px; color: rgba(255,255,255,0.92); font-weight: 800; text-transform: uppercase;">🏆 MEB LGS Puanı</div>
+                <div style="font-size: 26px; font-weight: 900; color: white;">{lgs_puani:.2f}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -4693,12 +4712,12 @@ elif menu == "📷 Deneme Analizi":
             <style>
                 .perf-wrap {{ font-family: 'Inter', sans-serif; padding: 6px 2px; }}
                 .perf-hero {{
-                    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+                    background: linear-gradient(135deg, #5b6cf9 0%, #8b5cf6 100%);
                     color: white;
                     border-radius: 20px;
                     padding: 22px;
                     margin-bottom: 16px;
-                    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+                    box-shadow: 0 8px 20px rgba(91, 108, 249, 0.18);
                 }}
                 .perf-badge {{
                     display: inline-block;
