@@ -301,173 +301,342 @@ def extract_exam_scores(image):
     return sonuc
 
 
-MEB_8_SINIF_KONULARI = {
-    "Türkçe": [
-        "Sözcükte ve Söz Öbeklerinde Anlam",
-        "Cümlede Anlam ve Yorum",
-        "Paragrafta Anlam ve Ana Düşünce",
-        "Sözel Mantık ve Muhakeme",
-        "Görsel Okuma ve Grafik Yorumlama",
-        "Fiilimsiler (Eylemsiler)",
-        "Cümlenin Ögeleri",
-        "Fiilde Çatı",
-        "Cümle Türleri",
-        "Yazım Kuralları ve Noktalama İşaretleri",
-        "Anlatım Bozuklukları",
-        "Metin Türleri ve Söz Sanatları",
-    ],
-    "Matematik": [
-        "Çarpanlar ve Katlar (EBOB - EKOK)",
-        "Üslü İfadeler",
-        "Kareköklü İfadeler",
-        "Veri Analizi (Çizgi, Sütun ve Daire Grafiği)",
-        "Basit Olayların Olma Olasılığı",
-        "Cebirsel İfadeler ve Özdeşlikler",
-        "Doğrusal Denklemler ve Eğim",
-        "Eşitsizlikler",
-        "Üçgenler ve Eşlik - Benzerlik",
-        "Dönüşüm Geometrisi",
-        "Geometrik Cisimler (Silindir, Piramit, Koni)",
-    ],
-    "Fen Bilimleri": [
-        "Mevsimler ve İklim",
-        "DNA ve Genetik Kod (Kalıtım, Mutasyon, Biyoteknoloji)",
-        "Basınç (Katı, Sıvı ve Gaz Basıncı)",
-        "Madde ve Endüstri (Periyodik Sistem, Kimyasal Tepkimeler, Asit-Baz)",
-        "Basit Makineler",
-        "Enerji Dönüşümleri ve Çevre Bilimi (Besin Zinciri, Fotosentez, Solunum)",
-        "Elektrik Yükleri ve Elektrik Enerjisi",
-    ],
-    "İnkılap Tarihi": [
-        "Bir Kahraman Doğuyor",
-        "Milli Uyanış: Bağımsızlık Yolunda Atılan Adımlar",
-        "Milli Bir Destan: Ya İstiklal Ya Ölüm!",
-        "Atatürkçülük ve Çağdaşlaşan Türkiye",
-        "Demokratikleşme Çabaları",
-        "Atatürk Dönemi Türk Dış Politikası",
-        "Atatürk'ün Ölümü ve Sonrası",
-    ],
-    "İngilizce": [
-        "Unit 1: Friendship",
-        "Unit 2: Teen Life",
-        "Unit 3: In The Kitchen",
-        "Unit 4: On The Phone",
-        "Unit 5: The Internet",
-        "Unit 6: Adventures",
-        "Unit 7: Tourism",
-        "Unit 8: Chores",
-        "Unit 9: Science",
-        "Unit 10: Natural Forces",
-    ],
-    "Din Kültürü": [
-        "Kader İnancı (Kader ve Kaza, İnsanın İradesi)",
-        "Zekat ve Sadaka İbadeti",
-        "Din ve Hayat (Din, Birey ve Toplum)",
-        "Hz. Muhammed'in (s.a.v.) Örnekliği",
-        "Kur'an-ı Kerim ve Özellikleri",
-    ],
+@st.cache_data
+def mufredat_yukle():
+    """MEB 8. Sınıf LGS müfredat sınırlarını ve kapsam dışı yasaklı alanları diskten tek seferlik okur ve önbelleğe alır."""
+    dosya_yolu = Path(__file__).parent / "lgs_mufredat_sinirlar.json"
+    with open(dosya_yolu, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+DERS_KODU_HARITASI = {
+    "MAT_8": "MAT_8",
+    "Matematik": "MAT_8",
+    "FEN_8": "FEN_8",
+    "Fen Bilimleri": "FEN_8",
+    "TUR_8": "TUR_8",
+    "Türkçe": "TUR_8",
+    "INK_8": "INK_8",
+    "İnkılap Tarihi": "INK_8",
+    "T.C. İnkılap Tarihi": "INK_8",
+    "T.C. İnkılap Tarihi ve Atatürkçülük": "INK_8",
+    "DIN_8": "DIN_8",
+    "Din Kültürü": "DIN_8",
+    "Din Kültürü ve Ahlak Bilgisi": "DIN_8",
+    "ING_8": "ING_8",
+    "İngilizce": "ING_8",
+}
+
+UI_DERS_ADI_HARITASI = {
+    "MAT_8": "Matematik",
+    "FEN_8": "Fen Bilimleri",
+    "TUR_8": "Türkçe",
+    "INK_8": "İnkılap Tarihi",
+    "DIN_8": "Din Kültürü",
+    "ING_8": "İngilizce",
 }
 
 
-def get_ai_lgs_topics(ders, force_ai=False):
-    """Seçilen 8. sınıf LGS dersi için yapay zeka destekli konu listesini döndürür."""
-    varsayilan = MEB_8_SINIF_KONULARI.get(ders, MEB_8_SINIF_KONULARI["Matematik"])
-    if not force_ai:
-        # Hızlı ve kesintisiz deneyim için MEB müfredat konularını + yapay zeka alt başlıklarını getirir
-        prompt = (
-            f"8. Sınıf MEB LGS '{ders}' dersinin en önemli tüm ünite ve alt konularını listele. "
-            "SADECE geçerli bir JSON string dizisi döndür, başka hiçbir metin yazma. "
-            'Örnek: ["1. Konu Adı", "2. Konu Adı"]'
-        )
-        raw = ask_gemini(prompt)
-        try:
-            match = re.search(r"\[.*\]", raw, re.DOTALL)
-            if match:
-                parsed = clean_math_text(json.loads(match.group(0)))
-                if isinstance(parsed, list) and len(parsed) >= 4:
-                    return [str(x).strip() for x in parsed if str(x).strip()]
-        except Exception:
-            pass
-        return varsayilan
+def _build_meb_konulari_dict():
+    try:
+        muf = mufredat_yukle()
+        sonuc = {}
+        for d_kod, d_bilgi in muf.get("dersler", {}).items():
+            ui_ad = UI_DERS_ADI_HARITASI.get(d_kod, d_bilgi.get("ders_adi", d_kod))
+            uniteler = [u["unite_adi"] for u in d_bilgi.get("uniteler", [])]
+            sonuc[ui_ad] = uniteler
+            sonuc[d_bilgi.get("ders_adi", ui_ad)] = uniteler
+        return sonuc
+    except Exception:
+        return {
+            "Türkçe": ["Sözcükte, Cümlede ve Parçada Anlam / Sözel Mantık", "Fiilimsiler (Eylemsiler)", "Cümlenin Ögeleri", "Fiilde Çatı", "Cümle Türleri / Metin Türleri / Anlatım Bozuklukları / Yazım ve Noktalama"],
+            "Matematik": ["Çarpanlar ve Katlar / Üslü İfadeler", "Kareköklü İfadeler / Veri Analizi", "Basit Olayların Olma Olasılığı / Cebirsel İfadeler ve Özdeşlikler", "Doğrusal Denklemler / Eşitsizlikler", "Üçgenler / Eşlik ve Benzerlik", "Dönüşüm Geometrisi / Geometrik Cisimler"],
+            "Fen Bilimleri": ["Mevsimler ve İklim", "DNA ve Genetik Kod", "Basınç", "Madde ve Endüstri", "Basit Makineler", "Enerji Dönüşümleri ve Çevre Bilimi", "Elektrik Yükleri ve Elektrik Enerjisi"],
+            "İnkılap Tarihi": ["Bir Kahraman Doğuyor", "Millî Uyanış: Bağımsızlık Yolunda Atılan Adımlar", "Millî Bir Destan: Ya İstiklal Ya Ölüm!", "Atatürkçülük ve Çağdaşlaşan Türkiye", "Demokratikleşme Çabaları", "Atatürk Dönemi Türk Dış Politikası", "Atatürk'ün Ölümü ve Sonrası"],
+            "İngilizce": ["Friendship", "Teen Life", "In The Kitchen", "On The Phone", "The Internet", "Adventures", "Tourism", "Chores", "Science", "Natural Forces"],
+            "Din Kültürü": ["Kader İnancı", "Zekât ve Sadaka", "Din ve Hayat", "Hz. Muhammed'in Örnekliği", "Kur'an-ı Kerim ve Özellikleri"],
+        }
+
+
+MEB_8_SINIF_KONULARI = _build_meb_konulari_dict()
+
+
+def _coz_ders_ve_unite(ders_kodu_veya_adi, unite_no_veya_konu=None):
+    """Seçilen ders ve ünite/konudan (ders_kodu, unite_no, ders_obj, unite_obj) döndürür."""
+    mufredat = mufredat_yukle()
+    dersler = mufredat["dersler"]
+    ders_kodu = DERS_KODU_HARITASI.get(str(ders_kodu_veya_adi).strip(), "MAT_8")
+    if ders_kodu not in dersler:
+        ders_kodu = "MAT_8"
+    ders_obj = dersler[ders_kodu]
+    uniteler = ders_obj["uniteler"]
+
+    secili_unite = None
+    if isinstance(unite_no_veya_konu, int):
+        secili_unite = next((u for u in uniteler if int(u["unite_no"]) == unite_no_veya_konu), None)
+    elif unite_no_veya_konu is not None:
+        konu_str = str(unite_no_veya_konu).strip()
+        if konu_str.isdigit():
+            secili_unite = next((u for u in uniteler if int(u["unite_no"]) == int(konu_str)), None)
+        else:
+            # Tam veya kısmi ünite adı eşleşmesi
+            for u in uniteler:
+                if u["unite_adi"].lower() == konu_str.lower() or u["unite_adi"].lower() in konu_str.lower() or konu_str.lower() in u["unite_adi"].lower():
+                    secili_unite = u
+                    break
+            if not secili_unite:
+                m_no = re.search(r"(\d+)", konu_str)
+                if m_no:
+                    u_no = int(m_no.group(1))
+                    secili_unite = next((u for u in uniteler if int(u["unite_no"]) == u_no), None)
+
+    if not secili_unite:
+        secili_unite = uniteler[0]
+
+    return ders_kodu, int(secili_unite["unite_no"]), ders_obj, secili_unite
+
+
+def _olustur_mufredat_system_prompt(ders_kodu: str, unite_no: int) -> str:
+    """Token tasarrufu için JSON içinden SADECE seçilen dersin genel_kisitlamalar listesini
+    ve seçilen ünitenin aktif_kazanimlar ile kapsam_disi_yasakli_alanlar listelerini çeker."""
+    mufredat = mufredat_yukle()
+    ders_kodu, unite_no, ders, unite = _coz_ders_ve_unite(ders_kodu, unite_no)
+
+    system_prompt = f"""Sen uzman bir MEB 8. Sınıf LGS soru yazarısın.
+DERS: {ders['ders_adi']} ({ders_kodu}) | ÜNİTE {unite['unite_no']}: {unite['unite_adi']}
+
+ÜRETİM ÖNCESİ KONTROL: {mufredat['validasyon_kurallari']['uretim_oncesi_kontrol']}
+
+AKTİF KAZANIMLAR (Yalnızca bu kapsamda kal):
+{chr(10).join(['- ' + k for k in unite['aktif_kazanimlar']])}
+
+KESİN YASAKLI ALANLAR (Bu kavramlara/işlemlere girersen çıktı geçersiz sayılır):
+{chr(10).join(['- ' + g for g in ders['genel_kisitlamalar']])}
+{chr(10).join(['- ' + y for y in unite['kapsam_disi_yasakli_alanlar']])}
+
+DENETİM: {mufredat['validasyon_kurallari']['uretim_sonrasi_filtre']}
+Kesinlikle $ işareti veya LaTeX kodu ($m^2$, \\frac vb.) kullanma; m², cm², cm³, 2⁵, √3 gibi doğrudan okunaklı Unicode karakterler kullan."""
+    return system_prompt
+
+
+def _mufredat_destekli_gemini_json(prompt: str, ders_kodu: str, unite_no: int):
+    """Seçilen ders ve ünitenin system_instruction sınırlarıyla (temperature=0.4, application/json) Gemini çağrısı yapar."""
+    current_key = _get_gemini_key()
+    genai.configure(api_key=current_key, transport="rest")
+    system_prompt = _olustur_mufredat_system_prompt(ders_kodu, unite_no)
+
+    model = genai.GenerativeModel(
+        model_name="gemini-3.5-flash-lite",
+        system_instruction=system_prompt,
+        generation_config={
+            "temperature": 0.4,
+            "response_mime_type": "application/json",
+            "max_output_tokens": 8192,
+        },
+    )
+    response = model.generate_content(prompt)
+    return response.text
+
+
+def _normalize_lgs_soru_dict(ham: dict, sira_no: int = 1, varsayilan_kazanim: str = "") -> dict:
+    """Standart JSON anahtarlarını (soru_koku, hikaye_veya_oncul, siklar, dogru_cevap, cozum_aciklamasi, ilgili_kazanim)
+    ve arayüz uyumluluk anahtarlarını (soru, secenekler, dogru_index, cozum, kazanim, ipucu) garanti altına alır."""
+    temiz = clean_math_text(ham if isinstance(ham, dict) else {})
+
+    hikaye = str(temiz.get("hikaye_veya_oncul") or "").strip()
+    soru_koku = str(temiz.get("soru_koku") or "").strip()
+    eski_soru = str(temiz.get("soru") or "").strip()
+
+    if not soru_koku and eski_soru:
+        soru_koku = eski_soru
+
+    if hikaye and soru_koku and hikaye not in soru_koku:
+        birlesik_soru = f"{hikaye}\n\n{soru_koku}"
     else:
-        prompt = (
-            f"8. Sınıf MEB LGS '{ders}' dersi için sınavda en çok çıkan 10 spesifik alt konu ve kazanım başlığı öner. "
-            "SADECE geçerli bir JSON string dizisi döndür, başka hiçbir metin yazma."
-        )
-        raw = ask_gemini(prompt)
-        try:
-            match = re.search(r"\[.*\]", raw, re.DOTALL)
-            if match:
-                parsed = clean_math_text(json.loads(match.group(0)))
-                if isinstance(parsed, list) and len(parsed) >= 4:
-                    return [str(x).strip() for x in parsed if str(x).strip()]
-        except Exception:
-            pass
-        return varsayilan
+        birlesik_soru = soru_koku or hikaye or eski_soru
+
+    siklar_ham = temiz.get("siklar")
+    siklar_obj = {"A": "", "B": "", "C": "", "D": ""}
+    harfler = ["A", "B", "C", "D"]
+
+    if isinstance(siklar_ham, dict):
+        for h in harfler:
+            val = str(siklar_ham.get(h) or siklar_ham.get(h.lower()) or "").strip()
+            val = re.sub(r"^[A-Da-d][\)\.\-\:\s]+", "", val).strip()
+            siklar_obj[h] = val
+    elif isinstance(temiz.get("secenekler"), list):
+        for idx, h in enumerate(harfler):
+            if idx < len(temiz["secenekler"]):
+                val = str(temiz["secenekler"][idx]).strip()
+                val = re.sub(r"^[A-Da-d][\)\.\-\:\s]+", "", val).strip()
+                siklar_obj[h] = val
+
+    secenekler_list = [f"{h}) {siklar_obj[h]}" for h in harfler]
+
+    dogru_cevap_raw = str(temiz.get("dogru_cevap") or "").strip().upper()
+    if dogru_cevap_raw and dogru_cevap_raw[0] in harfler:
+        dogru_harf = dogru_cevap_raw[0]
+        dogru_idx = harfler.index(dogru_harf)
+    else:
+        dogru_idx = int(temiz.get("dogru_index", 0) or 0)
+        dogru_idx = max(0, min(3, dogru_idx))
+        dogru_harf = harfler[dogru_idx]
+
+    cozum_aciklamasi = str(temiz.get("cozum_aciklamasi") or temiz.get("cozum") or "").strip()
+    ilgili_kazanim = str(temiz.get("ilgili_kazanim") or temiz.get("kazanim") or varsayilan_kazanim).strip()
+    ipucu = str(temiz.get("ipucu") or f"Bu soruda '{ilgili_kazanim}' kazanımındaki temel kurala dikkat et.").strip()
+
+    return {
+        "soru_no": f"Soru {sira_no}",
+        "soru_koku": soru_koku,
+        "hikaye_veya_oncul": hikaye,
+        "siklar": siklar_obj,
+        "dogru_cevap": dogru_harf,
+        "cozum_aciklamasi": cozum_aciklamasi,
+        "ilgili_kazanim": ilgili_kazanim,
+        # Mevcut optik test ekranı ile %100 uyumluluk alanları:
+        "soru": birlesik_soru,
+        "secenekler": secenekler_list,
+        "dogru_index": dogru_idx,
+        "cozum": cozum_aciklamasi,
+        "kazanim": ilgili_kazanim,
+        "ipucu": ipucu,
+    }
 
 
-def _fetch_test_batch(ders, konu, zorluk, adet, baslangic_no=1):
+def lgs_soru_uret(ders_kodu: str, unite_no: int, zorluk: str) -> dict:
+    """Seçilen ders_kodu (MAT_8, FEN_8 vb.) ve unite_no için MEB müfredat sınırlarına %100 uygun
+    1 adet yeni nesil LGS sorusu üretir ve standart JSON objesi olarak döndürür."""
+    ders_kodu, unite_no, ders, unite = _coz_ders_ve_unite(ders_kodu, unite_no)
     prompt = (
-        f"8. Sınıf MEB LGS müfredatına %100 uygun olarak '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde "
-        f"TAM {adet} ADET çoktan seçmeli yeni nesil LGS sorusu hazırla (Soru {baslangic_no}'den Soru {baslangic_no + adet - 1}'e kadar). "
-        "ÖNEMLİ KURALLAR:\n"
-        "1. Kesinlikle $ işareti veya LaTeX kodu ($m^2$, \\frac vb.) KULLANMA! Birimleri ve üslü/köklü sayıları m², cm², cm³, 2⁵, √3 gibi doğrudan okunaklı Unicode karakterlerle yaz.\n"
-        "2. Her sorunun 4 şıkkı (A, B, C, D), 1 kısa ipucu ve adım adım net çözümü olsun.\n"
-        "3. Yanıtı SADECE geçerli bir JSON dizisi olarak ver, başka hiçbir açıklama yazma. Format:\n"
+        f"{zorluk} seviyesinde 1 adet yeni nesil LGS sorusu üret. "
+        "Yanıtı SADECE aşağıdaki anahtarları eksiksiz içeren geçerli bir JSON objesi olarak döndür:\n"
+        "{\n"
+        '  "hikaye_veya_oncul": "Yeni nesil sorunun günlük hayat kurgusu, tablosu, metni veya öncülleri",\n'
+        '  "soru_koku": "Buna göre ... aşağıdakilerden hangisidir? şeklindeki net soru kökü",\n'
+        '  "siklar": {\n'
+        '    "A": "A şıkkı içeriği",\n'
+        '    "B": "B şıkkı içeriği",\n'
+        '    "C": "C şıkkı içeriği",\n'
+        '    "D": "D şıkkı içeriği"\n'
+        "  },\n"
+        '  "dogru_cevap": "A",\n'
+        '  "cozum_aciklamasi": "Adım adım kazanım odaklı net çözüm açıklaması",\n'
+        '  "ilgili_kazanim": "Sorunun ölçtüğü spesifik MEB aktif kazanımı"\n'
+        "}"
+    )
+    try:
+        raw_text = _mufredat_destekli_gemini_json(prompt, ders_kodu, unite_no)
+        veri = json.loads(raw_text)
+        if isinstance(veri, list) and veri:
+            veri = veri[0]
+        return _normalize_lgs_soru_dict(veri, sira_no=1, varsayilan_kazanim=f"{unite['unite_adi']} ({zorluk})")
+    except Exception as e:
+        return _normalize_lgs_soru_dict({
+            "hikaye_veya_oncul": f"{ders['ders_adi']} - {unite['unite_adi']} ünitesi kapsamında soru üretilirken bağlantı hatası oluştu: {e}",
+            "soru_koku": "Lütfen tekrar deneyiniz.",
+            "siklar": {"A": "Seçenek A", "B": "Seçenek B", "C": "Seçenek C", "D": "Seçenek D"},
+            "dogru_cevap": "A",
+            "cozum_aciklamasi": "Tekrar denediğinizde yeni soru üretilecektir.",
+            "ilgili_kazanim": unite["unite_adi"],
+        })
+
+
+def get_ai_lgs_topics(ders, force_ai=False):
+    """Seçilen 8. sınıf LGS dersi için lgs_mufredat_sinirlar.json içindeki ünite listesini döndürür."""
+    ders_kodu, _, ders_obj, _ = _coz_ders_ve_unite(ders, 1)
+    mufredat_uniteleri = [u["unite_adi"] for u in ders_obj.get("uniteler", [])]
+    if not force_ai:
+        return mufredat_uniteleri
+    # force_ai=True ise ünitelerin aktif kazanımlarını da alt başlık olarak ekle
+    detayli = []
+    for u in ders_obj.get("uniteler", []):
+        detayli.append(u["unite_adi"])
+        for kaz in u.get("aktif_kazanimlar", []):
+            detayli.append(f"{u['unite_adi']} — {kaz}")
+    return detayli if detayli else mufredat_uniteleri
+
+
+def _fetch_test_batch(ders, konu, zorluk, adet, baslangic_no=1, ders_kodu=None, unite_no=None):
+    cozulen_kod, cozulen_unite_no, ders_obj, unite_obj = _coz_ders_ve_unite(
+        ders_kodu or ders,
+        unite_no if unite_no is not None else konu,
+    )
+    prompt = (
+        f"'{ders_obj['ders_adi']}' dersi, '{unite_obj['unite_adi']}' ünitesi ({konu}) ve '{zorluk}' zorluk seviyesinde "
+        f"TAM {adet} ADET çoktan seçmeli yeni nesil LGS sorusu hazırla (Soru {baslangic_no}'den Soru {baslangic_no + adet - 1}'e kadar).\n"
+        "Her bir soru objesi ZORUNLU olarak şu JSON anahtarlarına sahip olmalıdır:\n"
+        "- hikaye_veya_oncul\n"
+        "- soru_koku\n"
+        "- siklar (A, B, C, D anahtarlarına sahip JSON objesi olarak)\n"
+        "- dogru_cevap ('A', 'B', 'C' veya 'D')\n"
+        "- cozum_aciklamasi\n"
+        "- ilgili_kazanim\n\n"
+        "Yanıtı SADECE aşağıdaki şemaya uygun geçerli bir JSON dizisi (array) olarak döndür:\n"
         "[\n"
         "  {\n"
-        f'    "soru_no": "Soru {baslangic_no}",\n'
-        f'    "kazanim": "{konu} ({zorluk})",\n'
-        '    "soru": "Soru hikayesi ve soru kökü...",\n'
-        '    "secenekler": ["A) ...", "B) ...", "C) ...", "D) ..."],\n'
-        '    "dogru_index": 0,\n'
-        '    "ipucu": "Soruyu çözdüren anahtar ipucu...",\n'
-        '    "cozum": "1. Adım: ... 2. Adım: ... Doğru Cevap: A"\n'
+        '    "hikaye_veya_oncul": "Yeni nesil sorunun hikayesi, tablosu, metni veya öncülleri...",\n'
+        '    "soru_koku": "Buna göre ... aşağıdakilerden hangisidir?",\n'
+        '    "siklar": {"A": "...", "B": "...", "C": "...", "D": "..."},\n'
+        '    "dogru_cevap": "A",\n'
+        '    "cozum_aciklamasi": "1. Adım: ... 2. Adım: ...",\n'
+        '    "ilgili_kazanim": "İlgili MEB aktif kazanımı"\n'
         "  }\n"
         "]"
     )
-    raw = ask_gemini(prompt)
     try:
-        match = re.search(r"\[.*\]", raw, re.DOTALL)
-        if match:
-            veriler = clean_math_text(json.loads(match.group(0)))
-            if isinstance(veriler, list):
-                return veriler
+        raw = _mufredat_destekli_gemini_json(prompt, cozulen_kod, cozulen_unite_no)
+        parsed = json.loads(raw)
+        if isinstance(parsed, dict):
+            for k in ("sorular", "questions", "items", "data"):
+                if isinstance(parsed.get(k), list):
+                    parsed = parsed[k]
+                    break
+            else:
+                parsed = [parsed]
+        if isinstance(parsed, list):
+            return [
+                _normalize_lgs_soru_dict(item, sira_no=baslangic_no + i, varsayilan_kazanim=f"{unite_obj['unite_adi']} ({zorluk})")
+                for i, item in enumerate(parsed)
+                if isinstance(item, dict)
+            ]
     except Exception:
         pass
     return []
 
 
-def generate_custom_lgs_test(ders, konu, zorluk, soru_sayisi=5):
-    """Seçilen ders, konu, zorluk ve soru sayısına (5, 10, 20) göre interaktif LGS testi üretir."""
+def generate_custom_lgs_test(ders, konu, zorluk, soru_sayisi=5, ders_kodu=None, unite_no=None):
+    """Seçilen ders, ünite/konu, zorluk ve soru sayısına (5, 10, 20) göre MEB müfredat denetimli interaktif LGS testi üretir."""
     soru_sayisi = int(soru_sayisi)
     if soru_sayisi <= 10:
-        sonuc = _fetch_test_batch(ders, konu, zorluk, soru_sayisi, baslangic_no=1)
+        sonuc = _fetch_test_batch(ders, konu, zorluk, soru_sayisi, baslangic_no=1, ders_kodu=ders_kodu, unite_no=unite_no)
     else:
-        ilk_yari = _fetch_test_batch(ders, konu, zorluk, 10, baslangic_no=1)
-        ikinci_yari = _fetch_test_batch(ders, konu, zorluk, soru_sayisi - 10, baslangic_no=11)
+        ilk_yari = _fetch_test_batch(ders, konu, zorluk, 10, baslangic_no=1, ders_kodu=ders_kodu, unite_no=unite_no)
+        ikinci_yari = _fetch_test_batch(ders, konu, zorluk, soru_sayisi - 10, baslangic_no=11, ders_kodu=ders_kodu, unite_no=unite_no)
         sonuc = ilk_yari + ikinci_yari
 
-    # Numaraları ve alanları standartlaştır
     temiz_liste = []
     for idx, item in enumerate(sonuc, 1):
         if isinstance(item, dict):
-            item["soru_no"] = f"Soru {idx}"
-            if not item.get("kazanim"):
-                item["kazanim"] = f"{konu} • {zorluk}"
-            temiz_liste.append(item)
+            norm_item = _normalize_lgs_soru_dict(item, sira_no=idx, varsayilan_kazanim=f"{konu} • {zorluk}")
+            temiz_liste.append(norm_item)
     return temiz_liste
 
 
-def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
-    """6 farklı çalışma türü (Test Oluştur, Flash Kart, Boşluk Doldur, Doğru/Yanlış, Eşleştir, Karıştırma) için garantili ve normalize edilmiş içerik üretir."""
+def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu, ders_kodu=None, unite_no=None):
+    """6 farklı çalışma türü (Test Oluştur, Flash Kart, Boşluk Doldur, Doğru/Yanlış, Eşleştir, Karıştırma) için
+    MEB müfredat sınırlarına (%100 aktif kazanım + yasaklı alan filtresi) uygun içerik üretir."""
     adet = int(adet)
+    cozulen_kod, cozulen_unite_no, ders_obj, unite_obj = _coz_ders_ve_unite(
+        ders_kodu or ders,
+        unite_no if unite_no is not None else konu,
+    )
     if calisma_turu == "Test Oluştur":
-        return generate_custom_lgs_test(ders, konu, zorluk, adet)
+        return generate_custom_lgs_test(ders, konu, zorluk, adet, ders_kodu=cozulen_kod, unite_no=cozulen_unite_no)
 
     elif calisma_turu == "Flash Kart":
         prompt = (
-            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET arkalı-önlü bilgi kartı (Flash Kart) hazırla. "
+            f"8. Sınıf MEB LGS '{ders_obj['ders_adi']}' dersi, '{unite_obj['unite_adi']}' ünitesi ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET arkalı-önlü bilgi kartı (Flash Kart) hazırla. "
             "Kesinlikle $ işareti veya LaTeX kodu kullanma (m², cm², 2⁵, √3 gibi düz Unicode kullan). "
             "SADECE geçerli bir JSON dizisi döndür:\n"
             '[\n'
@@ -479,7 +648,10 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
             '  }\n'
             ']'
         )
-        raw = ask_gemini(prompt)
+        try:
+            raw = _mufredat_destekli_gemini_json(prompt, cozulen_kod, cozulen_unite_no)
+        except Exception:
+            raw = ask_gemini(prompt)
         veriler = []
         try:
             m = re.search(r"\[.*\]", raw, re.DOTALL)
@@ -504,7 +676,7 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
 
     elif calisma_turu == "Boşluk Doldur":
         prompt = (
-            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET boşluk doldurma sorusu hazırla. "
+            f"8. Sınıf MEB LGS '{ders_obj['ders_adi']}' dersi, '{unite_obj['unite_adi']}' ünitesi ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET boşluk doldurma sorusu hazırla. "
             "Şık (A, B, C, D) KULLANMA! Her cümlede tek bir kritik kavramın yerine '_______' koy ve doğru kelimeyi 'cevap' alanına yaz. "
             "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
             '[\n'
@@ -517,7 +689,10 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
             '  }\n'
             ']'
         )
-        raw = ask_gemini(prompt)
+        try:
+            raw = _mufredat_destekli_gemini_json(prompt, cozulen_kod, cozulen_unite_no)
+        except Exception:
+            raw = ask_gemini(prompt)
         veriler = []
         try:
             m = re.search(r"\[.*\]", raw, re.DOTALL)
@@ -551,7 +726,7 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
 
     elif calisma_turu == "Doğru/Yanlış":
         prompt = (
-            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET Doğru/Yanlış etkinliği ifadesi hazırla. "
+            f"8. Sınıf MEB LGS '{ders_obj['ders_adi']}' dersi, '{unite_obj['unite_adi']}' ünitesi ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 15)} ADET Doğru/Yanlış etkinliği ifadesi hazırla. "
             "İfadelerin yaklaşık yarısı Doğru (true), yarısı Yanlış (false) olsun. "
             "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
             '[\n'
@@ -564,7 +739,10 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
             '  }\n'
             ']'
         )
-        raw = ask_gemini(prompt)
+        try:
+            raw = _mufredat_destekli_gemini_json(prompt, cozulen_kod, cozulen_unite_no)
+        except Exception:
+            raw = ask_gemini(prompt)
         veriler = []
         try:
             m = re.search(r"\[.*\]", raw, re.DOTALL)
@@ -597,7 +775,7 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
     elif calisma_turu == "Eşleştir":
         cift_sayisi = min(adet, 10)
         prompt = (
-            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {cift_sayisi} ADET kavram-açıklama eşleştirme çifti hazırla. "
+            f"8. Sınıf MEB LGS '{ders_obj['ders_adi']}' dersi, '{unite_obj['unite_adi']}' ünitesi ve '{zorluk}' zorluk seviyesinde TAM {cift_sayisi} ADET kavram-açıklama eşleştirme çifti hazırla. "
             "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
             '[\n'
             '  {\n'
@@ -607,7 +785,10 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
             '  }\n'
             ']'
         )
-        raw = ask_gemini(prompt)
+        try:
+            raw = _mufredat_destekli_gemini_json(prompt, cozulen_kod, cozulen_unite_no)
+        except Exception:
+            raw = ask_gemini(prompt)
         veriler = []
         try:
             m = re.search(r"\[.*\]", raw, re.DOTALL)
@@ -631,7 +812,7 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
 
     elif calisma_turu == "Karıştırma":
         prompt = (
-            f"8. Sınıf MEB LGS '{ders}' dersi, '{konu}' konusu ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 10)} ADET interaktif 'Kelime / Adım Karıştırma (Sıraya Dizme)' etkinliği hazırla. "
+            f"8. Sınıf MEB LGS '{ders_obj['ders_adi']}' dersi, '{unite_obj['unite_adi']}' ünitesi ve '{zorluk}' zorluk seviyesinde TAM {min(adet, 10)} ADET interaktif 'Kelime / Adım Karıştırma (Sıraya Dizme)' etkinliği hazırla. "
             "Kesinlikle A/B/C/D şıkkı KULLANMA! Her soruda öğrenciye bir yönerge/ipucu ('yonerge') ver ve doğru cümleyi, kuralı veya işlem sırasını oluşturan 4 ila 7 parçayı DOĞRU SIRASIYLA 'parcalar' dizisi olarak ver (sistem bunları ekranda karıştırıp öğrenciye tıklatarak sıraya dizdirecek). "
             "Kesinlikle $ işareti veya LaTeX kodu kullanma. SADECE geçerli bir JSON dizisi döndür:\n"
             '[\n'
@@ -644,7 +825,10 @@ def generate_sinotest_activity(ders, konu, zorluk, adet, calisma_turu):
             '  }\n'
             ']'
         )
-        raw = ask_gemini(prompt)
+        try:
+            raw = _mufredat_destekli_gemini_json(prompt, cozulen_kod, cozulen_unite_no)
+        except Exception:
+            raw = ask_gemini(prompt)
         veriler = []
         try:
             m = re.search(r"\[.*\]", raw, re.DOTALL)

@@ -26,6 +26,10 @@ from ai_engine import (
     generate_custom_lgs_test,
     generate_sinotest_activity,
     MEB_8_SINIF_KONULARI,
+    mufredat_yukle,
+    lgs_soru_uret,
+    DERS_KODU_HARITASI,
+    UI_DERS_ADI_HARITASI,
 )
 from gtts import gTTS
 import pypdf
@@ -2740,6 +2744,16 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     st.session_state.cipko_konu_mod = "yaz"
                     st.rerun()
 
+            # MEB 8. Sınıf Müfredat JSON Verisini Önbellekten (@st.cache_data) Yükle
+            mufredat_verisi = mufredat_yukle()
+            mufredat_dersler = mufredat_verisi.get("dersler", {})
+            ders_kod_listesi = list(mufredat_dersler.keys())  # ["MAT_8", "FEN_8", "TUR_8", "INK_8", "DIN_8", "ING_8"]
+
+            if "cipko_ders_kodu" not in st.session_state:
+                st.session_state.cipko_ders_kodu = DERS_KODU_HARITASI.get(st.session_state.cipko_ders or "Matematik", "MAT_8")
+            if "cipko_unite_no" not in st.session_state:
+                st.session_state.cipko_unite_no = 1
+
             st.markdown("<div style='font-size:17px; font-weight:800; color:#0f172a; margin:14px 0 8px 0;'>Hangi ders?</div>", unsafe_allow_html=True)
 
             # 6 LGS Dersi (2'li Yan Yana Kapsül Butonlar — Seçilen Mavi Olur)
@@ -2753,13 +2767,74 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     with d_col:
                         if st.button(etiket, key=f"cipko_ders_{d_idx}", use_container_width=True):
                             st.session_state.cipko_ders = ders_adi
-                            if ders_adi not in st.session_state.ai_konu_havuzu:
-                                with st.spinner(f"🤖 Yapay zeka {ders_adi} konularını getiriyor..."):
-                                    st.session_state.ai_konu_havuzu[ders_adi] = get_ai_lgs_topics(ders_adi)
-                            konu_list = st.session_state.ai_konu_havuzu[ders_adi]
-                            st.session_state.cipko_konu = konu_list[0] if konu_list else "🌟 Tüm Konular (Genel Karma)"
+                            yeni_kod = DERS_KODU_HARITASI.get(ders_adi, "MAT_8")
+                            st.session_state.cipko_ders_kodu = yeni_kod
+                            st.session_state.cipko_unite_no = 1
+                            ilk_uniteler = mufredat_dersler.get(yeni_kod, {}).get("uniteler", [])
+                            st.session_state.ai_konu_havuzu[ders_adi] = [u["unite_adi"] for u in ilk_uniteler]
+                            st.session_state.cipko_konu = ilk_uniteler[0]["unite_adi"] if ilk_uniteler else "🌟 Tüm Konular (Genel Karma)"
                             st.session_state.hedef_scroll = "cipko-konu-alani"
                             st.rerun()
+
+            # Dinamik Ders & Ünite Selectbox Bağlantısı (Doğrudan lgs_mufredat_sinirlar.json'dan beslenir)
+            aktif_kod = DERS_KODU_HARITASI.get(st.session_state.cipko_ders, st.session_state.cipko_ders_kodu)
+            if aktif_kod not in ders_kod_listesi:
+                aktif_kod = ders_kod_listesi[0]
+
+            sb_col1, sb_col2 = st.columns(2, gap="small")
+            with sb_col1:
+                secilen_kod_sb = st.selectbox(
+                    "📚 Müfredat Dersi (MEB 8. Sınıf):",
+                    options=ders_kod_listesi,
+                    index=ders_kod_listesi.index(aktif_kod),
+                    format_func=lambda k: f"{mufredat_dersler[k]['ders_adi']} ({k})",
+                    key="mufredat_ders_sb",
+                )
+                if secilen_kod_sb != aktif_kod or not st.session_state.cipko_ders:
+                    st.session_state.cipko_ders_kodu = secilen_kod_sb
+                    eslesen_ui_ders = UI_DERS_ADI_HARITASI.get(secilen_kod_sb, mufredat_dersler[secilen_kod_sb]["ders_adi"])
+                    if st.session_state.cipko_ders != eslesen_ui_ders:
+                        st.session_state.cipko_ders = eslesen_ui_ders
+                        st.session_state.cipko_unite_no = 1
+                        yeni_uniteler = mufredat_dersler[secilen_kod_sb].get("uniteler", [])
+                        st.session_state.ai_konu_havuzu[eslesen_ui_ders] = [u["unite_adi"] for u in yeni_uniteler]
+                        if yeni_uniteler:
+                            st.session_state.cipko_konu = yeni_uniteler[0]["unite_adi"]
+                        st.rerun()
+
+            aktif_ders_obj = mufredat_dersler[st.session_state.cipko_ders_kodu]
+            aktif_uniteler = aktif_ders_obj.get("uniteler", [])
+            unite_haritasi = {int(u["unite_no"]): u for u in aktif_uniteler}
+            unite_no_listesi = list(unite_haritasi.keys())
+            if st.session_state.cipko_unite_no not in unite_no_listesi:
+                st.session_state.cipko_unite_no = unite_no_listesi[0] if unite_no_listesi else 1
+
+            with sb_col2:
+                secilen_unite_no_sb = st.selectbox(
+                    "📖 Müfredat Ünitesi (MEB Kazanım Filtreli):",
+                    options=unite_no_listesi,
+                    index=unite_no_listesi.index(st.session_state.cipko_unite_no),
+                    format_func=lambda u_no: f"{u_no}. Ünite: {unite_haritasi[u_no]['unite_adi']}",
+                    key="mufredat_unite_sb",
+                )
+                if secilen_unite_no_sb != st.session_state.cipko_unite_no:
+                    st.session_state.cipko_unite_no = secilen_unite_no_sb
+                    st.session_state.cipko_konu = unite_haritasi[secilen_unite_no_sb]["unite_adi"]
+                    st.rerun()
+
+            secili_unite_obj = unite_haritasi.get(st.session_state.cipko_unite_no, aktif_uniteler[0])
+            if not st.session_state.cipko_konu:
+                st.session_state.cipko_konu = secili_unite_obj["unite_adi"]
+
+            with st.expander(f"🛡️ Aktif MEB Müfredat Sınırları: {aktif_ders_obj['ders_adi']} — {secili_unite_obj['unite_no']}. Ünite ({secili_unite_obj['unite_adi']})", expanded=False):
+                st.markdown("**✅ Aktif Kazanımlar (Yalnızca Bu Kapsamda Soru Üretilir):**")
+                for kaz in secili_unite_obj.get("aktif_kazanimlar", []):
+                    st.markdown(f"- 🟢 {kaz}")
+                st.markdown("**🚫 Kapsam Dışı / Yasaklı Alanlar (Kesinlikle Sorulamaz):**")
+                for gk in aktif_ders_obj.get("genel_kisitlamalar", []):
+                    st.markdown(f"- 🔴 *(Genel Kısıtlama)* {gk}")
+                for yk in secili_unite_obj.get("kapsam_disi_yasakli_alanlar", []):
+                    st.markdown(f"- 🔴 {yk}")
 
             # ÇALIŞMA TÜRÜ (Görseldeki 6'lı Grid + Çoklu Seç)
             tur_baslik_col, coklu_col = st.columns([2.2, 1.2], gap="small")
@@ -2823,6 +2898,10 @@ elif menu == "🤖 Soru Çöz & İkiz":
                         isaret = "✓ " if st.session_state.cipko_konu == k_ad else "• "
                         if st.button(f"{isaret}{k_ad}", key=f"cipko_konu_btn_{k_idx}", use_container_width=True):
                             st.session_state.cipko_konu = k_ad
+                            for u_item in aktif_uniteler:
+                                if u_item["unite_adi"] in k_ad or k_ad in u_item["unite_adi"]:
+                                    st.session_state.cipko_unite_no = int(u_item["unite_no"])
+                                    break
                             st.session_state.hedef_scroll = "cipko-ayar-alani"
                             st.rerun()
                 else:
@@ -2866,20 +2945,22 @@ elif menu == "🤖 Soru Çöz & İkiz":
 
                 st.markdown(f"""
                 <div style="background:#eff6ff; border:2px solid #93c5fd; border-radius:14px; padding:12px 14px; margin:12px 0; font-size:13.5px; color:#1e3a8a; font-weight:700;">
-                    📌 <b>Seçimin:</b> {secili_ders} &nbsp;|&nbsp; 🎯 {secili_konu_son} &nbsp;|&nbsp; 🧩 <b>{turler_ozet_str}</b> &nbsp;|&nbsp; 🔥 {secili_zorluk_son} &nbsp;|&nbsp; 🔢 {secili_adet_son} Adet
+                    📌 <b>Seçimin:</b> {secili_ders} ({st.session_state.cipko_ders_kodu}) &nbsp;|&nbsp; 📖 <b>Ünite {st.session_state.cipko_unite_no}:</b> {secili_konu_son} &nbsp;|&nbsp; 🧩 <b>{turler_ozet_str}</b> &nbsp;|&nbsp; 🔥 {secili_zorluk_son} &nbsp;|&nbsp; 🔢 {secili_adet_son} Adet
                 </div>
                 """, unsafe_allow_html=True)
 
                 if st.button(f"🚀 SinoTest'i Başlat ({turler_ozet_str})", key="cipko_start_test_btn", use_container_width=True):
                     uretilen_paketler = []
                     for tur_adi in secili_turler_son:
-                        with st.spinner(f"🤖 SinoTest '{secili_ders} - {secili_konu_son}' için [{tur_adi}] ({secili_adet_son} adet) hazırlıyor..."):
+                        with st.spinner(f"🤖 SinoTest '{secili_ders} ({st.session_state.cipko_ders_kodu}) - Ünite {st.session_state.cipko_unite_no}: {secili_konu_son}' için [{tur_adi}] ({secili_adet_son} adet) hazırlıyor..."):
                             veriler = generate_sinotest_activity(
                                 ders=secili_ders,
                                 konu=secili_konu_son,
                                 zorluk=secili_zorluk_son,
                                 adet=secili_adet_son,
-                                calisma_turu=tur_adi
+                                calisma_turu=tur_adi,
+                                ders_kodu=st.session_state.cipko_ders_kodu,
+                                unite_no=st.session_state.cipko_unite_no,
                             )
                             uretilen_paketler.append({
                                 "ders": secili_ders,
@@ -2891,6 +2972,23 @@ elif menu == "🤖 Soru Çöz & İkiz":
                     st.session_state.cipko_aktif_paketler = uretilen_paketler
                     st.session_state.hedef_scroll = "cipko-test-arena-sonuc"
                     st.rerun()
+
+                if st.button("🎯 Tekli Yeni Nesil LGS Sorusu Üret (MEB Katı Sınır Modu)", key="cipko_single_strict_btn", use_container_width=True):
+                    with st.spinner(f"🛡️ MEB Katı Sınır Modu ile {secili_ders} ({st.session_state.cipko_ders_kodu}) - {st.session_state.cipko_unite_no}. Ünite sorusu üretiliyor..."):
+                        tekli_soru = lgs_soru_uret(
+                            ders_kodu=st.session_state.cipko_ders_kodu,
+                            unite_no=int(st.session_state.cipko_unite_no),
+                            zorluk=secili_zorluk_son,
+                        )
+                        st.session_state.cipko_aktif_paketler = [{
+                            "ders": secili_ders,
+                            "tur": "Test Oluştur",
+                            "baslik": f"{secili_ders} ({st.session_state.cipko_ders_kodu}) • {st.session_state.cipko_unite_no}. Ünite: {secili_unite_obj['unite_adi']} ({secili_zorluk_son})",
+                            "veriler": [tekli_soru],
+                            "odul_alindi": False,
+                        }]
+                        st.session_state.hedef_scroll = "cipko-test-arena-sonuc"
+                        st.rerun()
 
         # =========================================================================
         # MOD 2: 📚 KAYNAĞIMDAN (Kütüphanedeki PDF'lerden Seçip Test Üretme)

@@ -1,0 +1,547 @@
+{
+  "mufredat_versiyonu": "MEB_8_Sinif_LGS_Tam_Kapsam",
+  "kati_sinir_modu": true,
+  "validasyon_kurallari": {
+    "uretim_oncesi_kontrol": "Yalnızca seçilen ünitenin 'aktif_kazanimlar' listesini baz al.",
+    "uretim_sonrasi_filtre": "Üretilen soruyu veya anlatımı 'kapsam_disi_yasakli_alanlar' ve 'genel_kisitlamalar' ile karşılaştır. Yasaklı listedeki tek bir kavram, formül veya soru tipi bile geçiyorsa çıktıyı derhal imha et ve kurallara uygun yeniden üret."
+  },
+  "dersler": {
+    "MAT_8": {
+      "ders_adi": "Matematik",
+      "genel_kisitlamalar": [
+        "Lise (9. sınıf ve üzeri) müfredatına ait formül, teorem ve kısayollar kesinlikle kullanılamaz.",
+        "Hesap makinesi gerektirecek aşırı büyük sayılarla işlem kurgulanamaz.",
+        "Müfredatta yer almayan 'olimpiyat' tarzı kurgular sorulamaz."
+      ],
+      "uniteler": [
+        {
+          "unite_no": 1,
+          "unite_adi": "Çarpanlar ve Katlar / Üslü İfadeler",
+          "aktif_kazanimlar": [
+            "Pozitif tam sayıların çarpanlarını bulur, üslü ifadelerin çarpımı şeklinde yazar.",
+            "İki doğal sayının EBOB ve EKOK'unu hesaplar, ilgili problemleri çözer.",
+            "Verilen iki doğal sayının aralarında asal olup olmadığını belirler.",
+            "Tam sayıların tam sayı kuvvetlerini hesaplar ve üslü ifadelerle temel işlemleri yapar.",
+            "Çok büyük ve çok küçük sayıları bilimsel gösterimle ifade eder."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "EBOB ve EKOK hesaplamalarında 3 veya daha fazla doğal sayı kullanılamaz (Sadece 2 sayı ile sınırlıdır).",
+            "Harfli ifadelerin (cebirsel ifadelerin) EBOB ve EKOK'u sorulamaz.",
+            "Faktöriyel (!) kavramına kesinlikle girilmez.",
+            "Üslü denklemlerde tabanların birbirine dönüştürülemediği logaritmik durumlar veya üstte ikinci dereceden denklem oluşturan yapılar kullanılamaz."
+          ]
+        },
+        {
+          "unite_no": 2,
+          "unite_adi": "Kareköklü İfadeler / Veri Analizi",
+          "aktif_kazanimlar": [
+            "Tam kare pozitif tam sayılarla karekökleri arasındaki ilişkiyi belirler.",
+            "Tam kare olmayan kareköklü sayının hangi iki doğal sayı arasında olduğunu belirler.",
+            "Kareköklü ifadelerde dört işlem yapar ve ondalık ifadelerin kareköklerini bulur.",
+            "En fazla üç veri grubuna ait çizgi, sütun ve daire grafiklerini yorumlar ve birbirine dönüştürür."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Küp kök, dördüncü dereceden kök gibi karekök dışındaki hiçbir köklü ifadeye girilmez.",
+            "Paydada (a + kök b) şeklinde iki terimli ifade bulunan kesirlerin eşlenik ile çarpılmasına girilmez (Paydada sadece tek terimli karekök olabilir).",
+            "İç içe kök formüllerine girilmez.",
+            "Veri analizinde standart sapma, varyans, medyan (ortanca) ve mod (tepe değer) hesaplamalarına girilmez."
+          ]
+        },
+        {
+          "unite_no": 3,
+          "unite_adi": "Basit Olayların Olma Olasılığı / Cebirsel İfadeler ve Özdeşlikler",
+          "aktif_kazanimlar": [
+            "Bir olaya ait olası durumları belirler; 'daha fazla', 'eşit', 'daha az' olasılıklı olayları ayırt eder.",
+            "Basit bir olayın olma olasılığını hesaplar.",
+            "Cebirsel ifadeleri çarpanlarına ayırır (Ortak çarpan parantezi ve özdeşlikler).",
+            "Tam kare özdeşliği ve iki kare farkı özdeşliğini modeller ve kullanır."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Olasılıkta 've / veya' bağlaçlı bileşik olayların olasılığına (bağımlı/bağımsız olayların çarpımına) kesinlikle girilmez.",
+            "Permütasyon ve Kombinasyon formüllerine girilmez.",
+            "Cebirsel ifadelerde üç terimlilerin çarpanlara ayrılmasında tam kare olmayan (x^2 + 5x + 6 gibi) ifadelere kesinlikle girilmez.",
+            "İki küp toplamı/farkı veya tam küp özdeşliklerine girilmez.",
+            "Rasyonel cebirsel ifadelerin sadeleştirilmesinde polinom bölmesi yapılamaz."
+          ]
+        },
+        {
+          "unite_no": 4,
+          "unite_adi": "Doğrusal Denklemler / Eşitsizlikler",
+          "aktif_kazanimlar": [
+            "Birinci dereceden bir bilinmeyenli denklemleri çözer (Rasyonel katsayılılar dahil).",
+            "Koordinat sistemini özellikleriyle tanır ve sıralı ikilileri gösterir.",
+            "Doğrusal ilişki içeren durumları tablo, grafik ve denklemle ifade eder.",
+            "Doğrunun eğimini modellerle açıklar ve hesaplar.",
+            "Birinci dereceden bir bilinmeyenli eşitsizlikleri çözer ve sayı doğrusunda gösterir."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Yok etme veya yerine koyma metodu gerektiren iki bilinmeyenli denklem sistemlerinin çözümüne girilmez.",
+            "Analitik geometride 'iki noktası bilinen doğrunun denklemi formülü' veya 'iki doğru arasındaki açı/uzaklık' formüllerine girilmez.",
+            "Mutlak değerli denklemler ve mutlak değerli eşitsizliklere girilmez.",
+            "İkinci dereceden eşitsizliklere (işaret tablosu yapmaya) girilmez; eşitsizlik her iki tarafında da değişken barındıran karmaşık kesirli yapılarda olamaz."
+          ]
+        },
+        {
+          "unite_no": 5,
+          "unite_adi": "Üçgenler / Eşlik ve Benzerlik",
+          "aktif_kazanimlar": [
+            "Üçgende kenarortay, açıortay ve yüksekliği inşa eder.",
+            "Üçgenin iki kenar uzunluğunun toplamı veya farkı ile üçüncü kenarının uzunluğunu ilişkilendirir (Üçgen eşitsizliği).",
+            "Üçgenin kenar uzunlukları ile bu kenarların karşısındaki açıların ölçülerini ilişkilendirir.",
+            "Pisagor bağıntısını oluşturur ve ilgili problemleri çözer.",
+            "Eş ve benzer çokgenlerin kenar ve açı özelliklerini belirler, benzerlik oranını kullanır."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Açıortay uzunluk/oran teoremlerine (iç ve dış açıortay teoremi) ve kenarortay ağırlık merkezi (2k'ya k) oran hesaplamalarına girilmez.",
+            "Öklid bağıntılarına (h^2 = p.k vb.), Sinüs ve Kosinüs teoremlerine, trigonometrik oranlara (sin, cos, tan) kesinlikle girilmez.",
+            "Benzerlikte Kenar-Açı-Kenar (K.A.K), Açı-Açı (A.A) gibi teorem ispatlarına veya Kelebek/Thales teoremlerinin karmaşık lise düzeyindeki alan parçalama kurallarına girilmez."
+          ]
+        },
+        {
+          "unite_no": 6,
+          "unite_adi": "Dönüşüm Geometrisi / Geometrik Cisimler",
+          "aktif_kazanimlar": [
+            "Nokta, doğru parçası ve diğer şekillerin öteleme ve yansıma (simetri) sonucundaki görüntülerini çizer.",
+            "Dik prizmaları tanır, temel elemanlarını belirler ve açınımını çizer.",
+            "Dik dairesel silindirin temel elemanlarını, açınımını, yüzey alanını ve hacmini hesaplar.",
+            "Dik piramidi ve dik koniyi tanır, temel elemanlarını ve açınımlarını belirler."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Dönme (rotasyon) dönüşümüne ve koordinat düzleminde dereceyle döndürme işlemlerine kesinlikle girilmez (Sadece öteleme ve eksenlere göre yansıma vardır).",
+            "Dik piramit ve dik koninin yüzey alanı ve hacim hesaplamalarına kesinlikle girilmez (Alan ve hacim hesabı sadece dik dairesel silindirde yapılır).",
+            "Küre cisminin kendisine, alanına ve hacmine girilmez; kesik koni veya kesik piramide girilmez."
+          ]
+        }
+      ]
+    },
+    "FEN_8": {
+      "ders_adi": "Fen Bilimleri",
+      "genel_kisitlamalar": [
+        "Fizik, Kimya ve Biyoloji derslerinin lise düzeyindeki matematiksel formüllerine girilmez.",
+        "Yoruma, grafik okumaya ve deneysel değişken (bağımlı, bağımsız, kontrol edilen) çıkarımına dayalı kurgular dışına çıkılmaz."
+      ],
+      "uniteler": [
+        {
+          "unite_no": 1,
+          "unite_adi": "Mevsimler ve İklim",
+          "aktif_kazanimlar": [
+            "Mevsimlerin oluşumuna yönelik tahminlerde bulunur (Eksen eğikliği ve Dünya'nın Güneş etrafındaki dolanımı).",
+            "İklim ve hava olayları arasındaki farkı açıklar."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Dünya'nın Güneş'e olan uzaklığının mevsimleri oluşturduğu yanılgısı doğru kabul edilemez.",
+            "Koriolis kuvveti, yerel rüzgar çeşitlerinin (Fön, Meltem vb.) isimlerine ve matematiksel basınç hesaplamalarına girilmez."
+          ]
+        },
+        {
+          "unite_no": 2,
+          "unite_adi": "DNA ve Genetik Kod",
+          "aktif_kazanimlar": [
+            "Nükleotid, gen, DNA ve kromozom kavramlarını ilişkilendirir; DNA'nın kendini nasıl eşlediğini ifade eder.",
+            "Tek karakter çaprazlamaları ile ilgili problemler çözer; akraba evliliğinin genetik sonuçlarını tartışır.",
+            "Mutasyon, modifikasyon, adaptasyon, doğal seçilim, varyasyon ve biyoteknoloji kavramlarını açıklar."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "RNA çeşitleri (mRNA, tRNA, rRNA), protein sentezi ve DNA enzimlerinin (Helikaz, Polimeraz) isimlerine girilmez.",
+            "İki karakterli (dihibrit) çaprazlamalara, eş baskınlığa, çok alelliliğe ve kan gruplarının kalıtımına kesinlikle girilmez.",
+            "Mitoz ve Mayoz bölünme evrelerine girilmez."
+          ]
+        },
+        {
+          "unite_no": 3,
+          "unite_adi": "Basınç",
+          "aktif_kazanimlar": [
+            "Katı basıncını etkileyen değişkenleri deneyerek keşfeder.",
+            "Sıvı basıncını etkileyen değişkenleri tahmin eder ve test eder.",
+            "Katı, sıvı ve gazların basınç özelliklerinin günlük yaşam ve teknolojideki uygulamalarına örnekler verir."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Katı, sıvı ve gaz basıncı ile ilgili matematiksel formüllere (P=F/S, P=h.d.g, PV=nRT) ve sayısal işlem sorularına kesinlikle girilmez; sadece değişken kıyaslaması ve oranlama yapılır.",
+            "Su cenderelerinde kesit alanı üzerinden kuvvet kazancı formül hesaplamalarına girilmez."
+          ]
+        },
+        {
+          "unite_no": 4,
+          "unite_adi": "Madde ve Endüstri",
+          "aktif_kazanimlar": [
+            "Periyodik sistemde grup ve periyotları belirler; elementleri metal, ametal, yarı metal ve soygaz olarak sınıflandırır.",
+            "Fiziksel ve kimyasal değişim arasındaki farkları, kimyasal tepkimelerin oluşumunu (kütle korunumu) açıklar.",
+            "Asit ve bazları tanıyan, pH ölçeğini kullanan deneyler yapar.",
+            "Maddenin ısı ile etkileşimini (öz ısı, kütle, sıcaklık değişimi) ve hâl değişim grafiklerini yorumlar."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Periyodik tabloda ilk 18 element dışındaki elementlerin katman-elektron dizilimine ve iyon yükü hesaplamalarına girilmez.",
+            "Kimyasal tepkime denklemlerinin katsayılarla denkleştirilmesine ve mol kavramına girilmez.",
+            "Asit ve bazların sistematik (IUPAC) adlandırma kurallarına girilmez; sadece yaygın adları ve formülleri (HCl, H2SO4, HNO3, NaOH, KOH, NH3) kullanılır.",
+            "Isı alışverişinde Q = m.c.DeltaT veya Q = m.L formüllerinde sayı yerine koyup matematiksel hesaplama yapılmasına kesinlikle girilmez (Sadece grafik ve tablo yorumlanır)."
+          ]
+        },
+        {
+          "unite_no": 5,
+          "unite_adi": "Basit Makineler",
+          "aktif_kazanimlar": [
+            "Basit makinelerin (sabit/hareketli makara, palanga, kaldıraç, eğik düzlem, çıkrık, dişli çark, kasnak, vida) sağladığı avantajları örneklerle açıklar.",
+            "Basit makinelerde kuvvet kazancı ve yoldan kayıp ilişkisini yorumlar."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Basit makinelerde Tork (Moment) kavramına, iş ve enerji birimi (Joule) üzerinden sayısal formül hesaplamalarına girilmez.",
+            "Dişli ve kasnaklarda tur sayısı ve dönme yönü dışında açısal hız veya vida adımı formül hesaplamalarına girilmez."
+          ]
+        },
+        {
+          "unite_no": 6,
+          "unite_adi": "Enerji Dönüşümleri ve Çevre Bilimi",
+          "aktif_kazanimlar": [
+            "Besin zincirindeki üretici, tüketici, ayrıştırıcıları ve enerji akışını (ekolojik piramit) açıklar.",
+            "Fotosentez ve solunum (oksijenli, oksijensiz, fermantasyon) süreçlerini ve hızını etkileyen faktörleri yorumlar.",
+            "Madde döngülerini (su, oksijen, karbon, azot) ve küresel iklim değişikliğini açıklar."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Fotosentez ve solunumun kimyasal formül denklemlerine (C6H12O6 vb.) ve ışığa bağımlı/bağımsız evrelerine, Krebs döngüsüne, ATP sayılarına kesinlikle girilmez.",
+            "Kemosentez kavramına girilmez."
+          ]
+        },
+        {
+          "unite_no": 7,
+          "unite_adi": "Elektrik Yükleri ve Elektrik Enerjisi",
+          "aktif_kazanimlar": [
+            "Elektriklenmeyi (sürtünme, dokunma, etki ile), elektrik yüklerini ve elektroskopun çalışma prensibini açıklar.",
+            "Topraklama olayını ve yıldırım/şimşek korunma yollarını açıklar.",
+            "Elektrik enerjisinin ısı, ışık ve hareket enerjisine dönüşümünü (sigorta, reosta, güç santralleri) açıklar."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Coulomb yasası formülüne ve yük paylaşımında yarıçaplarla orantılı matematiksel yük hesabı (q1 + q2 / r1 + r2) işlemlerine kesinlikle girilmez (Sadece özdeş kürelerin yük paylaşımı yorumlanır).",
+            "Elektrik enerjisi dönüşümünde E = I^2.R.t veya P = V.I gibi matematiksel formül hesaplamalarına girilmez."
+          ]
+        }
+      ]
+    },
+    "TUR_8": {
+      "ders_adi": "Türkçe",
+      "genel_kisitlamalar": [
+        "Lise edebiyat müfredatına ait edebi sanatlar (istiare, mecazımürsel, kinaye, tariz, teşbihibeliğ vb.) isimleriyle sorulamaz.",
+        "Tartışmalı veya birden fazla yoruma açık öncüllü dil bilgisi cümleleri kullanılamaz."
+      ],
+      "uniteler": [
+        {
+          "unite_no": 1,
+          "unite_adi": "Sözcükte, Cümlede ve Parçada Anlam / Sözel Mantık",
+          "aktif_kazanimlar": [
+            "Gerçek, mecaz, terim anlam; eş, zıt, yakın anlamlı sözcükler; deyimler ve atasözleri.",
+            "Cümlede neden-sonuç, amaç-sonuç, koşul-sonuç, karşılaştırma, öznel/nesnel yargı ve örtülü anlam.",
+            "Paragrafta ana düşünce, yardımcı düşünce, yapı, anlatım biçimleri (açıklama, tartışma, betimleme, öyküleme) ve düşünceyi geliştirme yolları.",
+            "Grafik, tablo, görsel yorumlama ve sözel mantık / muhakeme."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Sözel mantık sorularında 4'ten fazla değişken içeren, çözümü lise/KPSS/ALES düzeyinde tablo gerektiren aşırı karmaşık kurgulara girilmez.",
+            "Söz sanatlarında sadece Kişileştirme (Teşhis), Konuşturma (İntak), Benzetme (Teşbih), Abartma (Mübalağa) ve Karşıtlık (Tezat) sorulabilir; diğer sanatlara girilmez."
+          ]
+        },
+        {
+          "unite_no": 2,
+          "unite_adi": "Fiilimsiler (Eylemsiler)",
+          "aktif_kazanimlar": [
+            "Fiilimsilerin (isim-fiil, sıfat-fiil, zarf-fiil) işlevlerini ve cümledeki kullanımlarını fark eder.",
+            "Kalıcı isimleri ve çekimli fiilleri fiilimsilerden ayırt eder."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Fiilimsi gruplarının (yan cümlecik) cümlenin hangi ögesi olduğu gibi çapraz ve lise düzeyinde karmaşık dil bilgisi tamlamalarına girilmez."
+          ]
+        },
+        {
+          "unite_no": 3,
+          "unite_adi": "Cümlenin Ögeleri",
+          "aktif_kazanimlar": [
+            "Cümlenin temel ögelerini (yüklem, özne) ve yardımcı ögelerini (nesne, yer tamlayıcısı/dolaylı tümleç, zarf tamlayıcısı) tanır.",
+            "Cümlede vurgulanmak istenen ögeyi bulur; ara sözleri ve cümle dışı unsurları ayırt eder."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Edat tümleci (İlgeç tümleci) ayrı bir öge olarak sorulamaz; MEB müfredatına göre 'ne ile, kimin ile' soruları Zarf Tamlayıcısı içinde değerlendirilir.",
+            "Öge ortaklığı olan sıralı/bağlı cümlelerdeki tartışmalı öge ayrımlarına girilmez."
+          ]
+        },
+        {
+          "unite_no": 4,
+          "unite_adi": "Fiilde Çatı",
+          "aktif_kazanimlar": [
+            "Fiilleri özne-yüklem ilişkisine (etken, edilgen) ve nesne-yüklem ilişkisine (geçişli, geçişsiz) göre sınıflandırır."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Özne-yüklem ilişkisinde 'Dönüşlü' ve 'İşteş' çatılara kesinlikle girilmez (Sadece Etken ve Edilgen vardır).",
+            "Nesne-yüklem ilişkisinde 'Oldurgan' ve 'Ettirgen' çatılara kesinlikle girilmez (Sadece Geçişli ve Geçişsiz vardır)."
+          ]
+        },
+        {
+          "unite_no": 5,
+          "unite_adi": "Cümle Türleri / Metin Türleri / Anlatım Bozuklukları / Yazım ve Noktalama",
+          "aktif_kazanimlar": [
+            "Cümleleri yüklemin türüne (fiil, isim), yüklemin yerine (kurallı, devrik, eksiltili), anlamına (olumlu, olumsuz, soru, ünlem) ve yapısına (basit, birleşik, sıralı, bağlı) göre inceler.",
+            "Hikaye, roman, anı, biyografi, otobiyografi, gezi yazısı, makale, deneme, söyleşi, fıkra, destan, efsane türlerini ayırt eder.",
+            "Yapısal (dil bilgisi yönünden) anlatım bozukluklarını tespit eder ve düzeltir.",
+            "TDK kurallarına uygun yazım ve noktalama kurallarını uygular."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Birleşik cümlelerde sadece 'Fiilimsi bulunan (Girişik) birleşik cümle' işlenir; Şartlı birleşik, Ki'li birleşik ve İç içe birleşik cümlelerin alt sınıflandırma detaylarına girilmez.",
+            "Anlatım bozukluklarında 7. sınıf konusu olan anlama dayalı bozukluklar (gereksiz sözcük kullanımı, sözcüğün yanlış anlamda kullanımı vb.) değil, sadece 8. sınıf konusu olan yapısal bozukluklar (özne-yüklem uyuşmazlığı, öge eksikliği, tamlama ve çatı uyuşmazlığı) sorulur."
+          ]
+        }
+      ]
+    },
+    "INK_8": {
+      "ders_adi": "T.C. İnkılap Tarihi ve Atatürkçülük",
+      "genel_kisitlamalar": [
+        "Doğrudan gün, ay, yıl veya antlaşma madde numarası ezberine dayalı sorular sorulamaz; tüm sorular verilen tarihsel metin, harita veya anekdot üzerinden kavram eşleştirmesine (Millî Egemenlik, Tam Bağımsızlık, Çağdaşlaşma vb.) dayanmalıdır."
+      ],
+      "uniteler": [
+        {
+          "unite_no": 1,
+          "unite_adi": "Bir Kahraman Doğuyor",
+          "aktif_kazanimlar": [
+            "Avrupa'daki gelişmelerin (Coğrafi Keşifler, Rönesans, Reform, Aydınlanma, Sanayi İnkılabı, Fransız İhtilali) Osmanlı'ya etkileri (Tanzimat, Islahat, Meşrutiyet, Fikir Akımları).",
+            "Mustafa Kemal'in çocukluk, eğitim ve askerlik hayatı ile fikir hayatını etkileyen olay ve kişiler."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Osmanlı duraklama ve gerileme dönemi padişahlarının siyasi savaşlarına ve 19. yüzyıl öncesi antlaşmalara girilmez."
+          ]
+        },
+        {
+          "unite_no": 2,
+          "unite_adi": "Millî Uyanış: Bağımsızlık Yolunda Atılan Adımlar",
+          "aktif_kazanimlar": [
+            "I. Dünya Savaşı'nın sebepleri, Osmanlı'nın savaşa girişi ve savaştığı cepheler (Taarruz, Savunma, Yardım).",
+            "Mondros Ateşkes Antlaşması, işgaller, Cemiyetler (Yararlı ve Zararlı) ve Kuvâ-yı Millîye.",
+            "Genelgeler (Havza, Amasya) ve Kongreler (Erzurum, Sivas), Misakımillî, TBMM'nin açılışı ve ayaklanmalar, Sevr Antlaşması."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "I. Dünya Savaşı'nda Osmanlı'nın yer almadığı Avrupa cephelerinin (Marne, Verdun vb.) askeri detaylarına girilmez.",
+            "Amasya ve Erzurum dışındaki yerel kongrelerin (Balıkesir, Alaşehir, Pozantı) iç karar maddeleri ezber olarak sorulmaz."
+          ]
+        },
+        {
+          "unite_no": 3,
+          "unite_adi": "Millî Bir Destan: Ya İstiklal Ya Ölüm!",
+          "aktif_kazanimlar": [
+            "Doğu Cephesi (Gümrü Antlaşması) ve Güney Cephesi (Kuva-yı Milliye direnişi, Ankara Antlaşması).",
+            "Batı Cephesi: I. ve II. İnönü, Kütahya-Eskişehir, Maarif Kongresi, Tekalif-i Milliye Emirleri, Sakarya Meydan Muharebesi, Büyük Taarruz.",
+            "Mudanya Ateşkes Antlaşması ve Lozan Barış Antlaşması."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Savaşlardaki tümen/alay numaraları, komutanların taktiksel askeri harita koordinatları gibi lise/akademik düzeydeki askeri tarih detaylarına girilmez."
+          ]
+        },
+        {
+          "unite_no": 4,
+          "unite_adi": "Atatürkçülük ve Çağdaşlaşan Türkiye",
+          "aktif_kazanimlar": [
+            "Atatürk İlkeleri (Cumhuriyetçilik, Milliyetçilik, Halkçılık, Devletçilik, Laiklik, İnkılapçılık).",
+            "Siyasi, Hukuk, Eğitim-Kültür, Toplumsal ve Ekonomi alanında yapılan inkılaplar ve Kabotaj Kanunu.",
+            "Atatürk İnkılaplarının dayandığı temel ilkeler ve 10. Yıl Nutku."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Kanunların TBMM kabul tarihleri (yıl ezberi) veya medeni kanun maddelerinin hukuki alt bentleri ezber olarak sorulmaz; hangi ilke ile ilişkili olduğu sorulur."
+          ]
+        },
+        {
+          "unite_no": 5,
+          "unite_adi": "Demokratikleşme Çabaları",
+          "aktif_kazanimlar": [
+            "Çok partili hayata geçiş denemeleri (Cumhuriyet Halk Fırkası, Terakkiperver Cumhuriyet Fırkası, Serbest Cumhuriyet Fırkası).",
+            "Mustafa Kemal'e suikast girişimi, Şeyh Sait ve Kubilay (Menemen) olayları."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "1946 sonrası Demokrat Parti dönemi ve çok partili hayata kesin geçiş süreci bu ünitede sorulmaz."
+          ]
+        },
+        {
+          "unite_no": 6,
+          "unite_adi": "Atatürk Dönemi Türk Dış Politikası",
+          "aktif_kazanimlar": [
+            "Dış politikanın temel ilkeleri ('Yurtta sulh, cihanda sulh', tam bağımsızlık, mütekabiliyet, akılcılık).",
+            "Yabancı okullar, Dış borçlar, Nüfus mübadelesi, Musul sorunu, Milletler Cemiyeti'ne giriş, Balkan Antantı, Montrö Boğazlar Sözleşmesi, Sadabat Paktı ve Hatay'ın ana vatana katılması."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Atatürk dönemi dışındaki uluslararası paktlar (NATO, Bağdat Paktı vb.) bu ünitenin kazanımı olarak sorulmaz."
+          ]
+        },
+        {
+          "unite_no": 7,
+          "unite_adi": "Atatürk'ün Ölümü ve Sonrası",
+          "aktif_kazanimlar": [
+            "Atatürk'ün vefatı, eserleri, II. Dünya Savaşı'nda Türkiye'nin politikası ve çok partili siyasi hayata geçiş."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Soğuk Savaş dönemi detayları ve 1950 sonrası iç siyaset olaylarına girilmez."
+          ]
+        }
+      ]
+    },
+    "DIN_8": {
+      "ders_adi": "Din Kültürü ve Ahlak Bilgisi",
+      "genel_kisitlamalar": [
+        "Ayet ve hadislerin sure/ayet numaraları ezber olarak sorulamaz; verilen ayet/hadis metninden anlam ve kavram çıkarımı yaptırılır.",
+        "Mezhepler arası fıkhi/kelami ihtilaflara ve tartışmalı dini konulara kesinlikle girilmez."
+      ],
+      "uniteler": [
+        {
+          "unite_no": 1,
+          "unite_adi": "Kader İnancı",
+          "aktif_kazanimlar": [
+            "Kader ve kaza inancı, evrendeki yasalar (Sünnetullah: Fiziksel, Biyolojik, Toplumsal yasalar).",
+            "İnsanın iradesi (Külli ve Cüz'i irade), sorumluluk, kaderle ilgili kavramlar (Emek, rızık, ömür, ecel, tevekkül, başarı, sağlık).",
+            "Hz. Musa'nın (a.s.) hayatı ve Ayetel Kürsi'nin anlamı."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Cebriye, Mutezile, Eşariye ve Maturidiye gibi kelam mezheplerinin kader tartışmalarına girilmez.",
+            "Ayetel Kürsi'nin Arapça metninin ezberden boşluk doldurması sorulmaz; sadece anlamı ve mesajı sorulur."
+          ]
+        },
+        {
+          "unite_no": 2,
+          "unite_adi": "Zekât ve Sadaka",
+          "aktif_kazanimlar": [
+            "İslam'ın paylaşma ve yardımlaşmaya verdiği önem.",
+            "Zekât ve sadaka ibadeti (Nisap miktarı, kimlere verilir/verilmez, zekat oranları), sadaka-i cariye, فıtır sadakası (fitre) ve infak.",
+            "Hz. Şuayb'ın (a.s.) hayatı ve Maûn Suresi'nin anlamı."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "Karmaşık ticari malların, şirket hisselerinin veya madenlerin detaylı fıkhi zekât hesaplamalarına girilmez; sadece temel oranlar (1/40, 1/10, 1/5 ve hayvan sayıları) kullanılır."
+          ]
+        },
+        {
+          "unite_no": 3,
+          "unite_adi": "Din ve Hayat",
+          "aktif_kazanimlar": [
+            "Din, birey ve toplum ilişkisi.",
+            "İslam dininin temel gayeleri / Zarurat-ı Diniyye (Canın, Neslin, Aklın, Malın ve Dinin korunması).",
+            "Hz. Yusuf'un (a.s.) hayatı ve Asr Suresi'nin anlamı."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "İslam hukuku ceza maddelerine (had cezaları vb.) kesinlikle girilmez."
+          ]
+        },
+        {
+          "unite_no": 4,
+          "unite_adi": "Hz. Muhammed'in Örnekliği",
+          "aktif_kazanimlar": [
+            "Hz. Muhammed'in (s.a.v.) doğruluğu ve güvenilirliği (Muhammedü'l-Emin), merhametli ve affedici oluşu, istişareye (danışmaya) önem vermesi, cesareti ve kararlılığı, hakkı gözetmedeki hassasiyeti, insanlara değer vermesi.",
+            "Kureyş Suresi'nin anlamı."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "İslam tarihi savaşlarının (Bedir, Uhud, Hendek) kronolojik askeri detayları ezber olarak sorulmaz; sadece bu olaylardaki ahlaki tutum (örneğin Hendek'te istişare) sorulur."
+          ]
+        },
+        {
+          "unite_no": 5,
+          "unite_adi": "Kur'an-ı Kerim ve Özellikleri",
+          "aktif_kazanimlar": [
+            "İslam dininin temel kaynakları (Kur'an ve Sünnet).",
+            "Kur'an-ı Kerim'in ana konuları (İnanç, İbadet, Ahlak, Muamelat, Kıssalar) ve temel özellikleri (Nur, Şifa, Furkan, Hadi, Zikir).",
+            "Hz. Nuh'un (a.s.) hayatı."
+          ],
+          "kapsam_disi_yasakli_alanlar": [
+            "İcma ve Kıyas gibi tali fıkıh kaynaklarının usul detaylarına ve tefsir/hadis ilminin teknik terminolojisine girilmez."
+          ]
+        }
+      ]
+    },
+    "ING_8": {
+      "ders_adi": "İngilizce",
+      "genel_kisitlamalar": [
+        "Doğrudan dil bilgisi (Grammar) kuralı veya zaman eki boşluk doldurması (tense testi) sorulamaz; tüm sorular okuduğunu anlama, diyalog tamamlama, tablo/görsel yorumlama ve kelime bilgisine (Vocabulary) dayanmalıdır.",
+        "B1 ve üzeri (Lise) düzeyde karmaşık gramer yapıları (Past Perfect, Future Perfect, Conditionals Type 2-3, Reported Speech, Passive Voice'un karmaşık zamanları) metinlerde kullanılamaz."
+      ],
+      "uniteler": [
+        {
+          "unite_no": 1,
+          "unite_adi": "Friendship",
+          "aktif_kazanimlar": [
+            "Accepting and refusing (Kabul etme ve reddetme), apologizing (özür dileme), giving explanations/reasons (mazeret bildirme).",
+            "Kişilik özellikleri (personal traits: honest, tactful, laid-back, stubborn vb.) ve davet mektupları (invitation cards: sender, receiver, event, date, fee)."
+          ],
+          "kapsam_disi_yasakli_alanlar": ["Müfredat kelimeleri dışındaki ileri seviye C1 sıfatlar kullanılamaz."]
+        },
+        {
+          "unite_no": 2,
+          "unite_adi": "Teen Life",
+          "aktif_kazanimlar": [
+            "Expressing likes, dislikes and preferences (prefer, would rather, keen on, fond of, can't stand).",
+            "Stating personal opinions (terrific, unbearable, ridiculous, impressive) ve günlük rutinler / sıklık zarfları (frequency adverbs)."
+          ],
+          "kapsam_disi_yasakli_alanlar": ["Prefer ve Would rather yapılarının geçmiş zamanlı (would rather have done) formlarına girilmez."]
+        },
+        {
+          "unite_no": 3,
+          "unite_adi": "In The Kitchen",
+          "aktif_kazanimlar": [
+            "Describing simple processes (Yemek tarifi sıralama: First, Second, Next, Then, After that, Finally).",
+            "Mutfak araç gereçleri (grater, strainer, whisk vb.), pişirme yöntemleri (roast, grill, steam, boil, bake, fry) ve hazırlık fiilleri (dice, slice, chop, knead, peel)."
+          ],
+          "kapsam_disi_yasakli_alanlar": ["Uluslararası gastronomi terimlerine girilmez; sadece MEB ders kitaplarındaki mutfak kelimeleri kullanılır."]
+        },
+        {
+          "unite_no": 4,
+          "unite_adi": "On The Phone",
+          "aktif_kazanimlar": [
+            "Following phone conversations (hold on, put through, engaged, leave a message, hang up, pick up).",
+            "Stating decisions taken at the time of speaking (Spontaneous decisions with 'will') ve iletişim yöntemleri (smartphone apps, pros and cons)."
+          ],
+          "kapsam_disi_yasakli_alanlar": ["Will ve Going to arasındaki gramer farkını test eden boşluk doldurma sorusu sorulamaz."]
+        },
+        {
+          "unite_no": 5,
+          "unite_adi": "The Internet",
+          "aktif_kazanimlar": [
+            "Accepting and refusing, making excuses, asking for clarification (What do you mean?, Can you explain it more?).",
+            "İnternet alışkanlıkları, internet güvenliği kuralları (Internet safety rules) ve terimleri (attachment, browser, confirm, upload, download, sign in)."
+          ],
+          "kapsam_disi_yasakli_alanlar": ["Yazılım ve ağ mühendisliği terimlerine girilmez."]
+        },
+        {
+          "unite_no": 6,
+          "unite_adi": "Adventures",
+          "aktif_kazanimlar": [
+            "Expressing preferences (prefer / would rather) ve Making comparisons (Comparative adjectives: more challenging, safer, worse, better).",
+            "Doğa ve ekstrem sporlar (caving, hang-gliding, kayaking, rafting, bungee-jumping) ile ekipmanları (helmet, paddle, life jacket)."
+          ],
+          "kapsam_disi_yasakli_alanlar": ["Superlative (the most...) yapılarının karmaşık istisnaları gramer testi olarak sorulamaz."]
+        },
+        {
+          "unite_no": 7,
+          "unite_adi": "Tourism",
+          "aktif_kazanimlar": [
+            "Describing places (historic, all-inclusive, ancient, rural, urban), expressing preferences ve Talking about experiences (Have you ever...? / I have visited...).",
+            "Turizm istatistikleri, konaklama, ulaşım ve iklim özelliklerini içeren broşür/tablo okuma."
+          ],
+          "kapsam_disi_yasakli_alanlar": ["Present Perfect Tense ile Simple Past Tense farkını (for/since/ago) gramer kuralı olarak ölçen sorular sorulamaz; sadece deneyim anlamı kullanılır."]
+        },
+        {
+          "unite_no": 8,
+          "unite_adi": "Chores",
+          "aktif_kazanimlar": [
+            "Expressing likes/dislikes, obligation (must, have to) ve responsibilities (in charge of, responsible for, duty, task).",
+            "Ev işleri (mow the lawn, do the laundry, empty the dishwasher, vacuum, iron) ve okul/ev kuralları."
+          ],
+          "kapsam_disi_yasakli_alanlar": ["Mustn't ve Don't have to arasındaki gramer farkı boşluk doldurma olarak sorulamaz."]
+        },
+        {
+          "unite_no": 9,
+          "unite_adi": "Science",
+          "aktif_kazanimlar": [
+            "Describing the actions happening currently ve talking about past events (bilimsel buluşlar ve mucitler).",
+            "Bilimsel terimler (invention, discovery, cure, vaccine, cell, gravity, test tube, microscope, conduct an experiment)."
+          ],
+          "kapsam_disi_yasakli_alanlar": ["Passive Voice (was invented by) yapısı okuma parçalarında anlaşılır düzeyde geçebilir ancak gramer dönüşüm sorusu olarak sorulamaz."]
+        },
+        {
+          "unite_no": 10,
+          "unite_adi": "Natural Forces",
+          "aktif_kazanimlar": [
+            "Making predictions about the future (Gelecek tahminleri, doğal afetler ve alınacak önlemler).",
+            "Doğal afetler (avalanche, drought, earthquake, flood, landslide, hurricane, global warming, deforestation)."
+          ],
+          "kapsam_disi_yasakli_alanlar": ["Jeolojik ve meteorolojik akademik terimlere girilmez."]
+        }
+      ]
+    }
+  }
+}
